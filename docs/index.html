@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ── Primary Meta ──────────────────────────────── -->
+    <title>Body Muscles — Interactive SVG Body Map &amp; Muscle Chart JavaScript Library</title>
+    <meta
+      name="description"
+      content="Body Muscles is a zero-dependency, framework-agnostic JavaScript/TypeScript library for interactive anatomical body mapping. 70+ muscles, SVG precision, intensity visualization. Works with React, Vue, Svelte, vanilla JS."
+    />
+    <meta
+      name="keywords"
+      content="body map, muscle chart, body muscles, anatomy chart, SVG body map, interactive body map, muscle visualization, body mapping library, anatomical chart, JavaScript body map, TypeScript muscle chart, human body SVG, fitness tracker muscles, workout muscle map, body-muscles npm, muscle intensity chart, framework-agnostic body map"
+    />
+    <meta name="author" content="vulovix" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://vulovix.github.io/body/" />
+
+    <!-- ── Open Graph ────────────────────────────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Body Muscles — Interactive SVG Body Map Library" />
+    <meta
+      property="og:description"
+      content="Zero-dependency JavaScript library for interactive anatomical body mapping. 70+ muscles, SVG precision, intensity visualization."
+    />
+    <meta property="og:url" content="https://vulovix.github.io/body/" />
+    <meta property="og:site_name" content="Body Muscles" />
+    <meta property="og:image" content="https://vulovix.github.io/body/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- ── Twitter Card ──────────────────────────────── -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Body Muscles — Interactive SVG Body Map Library" />
+    <meta
+      name="twitter:description"
+      content="Zero-dependency JS/TS library for interactive anatomical body mapping. 70+ muscles, SVG precision, works with any framework."
+    />
+    <meta name="twitter:image" content="https://vulovix.github.io/body/og-image.png" />
+
+    <!-- ── JSON-LD Structured Data ───────────────────── -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareSourceCode",
+        "name": "body-muscles",
+        "alternateName": "Body Muscles",
+        "description": "Framework-agnostic interactive SVG body map with 70+ anatomical regions, intensity visualization, and zero dependencies.",
+        "url": "https://vulovix.github.io/body/",
+        "codeRepository": "https://github.com/vulovix/body",
+        "programmingLanguage": ["TypeScript", "JavaScript"],
+        "runtimePlatform": "Browser",
+        "license": "https://opensource.org/licenses/Apache-2.0",
+        "operatingSystem": "Any",
+        "applicationCategory": "DeveloperApplication",
+        "keywords": "body map, muscle chart, anatomy, SVG, JavaScript, TypeScript, interactive, visualization"
+      }
+    </script>
+
+    <!-- ── Fonts & Styles ────────────────────────────── -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" id="hljs-theme-dark" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css" id="hljs-theme-light" disabled />
+  </head>
+  <body>
+    <!-- ── Header ────────────────────────────────────── -->
+    <header class="header">
+      <div class="container">
+        <div class="header-brand">
+          <span>Body Muscles</span>
+          <!-- <span class="header-badge">v1.0.0</span> -->
+        </div>
+        <nav class="header-nav">
+          <a href="#demo">Demo</a>
+          <a href="#install">Install</a>
+          <a href="#api">API</a>
+          <a href="#examples">Examples</a>
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+            <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5" />
+              <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            </svg>
+            <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ── Hero ──────────────────────────────────────── -->
+    <section class="hero">
+      <div class="container">
+        <h1>Body Muscles</h1>
+        <p>Framework-agnostic interactive SVG body map with 70+ anatomical regions, intensity visualization, and zero dependencies.</p>
+        <div class="install-block">
+          <span class="prefix">$</span>
+          <span class="cmd">npm install body-muscles</span>
+          <button class="copy-btn" id="installCopyBtn" aria-label="Copy">
+            <svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            <svg
+              class="icon-check"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2.5"
+              style="display: none"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </button>
+        </div>
+        <div class="hero-actions">
+          <a href="#demo" class="btn btn-primary">Live Demo</a>
+          <a href="#api" class="btn btn-outline">API Reference</a>
+          <a href="https://github.com/vulovix/body" class="btn btn-outline" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Features ──────────────────────────────────── -->
+    <section id="features">
+      <div class="container">
+        <h2>Features</h2>
+        <div class="features-grid">
+          <div class="card feature-card">
+            <div class="feature-icon">0</div>
+            <h3>Zero Dependencies</h3>
+            <p>Pure TypeScript. No React, no framework lock-in. Works everywhere the DOM exists.</p>
+          </div>
+          <div class="card feature-card">
+            <div class="feature-icon">&#9881;</div>
+            <h3>70+ Regions</h3>
+            <p>Detailed anatomical mapping covering head, torso, arms, legs, hands and feet.</p>
+          </div>
+          <div class="card feature-card">
+            <div class="feature-icon">&#9734;</div>
+            <h3>Intensity Scale</h3>
+            <p>0-10 color gradient from neutral through yellow, orange, to deep red.</p>
+          </div>
+          <div class="card feature-card">
+            <div class="feature-icon">&#9783;</div>
+            <h3>Dual Views</h3>
+            <p>Anterior (front) and posterior (back) views with smooth transitions.</p>
+          </div>
+          <div class="card feature-card">
+            <div class="feature-icon">&#9881;</div>
+            <h3>TypeScript First</h3>
+            <p>Full type definitions, declaration maps, and ESM + CJS dual publish.</p>
+          </div>
+          <div class="card feature-card">
+            <div class="feature-icon">&#9742;</div>
+            <h3>Accessible</h3>
+            <p>Keyboard navigation, ARIA labels, and semantic roles on every path.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Demo ──────────────────────────────────────── -->
+    <section id="demo">
+      <div class="container">
+        <h2>Interactive Demo</h2>
+        <p>Click any muscle region to select it. Use the controls on the right to switch views and toggle muscle groups.</p>
+        <div class="demo-grid">
+          <div class="card">
+            <div class="demo-chart-wrap" id="chartContainer"></div>
+          </div>
+          <div class="demo-sidebar">
+            <!-- View toggle -->
+            <div class="card">
+              <div class="view-toggle">
+                <button class="active" data-view="FRONT">Anterior</button>
+                <button data-view="BACK">Posterior</button>
+              </div>
+            </div>
+
+            <!-- Selected info -->
+            <div class="card" id="selectedCard">
+              <div
+                style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600; margin-bottom: 0.5rem"
+              >
+                Selected Muscle
+              </div>
+              <p id="selectedInfo" style="font-size: 0.85rem; color: var(--fg-muted); font-style: italic">Click a body part to see details</p>
+            </div>
+
+            <!-- Muscle groups -->
+            <div class="card">
+              <div
+                style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600; margin-bottom: 0.5rem"
+              >
+                Muscle Groups
+              </div>
+              <div class="group-chips" id="groupChips"></div>
+            </div>
+
+            <!-- Group muscle list -->
+            <div class="card" id="groupMusclesCard" style="display: none">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem">
+                <div
+                  style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600"
+                  id="groupMusclesTitle"
+                >
+                  Muscles
+                </div>
+                <button class="btn btn-outline" id="btnCloseGroup" style="padding: 0.15rem 0.5rem; font-size: 0.7rem">Close</button>
+              </div>
+              <div id="groupMusclesList"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="card">
+              <div
+                style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600; margin-bottom: 0.5rem"
+              >
+                Session
+              </div>
+              <div class="info-row">
+                <span class="info-label">Selected</span>
+                <span class="info-value" id="statSelected">0</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Avg Intensity</span>
+                <span class="info-value" id="statAvg">0</span>
+              </div>
+            </div>
+
+            <!-- Intensity legend -->
+            <div class="card">
+              <div
+                style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600; margin-bottom: 0.5rem"
+              >
+                Intensity Scale
+              </div>
+              <div class="intensity-bar" id="intensityBar"></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="demo-actions">
+              <button class="btn btn-outline" id="btnReset">Reset</button>
+              <button class="btn btn-primary" id="btnExport">Export JSON</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Installation ──────────────────────────────── -->
+    <section id="install">
+      <div class="container">
+        <h2>Installation</h2>
+        <div class="install-tabs">
+          <div class="install-tab-buttons">
+            <button class="install-tab-btn active" data-tab="npm">npm</button>
+            <button class="install-tab-btn" data-tab="yarn">yarn</button>
+            <button class="install-tab-btn" data-tab="pnpm">pnpm</button>
+            <button class="install-tab-btn" data-tab="cdn-esm">CDN (ESM)</button>
+            <button class="install-tab-btn" data-tab="cdn-umd">CDN (UMD)</button>
+          </div>
+          <div class="install-tab-panel active" data-panel="npm">
+            <pre><code class="language-bash">npm install body-muscles</code></pre>
+          </div>
+          <div class="install-tab-panel" data-panel="yarn">
+            <pre><code class="language-bash">yarn add body-muscles</code></pre>
+          </div>
+          <div class="install-tab-panel" data-panel="pnpm">
+            <pre><code class="language-bash">pnpm add body-muscles</code></pre>
+          </div>
+          <div class="install-tab-panel" data-panel="cdn-esm">
+            <pre><code class="language-html">&lt;script type="module"&gt;
+  import { BodyChart, ViewSide } from 'https://esm.sh/body-muscles';
+&lt;/script&gt;</code></pre>
+            <p class="tab-note"><a href="https://esm.sh" target="_blank" rel="noopener">esm.sh</a> — CDN that serves npm packages as native ES modules.</p>
+          </div>
+          <div class="install-tab-panel" data-panel="cdn-umd">
+            <pre><code class="language-html">&lt;!-- Global: window.BodyMuscles --&gt;
+&lt;script src="https://unpkg.com/body-muscles/dist/umd/body-muscles.umd.min.js"&gt;&lt;/script&gt;
+
+&lt;script&gt;
+  const { BodyChart, ViewSide } = BodyMuscles;
+&lt;/script&gt;</code></pre>
+            <p class="tab-note">Works everywhere — no bundler needed, supports <code>file://</code>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Quick Start ───────────────────────────────── -->
+    <section id="quickstart">
+      <div class="container">
+        <h2>Quick Start</h2>
+        <pre><code class="language-typescript">import { BodyChart, ViewSide } from 'body-muscles';
+
+const chart = new BodyChart(document.getElementById('container'), {
+  view: ViewSide.FRONT,
+  bodyState: {},
+  onMuscleClick: (id, name) =&gt; {
+    console.log(`Clicked: ${name} (${id})`);
+  },
+  onMuscleHover: (id) =&gt; {
+    console.log('Hovered:', id);
+  },
+});
+
+// Update body state
+chart.update({
+  bodyState: {
+    'biceps-left': { intensity: 7, selected: true },
+    'chest-upper-right': { intensity: 4, selected: false },
+  }
+});
+
+// Switch to back view
+chart.update({ view: ViewSide.BACK });
+
+// Cleanup when done
+chart.destroy();</code></pre>
+      </div>
+    </section>
+
+    <!-- ── API Reference ─────────────────────────────── -->
+    <section id="api">
+      <div class="container">
+        <h2>API Reference</h2>
+
+        <h3><code>new BodyChart(container, options)</code></h3>
+        <p>Creates and mounts an interactive SVG body map inside the given DOM element.</p>
+
+        <h3>BodyChartOptions</h3>
+        <div style="overflow-x: auto">
+          <table class="api-table">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Type</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>view</code></td>
+                <td><code>ViewSide</code></td>
+                <td>—</td>
+                <td>Anatomical view: <code>"FRONT"</code> or <code>"BACK"</code></td>
+              </tr>
+              <tr>
+                <td><code>bodyState</code></td>
+                <td><code>BodyState</code></td>
+                <td>—</td>
+                <td>Map of muscle IDs to <code>{ intensity, selected }</code></td>
+              </tr>
+              <tr>
+                <td><code>onMuscleClick</code></td>
+                <td><code>(id, name) =&gt; void</code></td>
+                <td><code>noop</code></td>
+                <td>Fired when a muscle region is clicked</td>
+              </tr>
+              <tr>
+                <td><code>onMuscleHover</code></td>
+                <td><code>(id | null) =&gt; void</code></td>
+                <td><code>noop</code></td>
+                <td>Fired on hover enter/leave</td>
+              </tr>
+              <tr>
+                <td><code>className</code></td>
+                <td><code>string</code></td>
+                <td><code>""</code></td>
+                <td>Extra CSS class for the container</td>
+              </tr>
+              <tr>
+                <td><code>ariaLabel</code></td>
+                <td><code>string</code></td>
+                <td>auto</td>
+                <td>Accessibility label</td>
+              </tr>
+              <tr>
+                <td><code>showViewLabel</code></td>
+                <td><code>boolean</code></td>
+                <td><code>false</code></td>
+                <td>Show "Anterior / Posterior" overlay label</td>
+              </tr>
+              <tr>
+                <td><code>enableTransitions</code></td>
+                <td><code>boolean</code></td>
+                <td><code>true</code></td>
+                <td>Smooth CSS transitions</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Instance Methods</h3>
+        <div style="overflow-x: auto">
+          <table class="api-table">
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>update(options)</code></td>
+                <td>Merge partial options. Changing <code>view</code> triggers a full re-render; other changes update paths in-place.</td>
+              </tr>
+              <tr>
+                <td><code>destroy()</code></td>
+                <td>Remove the chart from the DOM and clean up all event listeners.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Types</h3>
+        <pre><code class="language-typescript">enum ViewSide { FRONT = "FRONT", BACK = "BACK" }
+
+type MuscleId = string;
+
+interface BodyPartState {
+  intensity: number;  // 0-10
+  selected: boolean;
+}
+
+type BodyState = Partial&lt;Record&lt;MuscleId, BodyPartState&gt;&gt;;</code></pre>
+
+        <h3>Data Exports</h3>
+        <div style="overflow-x: auto">
+          <table class="api-table">
+            <thead>
+              <tr>
+                <th>Export</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>MUSCLE_MAP</code></td>
+                <td>All 70+ muscle definitions (front + back)</td>
+              </tr>
+              <tr>
+                <td><code>FRONT_MUSCLES</code></td>
+                <td>Anterior-view muscle definitions</td>
+              </tr>
+              <tr>
+                <td><code>BACK_MUSCLES</code></td>
+                <td>Posterior-view muscle definitions</td>
+              </tr>
+              <tr>
+                <td><code>MUSCLE_GROUPS</code></td>
+                <td>Named groups: Head & Neck, Shoulders, Arms, Chest, Back, Abdominals, Legs, Hands & Feet</td>
+              </tr>
+              <tr>
+                <td><code>INTENSITY_COLORS</code></td>
+                <td>Color map (0-10) from slate → yellow → orange → red</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Utility Functions</h3>
+        <div style="overflow-x: auto">
+          <table class="api-table">
+            <thead>
+              <tr>
+                <th>Function</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>getMuscleColor(state, isHovered)</code></td>
+                <td>Returns hex color for a given <code>BodyPartState</code></td>
+              </tr>
+              <tr>
+                <td><code>filterMuscles(view)</code></td>
+                <td>Returns <code>MuscleDef[]</code> for the given view</td>
+              </tr>
+              <tr>
+                <td><code>createBodyPartState(intensity?, selected?)</code></td>
+                <td>Factory with validation</td>
+              </tr>
+              <tr>
+                <td><code>isValidIntensity(value)</code></td>
+                <td>Type guard for 0-10 integer</td>
+              </tr>
+              <tr>
+                <td><code>extractMuscleSide(id)</code></td>
+                <td>Returns <code>"left" | "right" | "central"</code></td>
+              </tr>
+              <tr>
+                <td><code>extractMuscleGroup(id)</code></td>
+                <td>Returns base group string</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Examples ──────────────────────────────────── -->
+    <section id="examples">
+      <div class="container">
+        <h2>Framework Examples</h2>
+
+        <h3>Vanilla JavaScript</h3>
+        <pre><code class="language-html">&lt;div id="body-map"&gt;&lt;/div&gt;
+&lt;script type="module"&gt;
+  import { BodyChart, ViewSide } from './dist/esm/index.js';
+
+  const state = {};
+  const chart = new BodyChart(document.getElementById('body-map'), {
+    view: ViewSide.FRONT,
+    bodyState: state,
+    onMuscleClick(id, name) {
+      const cur = state[id] || { intensity: 0, selected: false };
+      state[id] = { ...cur, selected: !cur.selected };
+      chart.update({ bodyState: state });
+    },
+  });
+&lt;/script&gt;</code></pre>
+
+        <h3>React</h3>
+        <pre><code class="language-javascript">import { useRef, useEffect, useState } from 'react';
+import { BodyChart, ViewSide } from 'body-muscles';
+
+function BodyMap() {
+  const ref = useRef(null);
+  const chartRef = useRef(null);
+  const [bodyState, setBodyState] = useState({});
+
+  useEffect(() =&gt; {
+    chartRef.current = new BodyChart(ref.current, {
+      view: ViewSide.FRONT,
+      bodyState,
+      onMuscleClick(id) {
+        setBodyState(prev =&gt; ({
+          ...prev,
+          [id]: { intensity: prev[id]?.intensity ?? 0, selected: !prev[id]?.selected },
+        }));
+      },
+    });
+    return () =&gt; chartRef.current?.destroy();
+  }, []);
+
+  useEffect(() =&gt; {
+    chartRef.current?.update({ bodyState });
+  }, [bodyState]);
+
+  return &lt;div ref={ref} /&gt;;
+}</code></pre>
+
+        <h3>Vue 3</h3>
+        <pre><code class="language-html">&lt;template&gt;
+  &lt;div ref="container" /&gt;
+&lt;/template&gt;
+
+&lt;script setup&gt;
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { BodyChart, ViewSide } from 'body-muscles';
+
+const container = ref(null);
+const bodyState = ref({});
+let chart;
+
+onMounted(() =&gt; {
+  chart = new BodyChart(container.value, {
+    view: ViewSide.FRONT,
+    bodyState: bodyState.value,
+    onMuscleClick(id) {
+      const cur = bodyState.value[id] || { intensity: 0, selected: false };
+      bodyState.value = { ...bodyState.value, [id]: { ...cur, selected: !cur.selected } };
+    },
+  });
+});
+
+watch(bodyState, (s) =&gt; chart?.update({ bodyState: s }), { deep: true });
+onUnmounted(() =&gt; chart?.destroy());
+&lt;/script&gt;</code></pre>
+
+        <h3>Svelte</h3>
+        <pre><code class="language-html">&lt;script&gt;
+  import { onMount, onDestroy } from 'svelte';
+  import { BodyChart, ViewSide } from 'body-muscles';
+
+  let container;
+  let chart;
+  let bodyState = {};
+
+  onMount(() =&gt; {
+    chart = new BodyChart(container, {
+      view: ViewSide.FRONT,
+      bodyState,
+      onMuscleClick(id) {
+        const cur = bodyState[id] || { intensity: 0, selected: false };
+        bodyState = { ...bodyState, [id]: { ...cur, selected: !cur.selected } };
+        chart.update({ bodyState });
+      },
+    });
+  });
+
+  onDestroy(() =&gt; chart?.destroy());
+&lt;/script&gt;
+
+&lt;div bind:this={container} /&gt;</code></pre>
+      </div>
+    </section>
+
+    <!-- ── Footer ────────────────────────────────────── -->
+    <footer class="footer">
+      <div class="container">
+        <p>Body Muscles &mdash; Apache 2.0 License</p>
+      </div>
+    </footer>
+
+    <!-- ── Scripts ───────────────────────────────────── -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/xml.min.js"></script>
+    <script>
+      // Syntax highlighting
+      hljs.highlightAll();
+
+      // Install tabs
+      document.querySelectorAll(".install-tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tab = btn.dataset.tab;
+          btn
+            .closest(".install-tabs")
+            .querySelectorAll(".install-tab-btn")
+            .forEach((b) => b.classList.remove("active"));
+          btn
+            .closest(".install-tabs")
+            .querySelectorAll(".install-tab-panel")
+            .forEach((p) => p.classList.remove("active"));
+          btn.classList.add("active");
+          btn.closest(".install-tabs").querySelector(`[data-panel="${tab}"]`).classList.add("active");
+        });
+      });
+
+      // Add copy buttons to all <pre> blocks
+      document.querySelectorAll("pre").forEach((pre) => {
+        pre.style.position = "relative";
+        const btn = document.createElement("button");
+        btn.className = "code-copy-btn";
+        btn.setAttribute("aria-label", "Copy code");
+        btn.innerHTML =
+          '<svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="icon-check" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="display:none"><path d="M20 6 9 17l-5-5"/></svg>';
+        btn.addEventListener("click", () => {
+          const code = pre.querySelector("code")?.textContent || pre.textContent;
+          navigator.clipboard.writeText(code).then(() => {
+            btn.classList.add("copied");
+            btn.querySelector(".icon-copy").style.display = "none";
+            btn.querySelector(".icon-check").style.display = "block";
+            setTimeout(() => {
+              btn.classList.remove("copied");
+              btn.querySelector(".icon-copy").style.display = "block";
+              btn.querySelector(".icon-check").style.display = "none";
+            }, 2000);
+          });
+        });
+        pre.appendChild(btn);
+      });
+    </script>
+    <script src="lib/body-muscles.umd.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

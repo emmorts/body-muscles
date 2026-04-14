@@ -1,0 +1,69 @@
+{
+  "name": "body-muscles",
+  "version": "1.0.0",
+  "description": "Interactive SVG body map with 70+ muscles, intensity visualization, and zero dependencies. Works with React, Vue, Svelte, or vanilla JS.",
+  "main": "dist/index.js",
+  "module": "dist/esm/index.js",
+  "browser": "dist/umd/body-muscles.umd.min.js",
+  "unpkg": "dist/umd/body-muscles.umd.min.js",
+  "jsdelivr": "dist/umd/body-muscles.umd.min.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && tsc -p tsconfig.build.json --module esnext --outDir dist/esm && node scripts/fix-esm-imports.js && node scripts/build-umd.js",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "docs": "rm -rf docs/lib && cp dist/umd/body-muscles.umd.js docs/lib/body-muscles.umd.js && npx serve docs",
+    "docs:build": "rm -rf docs/lib && mkdir -p docs/lib && cp dist/umd/body-muscles.umd.js docs/lib/body-muscles.umd.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "body-map",
+    "body-muscles",
+    "muscle-chart",
+    "anatomy",
+    "anatomical",
+    "svg",
+    "interactive-body-map",
+    "muscle-visualization",
+    "body-mapping",
+    "fitness",
+    "workout",
+    "human-body",
+    "typescript",
+    "framework-agnostic",
+    "vanilla-js",
+    "react",
+    "vue",
+    "svelte",
+    "zero-dependencies"
+  ],
+  "author": "vulovix",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=16"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vulovix/body.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vulovix/body/issues"
+  },
+  "homepage": "https://vulovix.github.io/body"
+}

@@ -1,0 +1,12 @@
+# Source files (keep in git, exclude from npm)
+src/
+tsconfig.json
+
+# Documentation (accessible via GitHub)
+docs/
+PROJECT_SUMMARY.md
+VISUAL_EXPLAINER_COMPLIANCE.md
+
+# Development files
+.gitignore
+*.log

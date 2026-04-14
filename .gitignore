@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build output
+dist/
+dist-dev/
+docs/lib/
+*.tsbuildinfo
+
+# Development
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment
+.env
+.env.local
+instructions/
