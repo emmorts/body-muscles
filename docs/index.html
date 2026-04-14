@@ -16,7 +16,7 @@
     />
     <meta name="author" content="vulovix" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://vulovix.github.io/body/" />
+    <link rel="canonical" href="https://vulovix.github.io/body-muscles/" />
 
     <!-- ── Open Graph ────────────────────────────────── -->
     <meta property="og:type" content="website" />
@@ -25,9 +25,9 @@
       property="og:description"
       content="Zero-dependency JavaScript library for interactive anatomical body mapping. 70+ muscles, SVG precision, intensity visualization."
     />
-    <meta property="og:url" content="https://vulovix.github.io/body/" />
+    <meta property="og:url" content="https://vulovix.github.io/body-muscles/" />
     <meta property="og:site_name" content="Body Muscles" />
-    <meta property="og:image" content="https://vulovix.github.io/body/og-image.png" />
+    <meta property="og:image" content="https://vulovix.github.io/body-muscles/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
@@ -38,7 +38,7 @@
       name="twitter:description"
       content="Zero-dependency JS/TS library for interactive anatomical body mapping. 70+ muscles, SVG precision, works with any framework."
     />
-    <meta name="twitter:image" content="https://vulovix.github.io/body/og-image.png" />
+    <meta name="twitter:image" content="https://vulovix.github.io/body-muscles/og-image.png" />
 
     <!-- ── JSON-LD Structured Data ───────────────────── -->
     <script type="application/ld+json">
@@ -48,7 +48,7 @@
         "name": "body-muscles",
         "alternateName": "Body Muscles",
         "description": "Framework-agnostic interactive SVG body map with 70+ anatomical regions, intensity visualization, and zero dependencies.",
-        "url": "https://vulovix.github.io/body/",
+        "url": "https://vulovix.github.io/body-muscles/",
         "codeRepository": "https://github.com/vulovix/body",
         "programmingLanguage": ["TypeScript", "JavaScript"],
         "runtimePlatform": "Browser",
@@ -672,7 +672,9 @@ onUnmounted(() =&gt; chart?.destroy());
         pre.appendChild(btn);
       });
     </script>
-    <script src="lib/body-muscles.umd.js"></script>
+    <!-- Option A: Switch the docs to use the CDN version (simplest — no build step needed) -->
+
+    <script src="https://unpkg.com/body-muscles/dist/umd/body-muscles.umd.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

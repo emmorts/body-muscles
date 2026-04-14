@@ -60,10 +60,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vulovix/body.git"
+    "url": "https://github.com/vulovix/body-muscles.git"
   },
   "bugs": {
-    "url": "https://github.com/vulovix/body/issues"
+    "url": "https://github.com/vulovix/body-muscles/issues"
   },
-  "homepage": "https://vulovix.github.io/body"
+  "homepage": "https://vulovix.github.io/body-muscles"
 }
