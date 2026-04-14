@@ -19,7 +19,8 @@
   "files": [
     "dist",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "NOTICE"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json && tsc -p tsconfig.build.json --module esnext --outDir dist/esm && node scripts/fix-esm-imports.js && node scripts/build-umd.js",
