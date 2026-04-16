@@ -566,26 +566,26 @@ function BodyMap() {
 &lt;/template&gt;
 
 &lt;script setup&gt;
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { BodyChart, ViewSide } from 'body-muscles';
+  import { ref, onMounted, onUnmounted, watch } from 'vue';
+  import { BodyChart, ViewSide } from 'body-muscles';
 
-const container = ref(null);
-const bodyState = ref({});
-let chart;
+  const container = ref(null);
+  const bodyState = ref({});
+  let chart;
 
-onMounted(() =&gt; {
-  chart = new BodyChart(container.value, {
-    view: ViewSide.FRONT,
-    bodyState: bodyState.value,
-    onMuscleClick(id) {
-      const cur = bodyState.value[id] || { intensity: 0, selected: false };
-      bodyState.value = { ...bodyState.value, [id]: { ...cur, selected: !cur.selected } };
-    },
+  onMounted(() =&gt; {
+    chart = new BodyChart(container.value, {
+      view: ViewSide.FRONT,
+      bodyState: bodyState.value,
+      onMuscleClick(id) {
+        const cur = bodyState.value[id] || { intensity: 0, selected: false };
+        bodyState.value = { ...bodyState.value, [id]: { ...cur, selected: !cur.selected } };
+      },
+    });
   });
-});
 
-watch(bodyState, (s) =&gt; chart?.update({ bodyState: s }), { deep: true });
-onUnmounted(() =&gt; chart?.destroy());
+  watch(bodyState, (s) =&gt; chart?.update({ bodyState: s }), { deep: true });
+  onUnmounted(() =&gt; chart?.destroy());
 &lt;/script&gt;</code></pre>
 
         <h3>Svelte</h3>
