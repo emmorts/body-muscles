@@ -119,6 +119,30 @@ The default `tooltipFormatter` renders the region name, plus `- intensity N` whe
 | `update(options: Partial<Options>)` | Merge new options. `view`/`interactive` changes rebuild; `undefined` values are ignored. |
 | `destroy()`                         | Remove all DOM elements and event listeners.       |
 
+#### State updates
+
+`update()` merges the options object shallowly, and `undefined` values are ignored. `bodyState`,
+however, is **replaced as a whole** — it is not merged region by region, so a region omitted from
+the new mapping returns to its default (intensity 0, unselected). The chart never mutates the
+mapping you pass and keeps no selection state of its own, so your application remains the single
+source of truth.
+
+```ts
+// Keep every other region and change one.
+chart.update({ bodyState: { ...current, "biceps-left": { intensity: 7, selected: true } } });
+
+// Apply a patch you built elsewhere to the current mapping.
+const patch: BodyState = { "biceps-left": { intensity: 7, selected: true } };
+chart.update({ bodyState: { ...current, ...patch } });
+
+// Remove one region's state.
+const { "biceps-left": removed, ...rest } = current;
+chart.update({ bodyState: rest });
+```
+
+There is deliberately no separate patch method: a spread expresses both preservation and removal,
+and a second entry point with different merge rules would only make the two easy to mix up.
+
 ### Types
 
 ```typescript

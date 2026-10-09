@@ -749,6 +749,53 @@ await test("region identifiers resolve through the typed lookup API", async (pag
   assert.equal(facts.canonical, true, "the table is keyed by the canonical entries");
 });
 
+await test("bodyState updates replace the mapping while spreads preserve entries", async (page) => {
+  await mount(page);
+  const facts = await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const host = document.getElementById("host");
+    const chart = new BodyChart(host, { view: ViewSide.FRONT, bodyState: {} });
+    const read = (label) => {
+      const el = host.querySelector(`.body-chart-muscle[aria-label^="${label}"]`);
+      return { fill: el.getAttribute("fill"), pressed: el.getAttribute("aria-pressed") };
+    };
+
+    const current = { head: { intensity: 6, selected: true }, face: { intensity: 2, selected: true } };
+    chart.update({ bodyState: current });
+    const both = { head: read("Head"), face: read("Face") };
+
+    // Replacing the mapping with a subset drops the omitted region's state.
+    chart.update({ bodyState: { head: current.head } });
+    const replaced = { head: read("Head"), face: read("Face") };
+
+    // Spreading the previous mapping preserves the other entries.
+    chart.update({ bodyState: { ...current, face: { intensity: 9, selected: true } } });
+    const spread = { head: read("Head"), face: read("Face") };
+
+    // Deleting a key returns that region to its default.
+    const { face: removed, ...rest } = current;
+    chart.update({ bodyState: rest });
+    const removedFace = read("Face");
+
+    // The caller's mapping is never mutated by the chart.
+    const untouched = { head: { intensity: 4, selected: false } };
+    const snapshot = JSON.stringify(untouched);
+    chart.update({ bodyState: untouched });
+    const callerIntact = JSON.stringify(untouched) === snapshot;
+
+    chart.destroy();
+    return { both, replaced, spread, removedFace, callerIntact };
+  });
+
+  assert.equal(facts.both.face.pressed, "true");
+  assert.equal(facts.replaced.head.pressed, "true", "entries in the new mapping survive");
+  assert.equal(facts.replaced.face.pressed, "false", "an omitted region loses its selection");
+  assert.notEqual(facts.replaced.face.fill, facts.both.face.fill, "an omitted region returns to the default fill");
+  assert.equal(facts.spread.face.pressed, "true", "a spread preserves the other regions");
+  assert.notEqual(facts.removedFace.fill, facts.spread.face.fill, "a deleted key returns the region to its default");
+  assert.equal(facts.callerIntact, true, "the chart never mutates the caller's mapping");
+});
+
 // ── Demo: the controls a visitor actually uses ───────────
 
 function startDocsServer() {

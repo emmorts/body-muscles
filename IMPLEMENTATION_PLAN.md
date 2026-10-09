@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B2 complete).
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B3 complete).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -155,7 +155,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### B3 — Explicit state replacement and patch semantics
 
-- [ ] Complete B3
+- [x] Complete B3
 
 **Problem:** `update({ bodyState })` replaces the entire mapping, although the method's description says options are merged. Consumers can accidentally remove state for omitted regions.
 
@@ -505,3 +505,12 @@ For each completed item, append a record containing:
 - **Design decision resolved:** strict literal union derived from the dataset, accepted as a breaking change requiring a major release.
 - **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build`, `npm run test:types` (fixture compiles; its `@ts-expect-error` directives fire, so unknown literals do fail), and 26 browser tests pass. Runtime checks against the built bundle confirm `getMuscleDef` resolves 89 identifiers, returns `undefined` for unknown input, does not leak prototype keys (`constructor`, `toString`), and that `MUSCLE_DEFS` is keyed by the canonical entries. Declaration output stays compact (7.7 KB across the three affected `.d.ts` files).
 - **Compatibility:** breaking. Consumers passing arbitrary strings as state keys, callback ids, or helper arguments must narrow with `isMuscleId` or switch to `getMuscleDef`. Recorded as **BREAKING** in the CHANGELOG, which now states the next release must be a major version. Existing identifiers are unchanged.
+
+### B3 — Explicit state replacement and patch semantics
+
+- **Completed:** 2026-10-09.
+- **Commit:** `docs: specify bodyState replacement semantics` (see git history for the hash).
+- **Changes:** documented the two merge rules explicitly — shallow option merge with `undefined` ignored, versus whole-mapping replacement for `bodyState` — in the `BodyChartOptions.bodyState` and `BodyChart.update()` JSDoc, the README "State updates" subsection, and the site's "State Updates" reference. Each shows three concrete patterns: replace one region while spreading the rest, apply an externally built patch, and remove one region's state by destructuring it out. Added a browser regression that pins the contract: an omitted region loses its selection and default fill, a spread preserves unmentioned entries, a deleted key returns the region to its default, and the caller's mapping is never mutated.
+- **Design decision resolved:** no patch API. A spread expresses preservation and removal, and a second entry point with different merge rules would make the two easy to confuse; the decision and its rationale are documented next to the examples.
+- **Verification:** `npm run test:browser` — 27 tests pass, including the new replacement/preservation regression, which asserts observed region attributes rather than source text.
+- **Compatibility:** documentation plus a test; no behaviour, API, or changelog change. The chart still never mutates the mapping it receives and owns no selection state.

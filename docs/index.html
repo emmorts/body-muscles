@@ -493,6 +493,27 @@ chart.destroy();</code></pre>
           </table>
         </div>
 
+        <h3>State Updates</h3>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          <code>update()</code> merges the options object shallowly and ignores <code>undefined</code> values,
+          but <code>bodyState</code> is <strong>replaced as a whole</strong>: a region omitted from the new
+          mapping returns to its default (intensity 0, unselected). The chart never mutates the mapping you
+          pass and keeps no selection state of its own.
+        </p>
+        <pre><code class="language-typescript">// Keep every other region and change one.
+chart.update({ bodyState: { ...current, "biceps-left": { intensity: 7, selected: true } } });
+
+// Apply a patch built elsewhere to the current mapping.
+chart.update({ bodyState: { ...current, ...patch } });
+
+// Remove one region's state.
+const { "biceps-left": removed, ...rest } = current;
+chart.update({ bodyState: rest });</code></pre>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          There is deliberately no separate patch method: a spread expresses both preservation and removal,
+          and a second entry point with different merge rules would only make the two easy to mix up.
+        </p>
+
         <h3>Types</h3>
         <pre><code class="language-typescript">enum ViewSide {
   FRONT = "FRONT",

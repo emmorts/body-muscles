@@ -25,7 +25,14 @@ function transitionStyle(): string {
 export interface BodyChartOptions {
   /** Current anatomical view (FRONT, BACK, or BOTH) */
   view: ViewSide;
-  /** State mapping for all body parts with intensity and selection */
+  /**
+   * State mapping for all body parts with intensity and selection.
+   *
+   * `update()` **replaces** this mapping as a whole rather than merging it
+   * region by region, so any region the new mapping omits returns to its
+   * default (intensity 0, unselected). Spread the previous mapping to keep the
+   * entries you are not changing; see {@link BodyChart.update} for examples.
+   */
   bodyState: BodyState;
   /** Callback fired when a muscle is clicked */
   onMuscleClick?: (id: MuscleId, name: string) => void;
@@ -158,6 +165,25 @@ export class BodyChart {
    * Update chart options. Partial updates are merged with the current options;
    * keys whose value is `undefined` are ignored, so callers can pass a spread
    * object without clobbering existing values.
+   *
+   * The merge is **shallow**: `bodyState`, when provided, replaces the entire
+   * mapping instead of merging per region, so any region missing from the new
+   * mapping returns to its default (intensity 0, unselected). Preserve the
+   * entries you are not changing by spreading the current mapping:
+   *
+   * ```ts
+   * // Replace one region, keep every other region's state.
+   * chart.update({
+   *   bodyState: { ...current, "biceps-left": { intensity: 7, selected: true } },
+   * });
+   *
+   * // Remove one region's state.
+   * const { "biceps-left": removed, ...rest } = current;
+   * chart.update({ bodyState: rest });
+   * ```
+   *
+   * The chart never mutates the mapping it receives and keeps no selection
+   * state of its own, so the application stays the single source of truth.
    *
    * Changing `view` or `interactive` rebuilds the chart (and therefore drops
    * focus); every other change is applied in place and preserves focus.
