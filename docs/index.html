@@ -204,7 +204,22 @@
               >
                 Selected Muscle
               </div>
-              <p id="selectedInfo" style="font-size: 0.85rem; color: var(--fg-muted); font-style: italic">Click a body part to see details</p>
+              <p id="selectedEmpty" style="font-size: 0.85rem; color: var(--fg-muted); font-style: italic">Click a body part to see details</p>
+              <div id="selectedDetail" hidden>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
+                  <strong id="selectedName" style="color: var(--accent); font-size: 1rem"></strong>
+                  <span id="selectedBadge" class="badge badge-gray">Inactive</span>
+                </div>
+                <div id="selectedId" class="selected-id"></div>
+                <div class="info-row">
+                  <span class="info-label">Intensity</span>
+                  <span class="info-value" id="selectedIntensity">0 / 10</span>
+                </div>
+                <div style="margin-top: 0.5rem">
+                  <label class="sr-only" for="intensitySlider" id="intensitySliderLabel">Intensity</label>
+                  <input type="range" id="intensitySlider" min="0" max="10" step="1" value="0" style="width: 100%; accent-color: var(--accent)" />
+                </div>
+              </div>
             </div>
 
             <!-- Muscle groups -->

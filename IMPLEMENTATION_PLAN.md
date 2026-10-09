@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 in progress (A1–A2 complete; A3–A4 not started).
+Status: Phase 1 in progress (A1–A3 complete; A4–A5 not started).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -56,7 +56,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### A3 — Stable and accessible demo controls
 
-- [ ] Complete A3
+- [x] Complete A3
 
 **Problem:** The selected-muscle slider is replaced on every input. A single ArrowRight press changed its value and then lost focus. Some selection controls are clickable `div` elements, and sliders lack explicit accessible labels.
 
@@ -87,6 +87,24 @@ This document tracks every improvement proposed in the developer and user experi
 - Tests remain isolated and do not add runtime dependencies to the published library.
 
 **Verification:** Run the browser checks through the CI command locally, then record the CI result when available. Browser smoke checks for affected features remain required.
+
+### A5 — Documentation-site structural and contrast accessibility
+
+- [ ] Complete A5
+
+**Problem:** Discovered while verifying A1: axe-core on the demo page reports page-level findings that are outside A3's control-level scope — colour contrast across site chrome, buttons, badges, the selected-muscle card, muscle rows, install tabs, and syntax-highlighting tokens; a missing main landmark; 43 nodes outside any landmark; and two prose links distinguishable only by colour. The demo is the first thing a prospective user sees, so its accessibility is user-facing.
+
+**Implementation scope:** `docs/index.html`, `docs/style.css`, `docs/app.js` as needed, and the syntax-highlighting theme handling.
+
+**Acceptance criteria:**
+- Text and controls meet WCAG AA contrast (4.5:1 for normal text, 3:1 for large text and UI boundaries) in both the light and dark themes, including the active view toggle, group chips, badges, selected-muscle card, install tabs, and code tokens.
+- Wrap page content in a single `<main>` landmark so all content is inside a landmark region.
+- Make in-text links distinguishable without relying on colour (underline or equivalent, not colour alone).
+- Re-run the audit after the change and record the remaining findings; do not suppress or exclude rules to reach a clean result.
+
+**Verification:** axe-core audit of the demo page in light and dark themes, plus a visual check that the palette changes did not break the chart's own region colours. Record the rule-by-rule result.
+
+**Note:** Added 2026-10-09, after the A1 verification surfaced the evidence. Not part of the original review.
 
 ## Phase 2 — Integration flexibility and discoverability
 
@@ -324,7 +342,7 @@ For each completed item, append a record containing:
 - **Commit:** `feat(a11y): accessible interactive and display-only chart semantics` (see git history for the hash).
 - **Files:** `src/BodyChart.ts`, `README.md`, `docs/index.html`, `CHANGELOG.md`.
 - **Changes:** removed `aria-hidden` from the interactive SVG and `role="img"` from the wrapper; the SVG now carries `role="group"`/`role="img"` plus the chart name. Regions are toggle buttons with `aria-pressed` tracking `selected`; the `(selected)` label suffix was dropped. Added the `interactive` option (default `true`); `false` renders a display-only graphic with no focusable regions, tooltip, or callbacks. Added a roving tab index (single tab stop) with arrow-key, `Home`/`End`, `Enter`/`Space`, and `Escape` handling, and a dual-tone keyboard focus indicator.
-- **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build` pass. Browser smoke test on the built UMD bundle confirmed: one tab stop across 40 regions with `role="button"`/`aria-pressed`; `Tab` lands on the first region and one further `Tab` leaves the chart; `ArrowRight`/`ArrowUp`/`Home`/`End` move focus with `:focus-visible` showing stroke `#1d4ed8` plus the halo; `Enter` toggles `aria-pressed` and fires `onMuscleClick`; a real click toggles selection; `Escape` hides the tooltip; `interactive: false` yields `role="img"`, zero focusable regions/roles, no tooltip, and no callback invocations while still painting intensity colours. axe-core on the demo page no longer reports `aria-hidden-focus` or `nested-interactive`. Remaining demo-page findings (colour contrast, unlabelled sliders, landmarks) belong to A3.
+- **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build` pass. Browser smoke test on the built UMD bundle confirmed: one tab stop across 40 regions with `role="button"`/`aria-pressed`; `Tab` lands on the first region and one further `Tab` leaves the chart; `ArrowRight`/`ArrowUp`/`Home`/`End` move focus with `:focus-visible` showing stroke `#1d4ed8` plus the halo; `Enter` toggles `aria-pressed` and fires `onMuscleClick`; a real click toggles selection; `Escape` hides the tooltip; `interactive: false` yields `role="img"`, zero focusable regions/roles, no tooltip, and no callback invocations while still painting intensity colours. axe-core on the demo page no longer reports `aria-hidden-focus` or `nested-interactive`. The remaining demo-page findings (colour contrast, landmarks, region, link distinction) and the unlabelled sliders were recorded as separate items; the sliders were fixed by A3, and the rest are tracked as A5 (added 2026-10-09 after this verification).
 - **Compatibility:** visible accessibility semantics changed (wrapper no longer exposes a label; region labels no longer include "(selected)"; tab order reduced to one stop). Documented in the changelog under Unreleased. No `[INFERENCE]` items outstanding.
 
 ### A2 — Reliable mutable options and focus-preserving updates
@@ -335,3 +353,12 @@ For each completed item, append a record containing:
 - **Changes:** `update()` now shallow-merges into a new resolved-options object, skipping `undefined` values, then applies each changed field through a dedicated method (`applyClassName`, `applyChartLabel`, `applyViewLabels`, `applyTooltipPresence`, `applyTransitions`) before refreshing regions. `view` or `interactive` changes rebuild. `applyViewLabels` and `applyTooltipPresence` remove before they add, so toggling never accumulates nodes; tooltip removal also clears `aria-describedby` from every region. `showTooltipAt` now takes the region and records `tooltipMuscleId`, and `refreshVisibleTooltip()` re-renders an on-screen tooltip when `bodyState` or `tooltipFormatter` changes. `build()` reuses the same appliers, and the outside-pointerdown listener is always registered. `destroy()` resets `hoveredMuscle`, `tooltipMuscleId`, and `tooltipId`.
 - **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build` pass. Browser smoke test on the built UMD bundle confirmed: `className`, `ariaLabel`, `showViewLabel`, `showTooltip` (off then on), and `enableTransitions` all reach the DOM without a view change; three on/off cycles left exactly one label set and one tooltip, and `showTooltip: false` left zero `aria-describedby` references; `undefined` in the update object did not clobber the existing `ariaLabel`; a focused region stayed focused across `update({ bodyState })` while its fill changed; a visible tooltip updated from `Face @ 6` to `Face @ 9` on a state change and to `Face!` on a formatter change without pointer movement; replacing callbacks took effect immediately; six view changes left one wrapper, one SVG, one tooltip, and one tab stop, and `destroy()` left the host empty. The demo page toggled views and a muscle group with no console errors.
 - **Compatibility:** `update()` behaviour changed (options now apply; `undefined` ignored; `interactive` change rebuilds). Documented in the changelog under Unreleased. `view`-change focus loss is now explicitly documented. No `[INFERENCE]` items outstanding.
+
+### A3 — Stable and accessible demo controls
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix(docs): keep demo controls mounted and accessible` (see git history for the hash).
+- **Files:** `docs/app.js`, `docs/index.html`, `docs/style.css`.
+- **Changes:** the selected-muscle card is now built once with persistent `#selectedEmpty`/`#selectedDetail` blocks and updated in place, so the slider is never replaced mid-interaction; the row toggle is a native `<input type="checkbox">` (styled with `appearance: none`) instead of a clickable `div`; group chips are created once as `aria-pressed` toggle buttons and only have their state class updated; muscle rows are keyed by id in `muscleRows` and reconciled through `syncMuscleRows`-style logic inside `renderGroupMuscles`, so a row is created once and removed only when deselected, with focus handed to the neighbouring control when the focused row disappears; every slider carries `aria-label`/`aria-valuetext` naming its region, and the selected-card slider is labelled through `#intensitySliderLabel`; display names come from `MUSCLE_MAP` via a `MUSCLE_NAMES` record instead of title-casing identifiers.
+- **Verification:** `node --check docs/app.js` passes. Browser smoke test on the served demo confirmed: the selected card shows "Left Biceps"/`biceps-left` for `aria-label^="Left Biceps"` rather than "Biceps Left"; three `ArrowRight` presses on the selected-card slider produced 1→2→3 with `document.activeElement` still the slider and the card text following; the Chest chip selected 5 muscles with `aria-pressed="true"`, rows rendered native `input/checkbox` toggles and labelled range sliders, and three `ArrowRight` presses on a row slider produced 1→2→3 with focus retained and the value label updating; `Space` on a focused row checkbox deselected it, removed the row, and moved focus to the next row's checkbox (never `document.body`) while the chip returned to `aria-pressed="false"` and the stats updated; no console errors after the interactions. axe-core no longer reports the `label` violations (the two unlabelled sliders); the remaining `color-contrast`, `landmark-one-main`, `link-in-text-block`, and `region` findings are page-level and are tracked as A5.
+- **Compatibility:** demo-only change; no package-facing API or artifact impact, so no changelog entry. No `[INFERENCE]` items outstanding.

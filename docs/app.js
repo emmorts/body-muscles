@@ -1,4 +1,8 @@
-const { BodyChart, ViewSide, MUSCLE_GROUPS, INTENSITY_COLORS } = window.BodyMuscles;
+const { BodyChart, ViewSide, MUSCLE_GROUPS, MUSCLE_MAP, INTENSITY_COLORS } = window.BodyMuscles;
+
+// Display names come from the library's anatomy data rather than being derived
+// from the identifier, which would read "Hand Left" instead of "Left Hand".
+const MUSCLE_NAMES = Object.fromEntries(MUSCLE_MAP.map((muscle) => [muscle.id, muscle.name]));
 
 // ── Theme ──────────────────────────────────────────────
 const THEME_KEY = "body-muscles-theme";
@@ -79,38 +83,52 @@ document.querySelectorAll(".view-toggle button").forEach((btn) => {
 });
 
 // ── Selected Card ──────────────────────────────────────
+// The card is rendered once and then updated in place: rebuilding it on every
+// input would replace the slider mid-interaction and drop keyboard focus.
+const selectedEmpty = document.getElementById("selectedEmpty");
+const selectedDetail = document.getElementById("selectedDetail");
+const selectedName = document.getElementById("selectedName");
+const selectedBadge = document.getElementById("selectedBadge");
+const selectedIdEl = document.getElementById("selectedId");
+const selectedIntensity = document.getElementById("selectedIntensity");
+const intensitySlider = document.getElementById("intensitySlider");
+const intensitySliderLabel = document.getElementById("intensitySliderLabel");
+
 function renderSelectedCard() {
-  const el = document.getElementById("selectedInfo");
   if (!selectedMuscleId) {
-    el.innerHTML = '<span style="font-style:italic">Click a body part to see details</span>';
+    selectedEmpty.hidden = false;
+    selectedDetail.hidden = true;
     return;
   }
+
   const state = bodyState[selectedMuscleId] || { intensity: 0, selected: false };
-  const name = selectedMuscleId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  el.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem">
-      <strong style="color:var(--accent);font-size:1rem">${name}</strong>
-      <span class="badge ${state.selected ? "badge-blue" : "badge-gray"}">${state.selected ? "Active" : "Inactive"}</span>
-    </div>
-    <div style="font-size:.78rem;color:var(--fg-muted);font-family:var(--font-mono);margin-bottom:.5rem">${selectedMuscleId}</div>
-    <div class="info-row">
-      <span class="info-label">Intensity</span>
-      <span class="info-value">${state.intensity} / 10</span>
-    </div>
-    <div style="margin-top:.5rem">
-      <input type="range" min="0" max="10" step="1" value="${state.intensity}"
-        style="width:100%;accent-color:var(--accent)"
-        id="intensitySlider" />
-    </div>
-  `;
-  document.getElementById("intensitySlider")?.addEventListener("input", (e) => {
-    const val = parseInt(e.target.value, 10);
-    bodyState[selectedMuscleId] = { intensity: val, selected: true };
-    chart.update({ bodyState });
-    renderSelectedCard();
-    renderStats();
-  });
+  const name = MUSCLE_NAMES[selectedMuscleId] || selectedMuscleId;
+
+  selectedEmpty.hidden = true;
+  selectedDetail.hidden = false;
+  selectedName.textContent = name;
+  selectedBadge.textContent = state.selected ? "Active" : "Inactive";
+  selectedBadge.className = `badge ${state.selected ? "badge-blue" : "badge-gray"}`;
+  selectedIdEl.textContent = selectedMuscleId;
+  selectedIntensity.textContent = `${state.intensity} / 10`;
+  intensitySliderLabel.textContent = `${name} intensity`;
+  intensitySlider.setAttribute("aria-valuetext", `${state.intensity} of 10`);
+  // Leave the control alone while the user is dragging or arrowing it.
+  if (document.activeElement !== intensitySlider) {
+    intensitySlider.value = String(state.intensity);
+  }
 }
+
+intensitySlider.addEventListener("input", () => {
+  if (!selectedMuscleId) return;
+  const val = parseInt(intensitySlider.value, 10);
+  bodyState[selectedMuscleId] = { intensity: val, selected: true };
+  chart.update({ bodyState });
+  renderSelectedCard();
+  renderStats();
+  renderGroupChips();
+  renderGroupMuscles();
+});
 
 // ── Stats ──────────────────────────────────────────────
 function renderStats() {
@@ -138,36 +156,103 @@ function renderStats() {
 // ── Group Chips ────────────────────────────────────────
 let activeGroup = null;
 
-function renderGroupChips() {
-  const container = document.getElementById("groupChips");
-  container.innerHTML = "";
-  for (const [group, muscles] of Object.entries(MUSCLE_GROUPS)) {
-    const isAllSelected = muscles.every((id) => bodyState[id]?.selected);
-    const chip = document.createElement("button");
-    chip.className = `group-chip${isAllSelected ? " active" : ""}`;
-    chip.textContent = group;
-    chip.addEventListener("click", () => {
-      const allSel = muscles.every((id) => bodyState[id]?.selected);
-      muscles.forEach((id) => {
-        bodyState[id] = { intensity: bodyState[id]?.intensity ?? 0, selected: !allSel };
-      });
-      chart.update({ bodyState });
-      activeGroup = !allSel ? group : activeGroup === group ? null : activeGroup;
-      renderGroupChips();
-      renderGroupMuscles();
-      renderStats();
+const groupChipsContainer = document.getElementById("groupChips");
+const groupChipButtons = new Map();
+
+for (const [group, muscles] of Object.entries(MUSCLE_GROUPS)) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "group-chip";
+  chip.textContent = group;
+  chip.setAttribute("aria-pressed", "false");
+  chip.addEventListener("click", () => {
+    const allSel = muscles.every((id) => bodyState[id]?.selected);
+    muscles.forEach((id) => {
+      bodyState[id] = { intensity: bodyState[id]?.intensity ?? 0, selected: !allSel };
     });
-    container.appendChild(chip);
+    chart.update({ bodyState });
+    activeGroup = !allSel ? group : activeGroup === group ? null : activeGroup;
+    renderGroupChips();
+    renderGroupMuscles();
+    renderStats();
+    renderSelectedCard();
+  });
+  groupChipsContainer.appendChild(chip);
+  groupChipButtons.set(group, chip);
+}
+
+function renderGroupChips() {
+  for (const [group, muscles] of Object.entries(MUSCLE_GROUPS)) {
+    const allSelected = muscles.every((id) => bodyState[id]?.selected);
+    const chip = groupChipButtons.get(group);
+    chip.classList.toggle("active", allSelected);
+    chip.setAttribute("aria-pressed", allSelected ? "true" : "false");
   }
 }
 renderGroupChips();
 
 // ── Group Muscle List ──────────────────────────────────
-function renderGroupMuscles() {
-  const card = document.getElementById("groupMusclesCard");
-  const list = document.getElementById("groupMusclesList");
-  const title = document.getElementById("groupMusclesTitle");
+// Rows are keyed by muscle id and reused: a row is only created when its muscle
+// first appears and only removed when it is deselected, so the slider being
+// dragged (and any focused control) is never replaced underneath the user.
+const groupMusclesCard = document.getElementById("groupMusclesCard");
+const groupMusclesList = document.getElementById("groupMusclesList");
+const groupMusclesTitle = document.getElementById("groupMusclesTitle");
+const muscleRows = new Map();
 
+function createMuscleRow(id) {
+  const name = MUSCLE_NAMES[id] || id;
+
+  const row = document.createElement("div");
+  row.className = "muscle-item";
+  row.dataset.muscleId = id;
+
+  const toggle = document.createElement("input");
+  toggle.type = "checkbox";
+  toggle.className = "muscle-item-toggle";
+  toggle.dataset.muscleId = id;
+  toggle.setAttribute("aria-label", `${name} selected`);
+  toggle.addEventListener("change", () => {
+    bodyState[id] = { intensity: bodyState[id]?.intensity ?? 0, selected: toggle.checked };
+    chart.update({ bodyState });
+    renderGroupChips();
+    renderStats();
+    renderGroupMuscles();
+    if (selectedMuscleId === id) renderSelectedCard();
+  });
+
+  const nameEl = document.createElement("span");
+  nameEl.className = "muscle-item-name";
+  nameEl.textContent = name;
+  nameEl.title = id;
+
+  const slider = document.createElement("input");
+  slider.type = "range";
+  slider.min = "0";
+  slider.max = "10";
+  slider.step = "1";
+  slider.className = "muscle-item-slider";
+  slider.dataset.muscleId = id;
+  slider.setAttribute("aria-label", `${name} intensity`);
+  slider.addEventListener("input", () => {
+    const val = parseInt(slider.value, 10);
+    bodyState[id] = { intensity: val, selected: true };
+    chart.update({ bodyState });
+    valEl.textContent = String(val);
+    slider.setAttribute("aria-valuetext", `${val} of 10`);
+    renderGroupChips();
+    renderStats();
+    if (selectedMuscleId === id) renderSelectedCard();
+  });
+
+  const valEl = document.createElement("span");
+  valEl.className = "muscle-item-value";
+
+  row.append(toggle, nameEl, slider, valEl);
+  return { row, toggle, slider, value: valEl };
+}
+
+function renderGroupMuscles() {
   // Find first active group if none explicitly set
   if (!activeGroup) {
     for (const [group, muscles] of Object.entries(MUSCLE_GROUPS)) {
@@ -184,75 +269,60 @@ function renderGroupMuscles() {
     .map(([id]) => id);
 
   if (selectedIds.length === 0) {
-    card.style.display = "none";
+    groupMusclesCard.style.display = "none";
     activeGroup = null;
+    for (const entry of muscleRows.values()) entry.row.remove();
+    muscleRows.clear();
     return;
   }
 
-  card.style.display = "";
-  title.textContent = activeGroup ? `${activeGroup} — ${selectedIds.length} muscles` : `${selectedIds.length} muscles selected`;
+  groupMusclesCard.style.display = "";
+  groupMusclesTitle.textContent = activeGroup
+    ? `${activeGroup} — ${selectedIds.length} muscles`
+    : `${selectedIds.length} muscles selected`;
 
   // Show muscles from active group first, then any other selected
   const groupMuscles = activeGroup ? MUSCLE_GROUPS[activeGroup] || [] : [];
-  const groupSelected = groupMuscles.filter((id) => bodyState[id]?.selected);
-  const otherSelected = selectedIds.filter((id) => !groupSelected.includes(id));
-  const ordered = [...groupSelected, ...otherSelected];
+  const ordered = [
+    ...groupMuscles.filter((id) => bodyState[id]?.selected),
+    ...selectedIds.filter((id) => !groupMuscles.includes(id)),
+  ];
 
-  list.innerHTML = "";
-  list.className = "muscle-list";
+  // Remember what had focus so a removed or reordered row can hand it on.
+  const focused = document.activeElement;
+  const focusWasInRows = groupMusclesList.contains(focused);
+  const focusedId = focusWasInRows ? focused.closest(".muscle-item")?.dataset.muscleId : undefined;
+  const focusedField = focused?.classList.contains("muscle-item-slider") ? "slider" : "toggle";
 
-  for (const id of ordered) {
+  for (const [id, entry] of [...muscleRows]) {
+    if (ordered.includes(id)) continue;
+    entry.row.remove();
+    muscleRows.delete(id);
+  }
+
+  ordered.forEach((id, index) => {
+    let entry = muscleRows.get(id);
+    if (!entry) {
+      entry = createMuscleRow(id);
+      muscleRows.set(id, entry);
+    }
     const state = bodyState[id] || { intensity: 0, selected: false };
-    const name = id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    entry.toggle.checked = !!state.selected;
+    entry.value.textContent = String(state.intensity);
+    entry.slider.setAttribute("aria-valuetext", `${state.intensity} of 10`);
+    if (document.activeElement !== entry.slider) {
+      entry.slider.value = String(state.intensity);
+    }
+    const current = groupMusclesList.children[index];
+    if (current !== entry.row) {
+      groupMusclesList.insertBefore(entry.row, current || null);
+    }
+  });
 
-    const row = document.createElement("div");
-    row.className = "muscle-item";
-
-    // Toggle checkbox
-    const toggle = document.createElement("div");
-    toggle.className = `muscle-item-toggle${state.selected ? " active" : ""}`;
-    toggle.addEventListener("click", () => {
-      bodyState[id] = { ...bodyState[id], selected: !bodyState[id]?.selected };
-      chart.update({ bodyState });
-      renderGroupMuscles();
-      renderGroupChips();
-      renderStats();
-    });
-
-    // Name
-    const nameEl = document.createElement("span");
-    nameEl.className = "muscle-item-name";
-    nameEl.textContent = name;
-    nameEl.title = id;
-
-    // Slider
-    const slider = document.createElement("input");
-    slider.type = "range";
-    slider.min = "0";
-    slider.max = "10";
-    slider.step = "1";
-    slider.value = state.intensity;
-    slider.className = "muscle-item-slider";
-    slider.addEventListener("input", (e) => {
-      const val = parseInt(e.target.value, 10);
-      bodyState[id] = { intensity: val, selected: true };
-      chart.update({ bodyState });
-      valEl.textContent = val;
-      renderStats();
-      // Update selected card if this muscle is shown there
-      if (selectedMuscleId === id) renderSelectedCard();
-    });
-
-    // Value label
-    const valEl = document.createElement("span");
-    valEl.className = "muscle-item-value";
-    valEl.textContent = state.intensity;
-
-    row.appendChild(toggle);
-    row.appendChild(nameEl);
-    row.appendChild(slider);
-    row.appendChild(valEl);
-    list.appendChild(row);
+  if (focusWasInRows && !groupMusclesList.contains(document.activeElement)) {
+    const restored = focusedId ? muscleRows.get(focusedId) : null;
+    const fallback = groupMusclesList.querySelector(".muscle-item-toggle, .muscle-item-slider");
+    (restored?.[focusedField] || fallback || document.getElementById("btnCloseGroup")).focus();
   }
 }
 
