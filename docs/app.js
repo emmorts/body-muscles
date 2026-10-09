@@ -146,7 +146,7 @@ function renderStats() {
     const s = document.createElement("div");
     s.className = "intensity-swatch";
     s.style.background = INTENSITY_COLORS[i];
-    s.style.color = i >= 8 ? "#fff" : "#1e293b";
+    s.style.color = i >= 8 ? "#ffffff" : "#0f172a";
     s.textContent = i;
     s.title = `Level ${i}`;
     bar.appendChild(s);

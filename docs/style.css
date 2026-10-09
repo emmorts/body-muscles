@@ -14,11 +14,11 @@
   --bg-pre: #f8fafc;
   --border: #e2e8f0;
   --fg: #0f172a;
-  --fg-muted: #64748b;
+  --fg-muted: #5d6b7e;
   --fg-code: #1e293b;
-  --accent: #3b82f6;
+  --accent: #2563eb;
   --accent-fg: #ffffff;
-  --ring: rgba(59, 130, 246, 0.35);
+  --ring: rgba(37, 99, 235, 0.35);
   --radius: 0.5rem;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -37,7 +37,11 @@
   --fg: #fafafa;
   --fg-muted: #a1a1aa;
   --fg-code: #e4e4e7;
-  --ring: rgba(59, 130, 246, 0.4);
+  /* A darker accent cannot carry white text, and a lighter one is needed to be
+     legible on dark surfaces, so the accent and its foreground flip here. */
+  --accent: #60a5fa;
+  --accent-fg: #0b1220;
+  --ring: rgba(96, 165, 250, 0.4);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.4);
@@ -87,6 +91,15 @@ p {
 a {
   color: var(--accent);
   text-decoration: none;
+}
+/* Links inside running text must not rely on colour alone (WCAG 1.4.1); nav
+   and button links keep their own `text-decoration: none`. */
+p a,
+li a,
+dd a,
+td a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 a:hover {
   text-decoration: underline;
@@ -345,6 +358,31 @@ pre code {
 pre code.hljs {
   background: transparent !important;
   padding: 0;
+}
+
+/* The CDN "github" light theme colours three token groups below WCAG AA on its
+   own background. These darker equivalents keep the theme's hue (the keyword
+   red matches its own deletion colour) while reaching 4.5:1. Scoped to the
+   light theme so the dark theme keeps its own palette. */
+[data-theme="light"] .hljs-doctag,
+[data-theme="light"] .hljs-keyword,
+[data-theme="light"] .hljs-meta .hljs-keyword,
+[data-theme="light"] .hljs-template-tag,
+[data-theme="light"] .hljs-template-variable,
+[data-theme="light"] .hljs-type,
+[data-theme="light"] .hljs-variable.language_ {
+  color: #b31d28;
+}
+[data-theme="light"] .hljs-built_in,
+[data-theme="light"] .hljs-symbol {
+  color: #b04a00;
+}
+[data-theme="light"] .hljs-addition,
+[data-theme="light"] .hljs-name,
+[data-theme="light"] .hljs-quote,
+[data-theme="light"] .hljs-selector-pseudo,
+[data-theme="light"] .hljs-selector-tag {
+  color: #1b6e30;
 }
 
 /* ── Install Tabs ──────────────────────────────────── */

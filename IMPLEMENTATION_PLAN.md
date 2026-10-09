@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 in progress (A1–A4 complete; A5 not started).
+Status: Phase 1 complete (A1–A5 done). Phase 2 not started.
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -90,7 +90,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### A5 — Documentation-site structural and contrast accessibility
 
-- [ ] Complete A5
+- [x] Complete A5
 
 **Problem:** Discovered while verifying A1: axe-core on the demo page reports page-level findings that are outside A3's control-level scope — colour contrast across site chrome, buttons, badges, the selected-muscle card, muscle rows, install tabs, and syntax-highlighting tokens; a missing main landmark; 43 nodes outside any landmark; and two prose links distinguishable only by colour. The demo is the first thing a prospective user sees, so its accessibility is user-facing.
 
@@ -371,3 +371,13 @@ For each completed item, append a record containing:
 - **Changes:** added Playwright 1.64.0 as a devDependency and `npm run test:browser`. The suite runs the built UMD bundle in headless Chromium: the library tests inject `dist/umd/body-muscles.umd.js` into a blank page, and the demo tests serve `docs/` from an in-process HTTP server that maps the git-ignored `docs/lib/body-muscles.umd.js` to the freshly built bundle, so no artifact is written into the working tree and external CDN requests are blocked. Each test uses a fresh page. Covered: single-tab-stop and toggle-button semantics, display-only mode, keyboard navigation and activation, focus preservation across in-place updates, tooltip show/refresh/hide and stale `aria-describedby`, every mutable option, callback replacement, view transitions, destruction, multiple instances, and three demo-control behaviours (slider increments, labelled native controls, focus hand-off when a row is deselected).
 - **Verification:** `npm run test:browser` — 12 passed, 0 failed, in ~2.5 s. To prove the suite is a real regression guard rather than a tautology, `src/BodyChart.ts` was reverted to `0a6b1a2` (pre-A2) and `docs/{app.js,index.html,style.css}` to `5ceb9a2` (pre-A3), the bundle rebuilt, and the suite re-run: 6 tests failed — the option-update, tooltip-refresh, focus/tooltip, and all three demo-control tests — confirming they exercise the fixed behaviour. The fixes were then restored and the suite returned to 12 passed. CI wiring (`npx playwright install --with-deps chromium` then `npm run test:browser`) is added but has not yet run on GitHub; that result is still pending.
 - **Compatibility:** development-only; `playwright` is a devDependency, the published `files` list is unchanged, so the runtime dependency footprint stays zero. The browser tests require Node 18+ and a downloaded Chromium; `engines.node` (the consumer contract) was deliberately left at `>=16`. No changelog entry. No `[INFERENCE]` items outstanding.
+
+### A5 — Documentation-site structural and contrast accessibility
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix(docs): meet WCAG AA contrast and add landmarks` (see git history for the hash).
+- **Files:** `docs/style.css`, `docs/index.html`, `docs/app.js`.
+- **Changes:** the light theme's `--accent` went from `#3b82f6` to `#2563eb` (white-on-accent 3.68→5.17, accent-on-card 3.52→4.94, accent-on-code 3.36→4.72) and `--fg-muted` from `#64748b` to `#5d6b7e` (on code background 4.34→4.95). Because a single accent cannot both carry white text and stay legible on dark surfaces, the dark theme now defines its own `--accent: #60a5fa` with `--accent-fg: #0b1220`. `--ring` follows both accents. The intensity-legend swatches use `#0f172a` instead of `#1e293b` for levels 0–7, which were failing on the orange and red steps (levels 8–10 keep white). The three failing highlight.js light-theme token colours are overridden under `[data-theme="light"]` — `#d73a49`→`#b31d28`, `#e36209`→`#b04a00`, `#22863a`→`#1b6e30`, covering every class that uses them in that theme. Links inside `p`/`li`/`dd`/`td` are underlined so they no longer rely on colour alone (WCAG 1.4.1). The page's sections are wrapped in a single `<main>` between the header and footer.
+- **Verification:** axe-core on the served docs page reports 0 violations and 1 "incomplete" (axe's manual-review bucket) in both the light and dark themes, down from 4 violations (73 contrast nodes plus landmark, region, and link-in-text-block findings). An independent in-page scan that resolves each element's effective background confirmed 0 elements below their required ratio in either theme. `npm run typecheck` passes and the 12-test browser suite still passes. Screenshots of both themes confirm the palette reads correctly, including the dark theme's light-blue accent with dark button text.
+- **Note:** section indentation inside `<main>` was intentionally left as-is rather than re-indenting ~590 lines, keeping the diff reviewable; the markup is valid either way.
+- **Compatibility:** documentation-site only; no package-facing API or artifact impact, so no changelog entry. No `[INFERENCE]` items outstanding.
