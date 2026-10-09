@@ -176,6 +176,9 @@ Set `interactive: false` for a display-only chart. It is then announced as a sin
 graphic: regions are not focusable, hoverable, or clickable, `onMuscleClick` / `onMuscleHover`
 never fire, and no tooltip is rendered. Use `ariaLabel` to name the chart in either mode.
 
+Verification covers keyboard interaction, Chromium's accessibility tree, and targeted automated audits.
+Screen-reader announcements and browse/focus-mode behavior remain unverified; these checks do not establish full WCAG conformance.
+
 ## Framework Examples
 
 ### Vanilla JavaScript

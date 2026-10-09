@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections in progress. Phase 2 not started.
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 not started.
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -20,7 +20,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### A1 — Accessible interactive and read-only chart semantics
 
-- [x] Complete A1
+- [ ] Complete A1
 
 **Problem:** Interactive paths have keyboard handlers, but their SVG ancestor is marked `aria-hidden="true"` and the wrapper has `role="img"`. The reviewed demo produced hidden-focusable-content and nested-interaction accessibility findings. Keyboard activation alone does not make the chart accessible.
 
@@ -34,6 +34,8 @@ This document tracks every improvement proposed in the developer and user experi
 - Establish a keyboard navigation model that avoids forcing users through all regions before reaching the next page control. Document the model and its relationship to the optional list in C1.
 
 **Verification:** Exercise keyboard navigation, selection changes, tooltip dismissal, and read-only behavior in an actual browser. Inspect the accessibility tree, run an automated audit, and perform an assistive-technology check.
+
+**Remaining verification:** Implementation, keyboard checks, and accessibility-tree inspection are complete. A real desktop screen-reader/browser session is still required to verify announcements and browse/focus-mode navigation before checking Complete A1. The current environment has no Orca, speech-dispatcher, or espeak-ng executable, and DISPLAY/WAYLAND_DISPLAY are unset.
 
 **Design decision:** Choose accessible interactive grouping and navigation semantics before exposing any read-only option.
 
@@ -340,7 +342,7 @@ Review findings are tracked individually; each correction is committed separatel
 - [x] R7 — Restore tooltip visibility and description when enabled during focus.
 - [x] R8 — Replace the vacuous tooltip-reference cleanup assertion.
 - [x] R9 — Correct the browser tooling Node prerequisite.
-- [ ] R10 — Verify accessibility-tree behavior and record screen-reader verification limits.
+- [x] R10 — Verify accessibility-tree behavior and record screen-reader verification limits.
 
 ## Completion record
 
@@ -353,7 +355,7 @@ For each completed item, append a record containing:
 
 ### A1 — Accessible interactive and read-only chart semantics
 
-- **Completed:** 2026-10-09.
+- **Implementation completed:** 2026-10-09; screen-reader verification remains pending (see R10).
 - **Commit:** `feat(a11y): accessible interactive and display-only chart semantics` (see git history for the hash).
 - **Files:** `src/BodyChart.ts`, `README.md`, `docs/index.html`, `CHANGELOG.md`.
 - **Changes:** removed `aria-hidden` from the interactive SVG and `role="img"` from the wrapper; the SVG now carries `role="group"`/`role="img"` plus the chart name. Regions are toggle buttons with `aria-pressed` tracking `selected`; the `(selected)` label suffix was dropped. Added the `interactive` option (default `true`); `false` renders a display-only graphic with no focusable regions, tooltip, or callbacks. Added a roving tab index (single tab stop) with arrow-key, `Home`/`End`, `Enter`/`Space`, and `Escape` handling, and a dual-tone keyboard focus indicator.
@@ -469,3 +471,12 @@ For each completed item, append a record containing:
 - **Changes:** README development prerequisites and A4's compatibility record now state Node 20+, matching Playwright and playwright-core 1.64.0.
 - **Verification:** both lockfile engine entries are >=20; the installed CLI reports Playwright 1.64.0 on Node v24.21.0. CI specifies Node 24. The published package's engines.node remains >=16.
 - **Compatibility:** documentation correction only; no dependency, consumer engine, or changelog change.
+
+### R10 — Available accessibility verification and explicit limits
+
+- **Completed:** 2026-10-09 (available checks and documentation only).
+- **Commit:** `docs: record accessibility verification evidence and limits`.
+- **Verification:** the built bundle's Chromium accessibility tree exposes a labelled group with named toggle buttons and Head's pressed state. Consumer-controlled Enter activation changed Head to unpressed; ArrowRight focused Face with its tooltip description; Escape hid the tooltip and Tab reached the following page button. Display-only mode exposes one labelled image, without button descendants. Final typecheck, build, artifact verification (89 regions, 11 intensity colours), 18 browser tests, and docs build all pass. Served-demo dragging changed the selected-card slider to 8, retained its element and focus, and updated details/statistics to 8 / 10 and 8.0. Populated light/dark demo audits with the CDN panel visible each report 0 violations, 1 incomplete, and 45 passing rules; no browser errors were recorded.
+- **Missing prerequisite:** no screen-reader executable or desktop display session is available here. Accessibility-tree inspection is not speech-output or browse/focus-mode verification. A1 is deliberately unchecked pending a real screen-reader/browser check; README and the site explicitly state this limit. No full WCAG-conformance claim is made.
+- **Required manual check:** with a supported desktop screen reader and browser, verify chart/button names and pressed-state announcements, arrow-key behavior in browse and focus modes, Enter/Space selection announcements, tooltip description/dismissal, one-step Tab exit, and the single-image read-only presentation. Record the reader/browser versions and results before completing A1.
+- **Compatibility:** verification documentation only; no package API or changelog change. GitHub CI results have not been observed for these local commits.
