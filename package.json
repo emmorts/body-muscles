@@ -1,6 +1,6 @@
 {
   "name": "@emmorts/body-muscles",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Interactive SVG body map with 70+ muscles, intensity visualization, and zero dependencies. Works with React, Vue, Svelte, or vanilla JS. Maintained fork of vulovix/body-muscles published as @emmorts/body-muscles.",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
