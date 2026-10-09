@@ -371,6 +371,17 @@ motion (`prefers-reduced-motion: reduce`), chart and tooltip transitions are dis
 `enableTransitions` — the OS preference wins, and it is re-evaluated if the preference changes at
 runtime. Overriding `--bm-transition-duration` changes the timing but never re-enables motion.
 
+## Update performance
+
+Region refreshes use keyed definitions and a shared rendering-only default, then compare the
+computed fill, label, selection, and styling values before writing to the DOM. Cursor/outline setup
+and transition configuration are outside the per-state refresh.
+
+This is not a state-reference cache: reused state mappings and resolver/label closures are still
+evaluated on updates. CSS-variable fill expressions remain intact and respond to ancestor theme
+changes without `update()`. The C3 record in [the implementation plan](IMPLEMENTATION_PLAN.md)
+documents the measured local workload; its timings are not a cross-device performance guarantee.
+
 ## Localization
 
 Every string the chart renders comes from the `labels` option, so the interface can be translated

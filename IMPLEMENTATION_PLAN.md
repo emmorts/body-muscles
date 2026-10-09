@@ -324,7 +324,7 @@ browser errors. Commit: `feat(selection): add pure group and bilateral helpers`.
 
 ### C3 — Reduce unnecessary path-refresh work
 
-- [ ] Complete C3
+- [x] Complete C3
 
 **Problem:** Each refresh performs a linear metadata lookup per region and rewrites attributes even when their values are unchanged. Correctness and interaction fixes take priority over optimization for the current 89-region dataset.
 
@@ -337,6 +337,32 @@ browser errors. Commit: `feat(selection): add pure group and bilateral helpers`.
 - Keep the design simple; do not add a general rendering abstraction for this optimization.
 
 **Verification:** Compare browser profiles for repeated slider updates before and after the change, and exercise the same interaction scenarios covered by A4. Record measured results without assuming a performance gain.
+
+**Completion:** hot-path and visible-tooltip definition lookups reuse `MUSCLE_DEFS`. A shared
+rendering default avoids per-region default objects while label callbacks still receive the
+original optional state. Rendered attribute/style comparisons suppress unchanged writes;
+cursor/outline setup and transition configuration are outside state refresh. All regions still
+re-evaluate resolvers and region labels, preserving reused objects and ambient closure changes.
+No internal selection state, per-instance duplicate definition cache, or rendering abstraction was added.
+
+**Measured workload:** same local Chromium session, 89-region BOTH chart, transitions/tooltips
+disabled, one reused state mapping with biceps-left intensity cycling 0–10. Warmed with 100 updates;
+five timed batches of 500 synchronous updates, each forcing a geometry read. Attribute mutations
+were observed separately for 100 changing updates and 100 identical submissions. Browser CPU profiles
+confirmed the refresh hot path; these measurements do not cover frame-paced painting or other devices.
+
+| Measure | Before | After |
+| --- | ---: | ---: |
+| Median time for 500 updates (ms) | 343.9 | 84.4 |
+| Browser task time across 2,500 updates (ms) | 1723.5 | 422.4 |
+| Attribute mutations for 100 changing updates | 26700 | 200 |
+| Attribute mutations for 100 identical updates | 26700 | 0 |
+
+**Verification:** all root build/type/package gates, six selection cases, 39 browser cases, docs build,
+and both example builds/type-checks passed. The new regression changes a resolver/label closure with
+unchanged state and retains focus. Actual Chromium demo slider arrowing reached intensity 3 with
+focus retained, the matching accessible name, one chart wrapper, and no browser errors.
+Commit: `perf(chart): skip redundant path refresh work`.
 
 ## Deferred — Record demand before expanding scope
 

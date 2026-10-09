@@ -822,6 +822,39 @@ await test("bodyState updates replace the mapping while spreads preserve entries
   assert.equal(facts.callerIntact, true, "the chart never mutates the caller's mapping");
 });
 
+await test("unchanged state still re-evaluates ambient resolver and label closures without dropping focus", async (page) => {
+  await mount(page);
+  await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    window.state = { "biceps-left": { intensity: 4, selected: true } };
+    window.palette = "var(--ambient-fill, #123456)";
+    window.wording = "Before";
+    window.chart = new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT,
+      bodyState: window.state,
+      enableTransitions: false,
+      intensityColor: () => window.palette,
+      labels: { region: (muscle) => `${window.wording}:${muscle.id}` },
+    });
+    window.region = document.querySelector('[aria-label="Before:biceps-left"]');
+    window.region.focus();
+  });
+  assert.equal(await page.locator('[aria-label="Before:biceps-left"]').getAttribute("fill"), "var(--ambient-fill, #123456)");
+  const after = await page.evaluate(() => {
+    window.palette = "#456123";
+    window.wording = "After";
+    window.chart.update({ bodyState: window.state });
+    return {
+      fill: window.region.getAttribute("fill"),
+      label: window.region.getAttribute("aria-label"),
+      selected: window.region.getAttribute("aria-pressed"),
+      intensity: window.state["biceps-left"].intensity,
+      focused: document.activeElement === window.region,
+    };
+  });
+  assert.deepEqual(after, { fill: "#456123", label: "After:biceps-left", selected: "true", intensity: 4, focused: true });
+});
+
 await test("intensities are validated at the chart boundary", async (page) => {
   await mount(page);
   const facts = await page.evaluate(() => {

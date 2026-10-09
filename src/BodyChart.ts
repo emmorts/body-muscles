@@ -1,9 +1,13 @@
 import { filterMuscles, getMuscleColor, resolveIntensityColor } from "./utils";
 import { ViewSide, MuscleId, BodyState, BodyPartState, assertValidBodyState } from "./types";
 import type { IntensityColorResolver } from "./types";
+import { MUSCLE_DEFS } from "./data";
 import type { MuscleDef } from "./data";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+
+/** Rendering-only default; label callbacks still receive the original optional state. */
+const EMPTY_STATE: Readonly<BodyPartState> = { intensity: 0, selected: false };
 
 /**
  * Reference a chart CSS custom property (`--bm-*`), falling back to the
@@ -432,7 +436,7 @@ export class BodyChart {
   /** Re-render an on-screen tooltip after its content source changed. */
   private refreshVisibleTooltip(): void {
     if (!this.tooltipEl || this.tooltipEl.style.visibility !== "visible") return;
-    const muscle = this.muscleData.find((m) => m.id === this.tooltipMuscleId);
+    const muscle = this.tooltipMuscleId ? MUSCLE_DEFS[this.tooltipMuscleId] : undefined;
     if (!muscle) return;
     this.showTooltipAt(muscle, this.tooltipClientX, this.tooltipClientY);
   }
@@ -459,12 +463,14 @@ export class BodyChart {
 
   private applyTransitions(): void {
     const transition = this.transitionsEnabled() ? transitionStyle() : "";
-    if (this.svgEl) this.svgEl.style.transition = transition;
+    if (this.svgEl && this.svgEl.style.transition !== transition) this.svgEl.style.transition = transition;
     if (this.tooltipEl) {
-      this.tooltipEl.style.transition = transition ? "opacity 120ms ease-out, transform 120ms ease-out" : "none";
+      const tooltipTransition = transition ? "opacity 120ms ease-out, transform 120ms ease-out" : "none";
+      if (this.tooltipEl.style.transition !== tooltipTransition) this.tooltipEl.style.transition = tooltipTransition;
     }
+    const regionTransition = transition || "none";
     for (const path of this.musclePaths.values()) {
-      path.style.transition = transition ? transitionStyle() : "none";
+      if (path.style.transition !== regionTransition) path.style.transition = regionTransition;
     }
   }
 
@@ -548,6 +554,7 @@ export class BodyChart {
 
     // Instant Tooltip DOM
     this.buildTooltip();
+    this.applyTransitions();
 
     // Hide tooltip when tapping outside wrapper
     const onDocumentPointerDown = (e: PointerEvent) => {
@@ -710,6 +717,8 @@ export class BodyChart {
     const path = document.createElementNS(SVG_NS, "path");
     path.setAttribute("d", muscle.path);
     path.classList.add("body-chart-muscle");
+    path.style.cursor = this.options.interactive ? "pointer" : "default";
+    path.style.outline = "none";
 
     if (!this.options.interactive) return path;
 
@@ -853,7 +862,7 @@ export class BodyChart {
     if (!path) return;
 
     const suppliedState = this.options.bodyState[muscleId];
-    const state = suppliedState || { intensity: 0, selected: false };
+    const state = suppliedState || EMPTY_STATE;
     const isSelected = state.selected || false;
     const isHovered = this.hoveredMuscle === muscleId;
     let isFocused = false;
@@ -869,33 +878,38 @@ export class BodyChart {
     const fill = getMuscleColor(state, isHovered, this.options.intensityColor);
     const opacity =
       state.intensity === 0 && !isSelected ? bmVar("region-inactive-opacity", "0.6") : "1";
-    const muscle = this.muscleData.find((m) => m.id === muscleId);
+    const muscle = MUSCLE_DEFS[muscleId];
 
-    // Preserve the resolver expression in the attribute; getComputedStyle(path).fill
-    // reports the colour after the browser resolves any CSS variable references.
-    path.setAttribute("fill", fill);
-    path.style.stroke = isFocused
+    // Compare rendered values, not state references: consumers may reuse objects
+    // or change a resolver/label closure without changing its function identity.
+    // Keep resolver expressions intact so inherited CSS variables remain live.
+    if (path.getAttribute("fill") !== fill) path.setAttribute("fill", fill);
+    const stroke = isFocused
       ? bmVar("region-stroke-focus", "#1d4ed8")
       : isSelected
         ? bmVar("region-stroke-selected", "#ffffff")
         : bmVar("region-stroke", "#1e293b");
-    path.style.strokeWidth = isFocused
+    const strokeWidth = isFocused
       ? bmVar("region-stroke-width-focus", "0.5")
       : isSelected
         ? bmVar("region-stroke-width-selected", "0.3")
         : bmVar("region-stroke-width", "0.1");
+    if (path.style.stroke !== stroke) path.style.stroke = stroke;
+    if (path.style.strokeWidth !== strokeWidth) path.style.strokeWidth = strokeWidth;
 
     if (this.options.interactive) {
       // Selection is exposed as a toggle-button state, not only as a colour or
       // label suffix, so assistive technology announces it reliably.
-      path.setAttribute("aria-pressed", isSelected ? "true" : "false");
-      path.setAttribute("aria-label", muscle ? this.regionLabel(muscle, suppliedState) : muscleId);
+      const pressed = isSelected ? "true" : "false";
+      const label = this.regionLabel(muscle, suppliedState);
+      if (path.getAttribute("aria-pressed") !== pressed) path.setAttribute("aria-pressed", pressed);
+      if (path.getAttribute("aria-label") !== label) path.setAttribute("aria-label", label);
     }
 
-    path.style.fillOpacity = opacity;
+    if (path.style.fillOpacity !== opacity) path.style.fillOpacity = opacity;
     // Focus is a dual-tone halo that stays visible against any background; it
     // replaces the selection/hover glow so the ring is never masked by it.
-    path.style.filter = isFocused
+    const filter = isFocused
       ? bmVar(
           "region-focus-shadow",
           "drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 2.5px rgba(15, 23, 42, 0.9))",
@@ -903,9 +917,7 @@ export class BodyChart {
       : isSelected || isHovered
         ? bmVar("region-active-shadow", "url(#glow)")
         : "none";
-    path.style.cursor = this.options.interactive ? "pointer" : "default";
-    path.style.transition = this.transitionsEnabled() ? transitionStyle() : "none";
-    path.style.outline = "none";
+    if (path.style.filter !== filter) path.style.filter = filter;
   }
 
   // ── View label ───────────────────────────────────────────

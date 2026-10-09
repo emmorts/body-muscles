@@ -13,6 +13,15 @@
 - Vanilla TypeScript group/bilateral controls and demo group selection composed through the helpers.
   Six deterministic selection regressions and consumer type checks run in CI.
 
+### Changed
+
+- Region refreshes reuse keyed definitions and a shared rendering-only default state, compare
+  rendered values before DOM writes, and configure cursor/outline/transitions outside the state
+  refresh. Reused state mappings, ambient resolver/label changes, focus, tooltips, and live CSS
+  variables retain their behavior. Added an ambient-closure browser regression.
+  The implementation plan records before/after Chromium profiles for repeated intensity updates;
+  measurements describe a local synthetic workload, not a universal frame-rate guarantee.
+
 ## 2.0.0 (2026-10-09)
 
 ### Added
