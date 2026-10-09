@@ -5,13 +5,16 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/@emmorts%2Fbody-muscles)](https://www.npmjs.com/package/@emmorts/body-muscles)
 
+**Documentation:** <https://emmorts.github.io/body-muscles/>
+
 Works with React, Vue, Svelte, Angular, or vanilla JavaScript. No framework required.
 
 ## Features
 
-- **70+ Anatomical Regions** — Granular muscle mapping with accurate SVG paths
+- **70+ Anatomical Regions** — Granular muscle mapping, every region drawn as a smoothed bezier path
 - **Multiple Views** — Anterior (front), posterior (back), and side-by-side with automatic viewport switching
 - **Intensity Scale** — 0–10 gradient color mapping (yellow → orange → red)
+- **Instant Tooltips** — Region names follow hover and keyboard focus in an instant floating tooltip, with `tooltipFormatter` for custom content
 - **Interactive** — Hover effects, selection states, glow filters
 - **Zero Dependencies** — Pure TypeScript, ~40KB UMD / ~29KB minified
 - **Three Build Formats** — ESM, CommonJS, UMD (works with `file://` too)
@@ -298,6 +301,21 @@ body-muscles/
 ├── package.json
 └── tsconfig.json
 ```
+
+## Development
+
+```bash
+npm install
+npm run build          # ESM, CommonJS, UMD and dist/data/body-muscles-data.json
+npm run verify-build   # load the built artifacts and assert they are complete
+npm run typecheck
+npm run smooth-paths   # redraw src/data/muscles.*.ts as bezier paths (idempotent)
+npm run docs           # build the browser bundle and serve the docs site on :3000
+```
+
+The site in [`docs/`](./docs) is published to <https://emmorts.github.io/body-muscles/> by
+[`.github/workflows/docs.yml`](./.github/workflows/docs.yml), which builds the library and uploads
+the `docs` directory as the Pages artifact on every push to `main` that touches it.
 
 ## License
 
