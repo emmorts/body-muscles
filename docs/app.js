@@ -501,6 +501,9 @@ if (catalogResults) {
     }
   };
 
+  document.getElementById("catalogControls").addEventListener("submit", (event) => {
+    event.preventDefault();
+  });
   searchInput.addEventListener("input", renderResults);
   groupSelect.addEventListener("change", renderResults);
   sideSelect.addEventListener("change", renderResults);

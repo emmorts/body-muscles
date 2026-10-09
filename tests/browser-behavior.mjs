@@ -1240,6 +1240,19 @@ await test("demo anatomy catalog lists every region from canonical data", async 
   assert.equal(facts.count, "89 of 89 regions");
 });
 
+await test("submitting catalog search preserves filters and demo state", async (page) => {
+  await openDemo(page);
+  await page.locator(".body-chart-muscle").first().focus();
+  await page.keyboard.press("Enter");
+  const selectedName = await page.locator("#selectedName").textContent();
+  await page.fill("#catalogSearch", "biceps");
+  await page.locator("#catalogSearch").press("Enter");
+  assert.equal(await page.locator("#catalogSearch").inputValue(), "biceps");
+  assert.equal(await page.locator("#catalogCount").textContent(), "4 of 89 regions");
+  assert.equal(await page.locator("#selectedName").textContent(), selectedName);
+  assert.equal(await page.locator(".body-chart-muscle").first().getAttribute("aria-pressed"), "true");
+});
+
 await test("demo anatomy catalog filters by text, group, side, and view", async (page) => {
   await openDemo(page);
   const read = () =>
