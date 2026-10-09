@@ -105,6 +105,7 @@ Creates an interactive body map inside the given DOM element.
 | `enableTransitions` | `boolean`                              | `true`      | Smooth CSS transitions on state changes     |
 | `showTooltip`       | `boolean`                              | `true`      | Display custom instant floating tooltip     |
 | `tooltipFormatter`  | `(muscle, state) => string`            | default     | Custom tooltip content formatter callback   |
+| `interactive`       | `boolean`                              | `true`      | Enable pointer/keyboard interaction         |
 
 #### Methods
 
@@ -152,6 +153,26 @@ type BodyState = Partial<Record<MuscleId, BodyPartState>>;
 | `isValidIntensity(value)`                    | Type guard for 0-10 integer               |
 | `extractMuscleSide(id)`                      | Returns `"left" \| "right" \| "central"`  |
 | `extractMuscleGroup(id)`                     | Returns base group string                 |
+
+## Accessibility
+
+The chart is a composite widget with a **single tab stop**. `Tab` enters the chart on the first
+region and leaves it in one step — a keyboard user never has to tab through all regions to reach
+the next control.
+
+- `ArrowRight` / `ArrowDown` — next region in reading order
+- `ArrowLeft` / `ArrowUp` — previous region in reading order
+- `Home` / `End` — first / last region
+- `Enter` / `Space` — activate the focused region (fires `onMuscleClick`)
+- `Escape` — dismiss the tooltip
+
+Each region is exposed as a toggle button: its name is available to assistive technology and its
+pressed state tracks `selected`, so selection is not conveyed by colour alone. Keyboard focus shows
+a high-contrast indicator that is independent of the selection/hover styling.
+
+Set `interactive: false` for a display-only chart. It is then announced as a single labelled
+graphic: regions are not focusable, hoverable, or clickable, `onMuscleClick` / `onMuscleHover`
+never fire, and no tooltip is rendered. Use `ariaLabel` to name the chart in either mode.
 
 ## Framework Examples
 

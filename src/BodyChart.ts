@@ -28,6 +28,15 @@ export interface BodyChartOptions {
   showTooltip?: boolean;
   /** Optional custom tooltip content formatter */
   tooltipFormatter?: (muscle: MuscleDef, state?: BodyPartState) => string;
+  /**
+   * Enable pointer and keyboard interaction (default: true).
+   *
+   * When `false` the chart is a static visualization exposed to assistive
+   * technology as a single labelled graphic: muscle regions are not focusable,
+   * hoverable, or clickable, `onMuscleClick`/`onMuscleHover` never fire, and no
+   * tooltip is rendered.
+   */
+  interactive?: boolean;
 }
 
 type ResolvedOptions = Required<BodyChartOptions>;
@@ -40,6 +49,7 @@ function resolveOptions(options: BodyChartOptions): ResolvedOptions {
     enableTransitions: true,
     showTooltip: true,
     tooltipFormatter: (muscle) => muscle.name,
+    interactive: true,
     onMuscleClick: () => {},
     onMuscleHover: () => {},
     ...options,
@@ -52,6 +62,22 @@ function resolveOptions(options: BodyChartOptions): ResolvedOptions {
  * Renders a detailed human body with 70+ clickable muscle regions into any DOM element.
  * Supports front, back, and side-by-side views, intensity visualization (0-10 scale),
  * and interactive selection states with visual feedback.
+ *
+ * ## Accessibility
+ *
+ * The chart is a composite widget with a single tab stop. Only the active region
+ * carries `tabindex="0"`; the remaining regions are reachable with the arrow keys,
+ * so a keyboard user is never forced through every region to leave the chart.
+ *
+ * - `ArrowRight` / `ArrowDown`: next region in reading order
+ * - `ArrowLeft` / `ArrowUp`: previous region in reading order
+ * - `Home` / `End`: first / last region
+ * - `Enter` / `Space`: activate the focused region (fires `onMuscleClick`)
+ * - `Escape`: dismiss the tooltip
+ *
+ * Each region is exposed as a toggle button whose pressed state reflects `selected`.
+ * Set `interactive: false` for a display-only chart that is announced as a single
+ * labelled graphic instead.
  *
  * @example
  * ```ts
@@ -87,6 +113,7 @@ export class BodyChart {
   private tooltipId: string = "";
   private musclePaths: Map<string, SVGPathElement> = new Map();
   private muscleData: MuscleDef[] = [];
+  private tabbableMuscle: MuscleId | null = null;
   private eventCleanup: (() => void)[] = [];
 
   constructor(container: HTMLElement, options: BodyChartOptions) {
@@ -120,6 +147,7 @@ export class BodyChart {
     this.eventCleanup = [];
     this.musclePaths.clear();
     this.muscleData = [];
+    this.tabbableMuscle = null;
 
     if (this.tooltipEl && this.wrapperEl?.contains(this.tooltipEl)) {
       this.wrapperEl.removeChild(this.tooltipEl);
@@ -136,7 +164,7 @@ export class BodyChart {
   // ── Build ────────────────────────────────────────────────
 
   private build(): void {
-    const { view, className, ariaLabel, showViewLabel, enableTransitions } =
+    const { view, className, ariaLabel, showViewLabel, enableTransitions, interactive } =
       this.options;
     this.muscleData = filterMuscles(view);
     const isBoth = view === ViewSide.BOTH;
@@ -146,7 +174,7 @@ export class BodyChart {
         ? "0 0 35 93"
         : "37 0 35 93";
 
-    // Wrapper
+    // Wrapper (layout only; the SVG carries the accessible role and name)
     this.wrapperEl = document.createElement("div");
     this.wrapperEl.className = `body-chart-container ${className}`.trim();
     setStyles(this.wrapperEl, {
@@ -158,20 +186,22 @@ export class BodyChart {
       alignItems: "center",
       padding: "1rem",
     });
-    this.wrapperEl.setAttribute("role", "img");
-    this.wrapperEl.setAttribute(
-      "aria-label",
+
+    const chartLabel =
       ariaLabel ||
-        (isBoth
-          ? "Anterior and posterior body map views"
-          : `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} body map view`),
-    );
+      (isBoth
+        ? "Anterior and posterior body map views"
+        : `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} body map view`);
 
     // SVG
     this.svgEl = document.createElementNS(SVG_NS, "svg");
     this.svgEl.setAttribute("viewBox", viewBox);
     this.svgEl.classList.add("body-chart-svg");
-    this.svgEl.setAttribute("aria-hidden", "true");
+    // Interactive charts expose individually focusable regions, so the SVG must
+    // not be `aria-hidden` and must be a group rather than an image. Display-only
+    // charts have no focusable descendants and are announced as one graphic.
+    this.svgEl.setAttribute("role", interactive ? "group" : "img");
+    this.svgEl.setAttribute("aria-label", chartLabel);
     setStyles(this.svgEl as unknown as HTMLElement, {
       height: "auto",
       width: "100%",
@@ -206,6 +236,10 @@ export class BodyChart {
       this.musclePaths.set(muscle.id, path);
     }
 
+    if (interactive) {
+      this.applyRovingTabIndex(this.muscleData[0]?.id ?? null);
+    }
+
     this.wrapperEl.appendChild(this.svgEl);
 
     // Optional view label(s)
@@ -228,15 +262,17 @@ export class BodyChart {
     this.buildTooltip();
 
     // Hide tooltip when tapping outside wrapper
-    const onDocumentPointerDown = (e: PointerEvent) => {
-      if (this.wrapperEl && !this.wrapperEl.contains(e.target as Node)) {
-        this.hideTooltip();
-      }
-    };
-    document.addEventListener("pointerdown", onDocumentPointerDown);
-    this.eventCleanup.push(() => {
-      document.removeEventListener("pointerdown", onDocumentPointerDown);
-    });
+    if (this.tooltipEl) {
+      const onDocumentPointerDown = (e: PointerEvent) => {
+        if (this.wrapperEl && !this.wrapperEl.contains(e.target as Node)) {
+          this.hideTooltip();
+        }
+      };
+      document.addEventListener("pointerdown", onDocumentPointerDown);
+      this.eventCleanup.push(() => {
+        document.removeEventListener("pointerdown", onDocumentPointerDown);
+      });
+    }
 
     this.container.appendChild(this.wrapperEl);
     this.refreshAllPaths();
@@ -277,7 +313,7 @@ export class BodyChart {
   }
 
   private buildTooltip(): void {
-    if (!this.options.showTooltip || !this.wrapperEl) return;
+    if (!this.options.showTooltip || !this.options.interactive || !this.wrapperEl) return;
 
     BodyChart.instanceCounter++;
     this.tooltipId = `body-chart-tooltip-${BodyChart.instanceCounter}`;
@@ -322,6 +358,7 @@ export class BodyChart {
     clientY: number,
   ): void {
     if (!this.tooltipEl || !this.wrapperEl || !this.options.showTooltip) return;
+    if (!this.options.interactive) return;
 
     this.tooltipEl.textContent = content;
     this.tooltipEl.style.visibility = "visible";
@@ -373,8 +410,13 @@ export class BodyChart {
     const path = document.createElementNS(SVG_NS, "path");
     path.setAttribute("d", muscle.path);
     path.classList.add("body-chart-muscle");
+
+    if (!this.options.interactive) return path;
+
+    // Toggle button: pressed state reflects `selected`. All regions start out of
+    // the tab order; `applyRovingTabIndex` promotes one to a single tab stop.
     path.setAttribute("role", "button");
-    path.setAttribute("tabindex", "0");
+    path.setAttribute("tabindex", "-1");
 
     const getTooltipText = () => {
       const state = this.options.bodyState[muscle.id];
@@ -405,6 +447,7 @@ export class BodyChart {
 
     const onFocus = () => {
       this.hoveredMuscle = muscle.id;
+      this.applyRovingTabIndex(muscle.id);
       this.refreshPath(muscle.id);
       if (this.tooltipId) {
         path.setAttribute("aria-describedby", this.tooltipId);
@@ -428,11 +471,33 @@ export class BodyChart {
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        this.options.onMuscleClick(muscle.id, muscle.name);
-      } else if (e.key === "Escape") {
-        this.hideTooltip();
+      switch (e.key) {
+        case "Enter":
+        case " ":
+          e.preventDefault();
+          this.options.onMuscleClick(muscle.id, muscle.name);
+          break;
+        case "Escape":
+          this.hideTooltip();
+          break;
+        case "ArrowRight":
+        case "ArrowDown":
+          e.preventDefault();
+          this.moveFocus(muscle.id, 1);
+          break;
+        case "ArrowLeft":
+        case "ArrowUp":
+          e.preventDefault();
+          this.moveFocus(muscle.id, -1);
+          break;
+        case "Home":
+          e.preventDefault();
+          this.focusMuscle(this.muscleData[0]?.id);
+          break;
+        case "End":
+          e.preventDefault();
+          this.focusMuscle(this.muscleData[this.muscleData.length - 1]?.id);
+          break;
       }
     };
 
@@ -457,6 +522,35 @@ export class BodyChart {
     return path;
   }
 
+  // ── Keyboard navigation ──────────────────────────────────
+
+  /**
+   * Keep exactly one region in the tab order, so `Tab` enters and leaves the
+   * chart with a single stop instead of traversing every region.
+   */
+  private applyRovingTabIndex(activeId: MuscleId | null): void {
+    this.tabbableMuscle = activeId;
+    for (const [id, path] of this.musclePaths) {
+      path.setAttribute("tabindex", id === activeId ? "0" : "-1");
+    }
+  }
+
+  /** Move focus by `delta` regions in reading order, wrapping around. */
+  private moveFocus(currentId: MuscleId, delta: number): void {
+    const index = this.muscleData.findIndex((m) => m.id === currentId);
+    if (index === -1) return;
+    const count = this.muscleData.length;
+    this.focusMuscle(this.muscleData[(index + delta + count) % count]?.id);
+  }
+
+  private focusMuscle(id: MuscleId | undefined): void {
+    if (!id) return;
+    const path = this.musclePaths.get(id);
+    if (!path) return;
+    this.applyRovingTabIndex(id);
+    path.focus();
+  }
+
   // ── State refresh ────────────────────────────────────────
 
   private refreshAllPaths(): void {
@@ -472,21 +566,46 @@ export class BodyChart {
     const state = this.options.bodyState[muscleId] || { intensity: 0, selected: false };
     const isSelected = state.selected || false;
     const isHovered = this.hoveredMuscle === muscleId;
+    let isFocused = false;
+    if (this.options.interactive) {
+      // `:focus-visible` limits the ring to keyboard focus; engines without it
+      // fall back to `:focus`.
+      try {
+        isFocused = path.matches(":focus-visible");
+      } catch {
+        isFocused = path.matches(":focus");
+      }
+    }
     const fill = getMuscleColor(state, isHovered);
     const opacity = state.intensity === 0 && !isSelected ? 0.6 : 1;
     const muscle = this.muscleData.find((m) => m.id === muscleId);
 
     path.setAttribute("fill", fill);
-    path.setAttribute("stroke", isSelected ? "#ffffff" : "#1e293b");
-    path.setAttribute("stroke-width", isSelected ? "0.3" : "0.1");
     path.setAttribute(
-      "aria-label",
-      `${muscle?.name || muscleId}${isSelected ? " (selected)" : ""}${state.intensity > 0 ? ` - intensity ${state.intensity}` : ""}`,
+      "stroke",
+      isFocused ? "#1d4ed8" : isSelected ? "#ffffff" : "#1e293b",
     );
+    path.setAttribute("stroke-width", isFocused ? "0.5" : isSelected ? "0.3" : "0.1");
+
+    if (this.options.interactive) {
+      // Selection is exposed as a toggle-button state, not only as a colour or
+      // label suffix, so assistive technology announces it reliably.
+      path.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      path.setAttribute(
+        "aria-label",
+        `${muscle?.name || muscleId}${state.intensity > 0 ? ` - intensity ${state.intensity}` : ""}`,
+      );
+    }
 
     path.style.fillOpacity = String(opacity);
-    path.style.filter = isSelected || isHovered ? "url(#glow)" : "none";
-    path.style.cursor = "pointer";
+    // Focus is a dual-tone halo that stays visible against any background; it
+    // replaces the selection/hover glow so the ring is never masked by it.
+    path.style.filter = isFocused
+      ? "drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 2.5px rgba(15, 23, 42, 0.9))"
+      : isSelected || isHovered
+        ? "url(#glow)"
+        : "none";
+    path.style.cursor = this.options.interactive ? "pointer" : "default";
     path.style.transition = this.options.enableTransitions ? "all 200ms ease-out" : "none";
     path.style.outline = "none";
   }

@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The chart no longer marks its interactive SVG `aria-hidden`, and the container no longer uses
+  `role="img"`, so muscle regions are reachable by assistive technology instead of being hidden
+  focusable content nested inside an image. Regions are exposed as toggle buttons whose
+  `aria-pressed` state tracks `selected`, and keyboard focus shows a high-contrast indicator.
+
+### Changed
+
+- Keyboard navigation now uses a roving tab index: the chart is a single tab stop and regions are
+  reached with the arrow keys (`Home`/`End` jump to the ends), instead of placing every region in
+  the tab order.
+- Added the `interactive` option (default `true`). When `false` the chart is a static, single
+  labelled graphic with no focusable regions, tooltip, or callbacks.
+
 ## 1.1.1 (2026-10-09)
 
 No functional change. This release exists to exercise the release pipeline end to end: the tag

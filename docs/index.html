@@ -424,9 +424,26 @@ chart.destroy();</code></pre>
                 <td>muscle name</td>
                 <td>Custom tooltip content</td>
               </tr>
+              <tr>
+                <td><code>interactive</code></td>
+                <td><code>boolean</code></td>
+                <td><code>true</code></td>
+                <td>Enable pointer/keyboard interaction; <code>false</code> renders a static labelled graphic</td>
+              </tr>
             </tbody>
           </table>
         </div>
+
+        <h3>Accessibility</h3>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          The chart is a composite widget with a <strong>single tab stop</strong>: <code>Tab</code> enters
+          on the first region and leaves in one step. Within the chart, <code>ArrowRight</code>/<code>ArrowDown</code>
+          and <code>ArrowLeft</code>/<code>ArrowUp</code> move by one region, <code>Home</code>/<code>End</code>
+          jump to the first/last region, <code>Enter</code>/<code>Space</code> activate the focused region, and
+          <code>Escape</code> dismisses the tooltip. Each region is a toggle button whose pressed state tracks
+          <code>selected</code>, and keyboard focus shows a high-contrast ring. Set <code>interactive: false</code>
+          for a display-only chart announced as a single labelled graphic.
+        </p>
 
         <h3>Instance Methods</h3>
         <div style="overflow-x: auto">
