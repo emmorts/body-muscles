@@ -1,1066 +1,664 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <!-- ── Primary Meta ──────────────────────────────── -->
-    <title>Body Muscles — Interactive SVG Body Map &amp; Muscle Chart JavaScript Library</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Body Muscles — an interactive, accessible SVG body map for the web</title>
     <meta
       name="description"
-      content="Body Muscles is a zero-dependency, framework-agnostic JavaScript/TypeScript library for interactive anatomical body mapping. 70+ muscles, SVG precision, intensity visualization. Works with React, Vue, Svelte, vanilla JS."
+      content="Body Muscles renders 89 anatomical regions as an interactive, keyboard-accessible SVG chart. You own the state; it draws intensity, selection, tooltips, and labels. Framework-agnostic, zero dependencies, TypeScript types."
     />
-    <meta
-      name="keywords"
-      content="body map, muscle chart, body muscles, anatomy chart, SVG body map, interactive body map, muscle visualization, body mapping library, anatomical chart, JavaScript body map, TypeScript muscle chart, human body SVG, fitness tracker muscles, workout muscle map, body-muscles npm, muscle intensity chart, framework-agnostic body map"
-    />
-    <meta name="author" content="vulovix" />
-    <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://emmorts.github.io/body-muscles/" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#f5f1ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#13110f" media="(prefers-color-scheme: dark)" />
 
-    <!-- ── Open Graph ────────────────────────────────── -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Body Muscles — Interactive SVG Body Map Library" />
+    <meta property="og:site_name" content="Body Muscles" />
+    <meta property="og:title" content="Body Muscles — the human body, as a chart" />
     <meta
       property="og:description"
-      content="Zero-dependency JavaScript library for interactive anatomical body mapping. 70+ muscles, SVG precision, intensity visualization."
+      content="An interactive, accessible SVG body map with 89 regions, intensity and selection state, and zero dependencies."
     />
     <meta property="og:url" content="https://emmorts.github.io/body-muscles/" />
-    <meta property="og:site_name" content="Body Muscles" />
-
-    <!-- ── Twitter Card ──────────────────────────────── -->
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Body Muscles — Interactive SVG Body Map Library" />
-    <meta
-      name="twitter:description"
-      content="Zero-dependency JS/TS library for interactive anatomical body mapping. 70+ muscles, SVG precision, works with any framework."
-    />
 
-    <!-- ── JSON-LD Structured Data ───────────────────── -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "SoftwareSourceCode",
-        "name": "body-muscles",
-        "alternateName": "Body Muscles",
-        "description": "Framework-agnostic interactive SVG body map with 70+ anatomical regions, intensity visualization, and zero dependencies.",
+        "name": "Body Muscles",
+        "description": "Framework-agnostic interactive SVG body map with 89 anatomical regions, intensity visualization, and zero dependencies.",
         "url": "https://emmorts.github.io/body-muscles/",
         "codeRepository": "https://github.com/emmorts/body-muscles",
         "programmingLanguage": ["TypeScript", "JavaScript"],
         "runtimePlatform": "Browser",
-        "license": "https://opensource.org/licenses/Apache-2.0",
-        "operatingSystem": "Any",
-        "applicationCategory": "DeveloperApplication",
-        "keywords": "body map, muscle chart, anatomy, SVG, JavaScript, TypeScript, interactive, visualization"
+        "license": "https://opensource.org/licenses/Apache-2.0"
       }
     </script>
 
-    <!-- ── Fonts & Styles ────────────────────────────── -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <!-- Apply the stored or system theme before first paint. -->
+    <script>
+      (() => {
+        let stored = null;
+        try {
+          stored = localStorage.getItem("body-muscles-theme");
+        } catch {}
+        const system = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = stored === "light" || stored === "dark" ? stored : system;
+      })();
+    </script>
+    <link rel="preload" href="lib/fonts/newsreader.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="lib/fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" id="hljs-theme-dark" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css" id="hljs-theme-light" disabled />
   </head>
   <body>
-    <!-- ── Header ────────────────────────────────────── -->
-    <header class="header">
-      <div class="container">
-        <div class="header-brand">
-          <span>Body Muscles</span>
-          <!-- <span class="header-badge">v1.0.0</span> -->
-        </div>
-        <nav class="header-nav">
-          <a href="#demo">Demo</a>
-          <a href="#install">Install</a>
-          <a href="#api">API</a>
-          <a href="#catalog">Catalog</a>
-          <a href="#examples">Examples</a>
-          <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-            <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="5" />
-              <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="shell">
+        <a class="brand" href="#top" aria-label="Body Muscles, home">
+          <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="21" height="21" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <rect x="5.5" y="13" width="3" height="5.5" rx="1" fill="#eab308" />
+            <rect x="10.5" y="9.5" width="3" height="9" rx="1" fill="#f97316" />
+            <rect x="15.5" y="5.5" width="3" height="13" rx="1" fill="#b91c1c" />
+          </svg>
+          <span>Body <em>Muscles</em></span>
+        </a>
+        <span class="version" data-site-version hidden></span>
+        <nav class="site-nav" aria-label="Primary">
+          <a class="nav-section" href="#start">Start</a>
+          <a class="nav-section" href="#guides">Guides</a>
+          <a class="nav-section" href="#anatomy">Anatomy</a>
+          <a class="nav-section" href="#reference">Reference</a>
+          <a class="icon-button" href="https://github.com/emmorts/body-muscles" aria-label="GitHub repository">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"
+              />
             </svg>
-            <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </a>
+          <button class="icon-button" id="themeToggle" type="button" aria-label="Dark theme" aria-pressed="false">
+            <svg class="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+              <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
+            </svg>
+            <svg class="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
             </svg>
           </button>
         </nav>
       </div>
     </header>
 
-    <main>
-      <!-- ── Hero ──────────────────────────────────────── -->
-      <section class="hero">
-      <div class="container">
-        <h1>Body Muscles</h1>
-        <p>Framework-agnostic interactive SVG body map with 70+ anatomical regions, intensity visualization, and zero dependencies.</p>
-        <div class="install-block">
-          <span class="prefix">$</span>
-          <span class="cmd">npm install @emmorts/body-muscles</span>
-          <button class="copy-btn" id="installCopyBtn" aria-label="Copy">
-            <svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-            <svg
-              class="icon-check"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              stroke-width="2.5"
-              style="display: none"
-            >
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
-          </button>
-        </div>
-        <div class="hero-actions">
-          <a href="#demo" class="btn btn-primary">Live Demo</a>
-          <a href="#api" class="btn btn-outline">API Reference</a>
-          <a href="https://github.com/emmorts/body-muscles" class="btn btn-outline" target="_blank" rel="noopener">GitHub</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Features ──────────────────────────────────── -->
-    <section id="features">
-      <div class="container">
-        <h2>Features</h2>
-        <div class="features-grid">
-          <div class="card feature-card">
-            <div class="feature-icon">0</div>
-            <h3>Zero Dependencies</h3>
-            <p>Pure TypeScript. No React, no framework lock-in. Works everywhere the DOM exists.</p>
-          </div>
-          <div class="card feature-card">
-            <div class="feature-icon">&#9881;</div>
-            <h3>70+ Regions</h3>
-            <p>Detailed anatomical mapping covering head, torso, arms, legs, hands and feet.</p>
-          </div>
-          <div class="card feature-card">
-            <div class="feature-icon">&#9734;</div>
-            <h3>Intensity Scale</h3>
-            <p>0-10 color gradient from neutral through yellow, orange, to deep red.</p>
-          </div>
-          <div class="card feature-card">
-            <div class="feature-icon">&#9783;</div>
-            <h3>Multiple Views</h3>
-            <p>Anterior, posterior, and side-by-side views with smooth transitions.</p>
-          </div>
-          <div class="card feature-card">
-            <div class="feature-icon">&#9881;</div>
-            <h3>TypeScript First</h3>
-            <p>Full type definitions, declaration maps, and ESM + CJS dual publish.</p>
-          </div>
-          <div class="card feature-card">
-            <div class="feature-icon">&#9742;</div>
-            <h3>Accessible</h3>
-            <p>Keyboard navigation, ARIA labels, and semantic roles on every path.</p>
-          </div>
-          <div class="card feature-card">
-            <div class="feature-icon">&#9432;</div>
-            <h3>Instant Tooltips</h3>
-            <p>
-              Hovering or focusing a region names it in an instant floating tooltip; keyboard focus also links the region to it with
-              <code>aria-describedby</code>. Replace the content with <code>tooltipFormatter</code>.
+    <main id="main" tabindex="-1">
+      <div class="shell" id="top">
+        <!-- ── Hero ──────────────────────────────────────────────────────── -->
+        <section class="hero" aria-labelledby="heroTitle">
+          <h1 id="heroTitle">The human body, <em>as a chart.</em></h1>
+          <div>
+            <p class="hero-lead">
+              An interactive SVG body map. Give it a state object — intensity and selection per region — and it
+              draws the chart, handles keyboard navigation and tooltips, and labels every region. Any framework, no
+              dependencies.
             </p>
+            <div class="hero-actions">
+              <span class="install"><code>npm i @emmorts/body-muscles</code></span>
+              <a class="button" data-variant="primary" href="#start">Get started</a>
+              <a class="button" href="#reference">API reference</a>
+            </div>
           </div>
-          <div class="card feature-card">
-            <div class="feature-icon">&#8776;</div>
-            <h3>Smooth Geometry</h3>
-            <p>Every region is a smoothed bezier path rather than a faceted polygon, so scaled charts stay clean.</p>
+          <dl class="specs">
+            <div><dt>anatomical regions</dt><dd data-spec="regions">89</dd></div>
+            <div><dt>views, front and back</dt><dd>2</dd></div>
+            <div><dt>canonical groups</dt><dd data-spec="groups">8</dd></div>
+            <div><dt>intensity levels</dt><dd>0–10</dd></div>
+            <div><dt>runtime dependencies</dt><dd>0</dd></div>
+          </dl>
+        </section>
+
+        <!-- ── Playground ────────────────────────────────────────────────── -->
+        <section class="workbench" id="playground" aria-labelledby="playgroundTitle">
+          <h2 class="visually-hidden" id="playgroundTitle">Playground</h2>
+          <div class="workbench-bar">
+            <fieldset>
+              <legend class="label">View</legend>
+              <div class="segmented">
+                <label><input type="radio" name="view" value="FRONT" />Anterior</label>
+                <label><input type="radio" name="view" value="BACK" />Posterior</label>
+                <label><input type="radio" name="view" value="BOTH" checked />Both</label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend class="label">Toggle group</legend>
+              <div class="chip-list" id="groupChips"></div>
+            </fieldset>
+            <button class="button" data-variant="quiet" data-size="sm" type="button" id="resetButton">Reset</button>
           </div>
-        </div>
+
+          <div class="workbench-body">
+            <figure class="plate">
+              <div class="plate-chart" id="chartContainer"></div>
+              <figcaption class="plate-caption">
+                <span>
+                  <strong id="figureTitle">Fig. 1 — Anterior and posterior views.</strong>
+                  Tab into the chart, move with <kbd>←</kbd> <kbd>→</kbd>, select with <kbd>Enter</kbd>.
+                </span>
+                <span class="legend">
+                  <span class="label">0</span>
+                  <span class="legend-ramp" aria-hidden="true"></span>
+                  <span class="label">10 intensity</span>
+                </span>
+              </figcaption>
+            </figure>
+
+            <div class="inspector">
+              <section class="inspector-section">
+                <div class="panel-head">
+                  <h3 class="label" id="regionTitle">Region</h3>
+                  <span class="tag" id="regionStatus" hidden></span>
+                </div>
+                <div class="panel-body">
+                  <p class="empty" id="regionEmpty">Click a region, or focus one and press <kbd>Enter</kbd>.</p>
+                  <div class="region-card" id="regionDetail" hidden>
+                    <div>
+                      <p class="region-name" id="regionName"></p>
+                      <p class="region-meta"><code id="regionId"></code><span id="regionMeta"></span></p>
+                    </div>
+                    <div class="intensity-field">
+                      <label class="label" for="intensitySlider">
+                        Intensity<span class="visually-hidden" id="intensitySliderRegion"></span>
+                      </label>
+                      <output id="regionIntensity" for="intensitySlider">0 / 10</output>
+                      <input class="range" type="range" id="intensitySlider" min="0" max="10" step="1" value="0" />
+                    </div>
+                    <button class="button" data-size="sm" type="button" id="bilateralButton">Select both sides</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="inspector-section">
+                <div class="panel-head">
+                  <h3 class="label" id="selectionTitle">Selected · <span id="selectionCount">0</span></h3>
+                </div>
+                <p class="empty panel-body" id="selectionEmpty">Nothing selected.</p>
+                <ul class="selection-list" id="selectionList" role="list" aria-labelledby="selectionTitle"></ul>
+              </section>
+
+              <section class="inspector-section">
+                <div class="panel-head">
+                  <h3 class="label" id="stateTitle">What you pass in</h3>
+                </div>
+                <div class="code state-output">
+                  <pre tabindex="0" aria-labelledby="stateTitle"><code class="language-javascript" id="stateCode"></code></pre>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
       </div>
-    </section>
 
-    <!-- ── Demo ──────────────────────────────────────── -->
-    <section id="demo">
-      <div class="container">
-        <h2>Interactive Demo</h2>
-        <p>
-          Click any muscle region to select it and hover or focus one to see its instant tooltip. Use the controls on the right to
-          switch views and toggle muscle groups.
-        </p>
-        <div class="demo-grid">
-          <div class="card">
-            <div class="demo-chart-wrap" id="chartContainer"></div>
-          </div>
-          <div class="demo-sidebar">
-            <!-- View toggle -->
-            <div class="card">
-              <div class="view-toggle">
-                <button class="active" data-view="FRONT">Anterior</button>
-                <button data-view="BACK">Posterior</button>
-                <button data-view="BOTH">Both</button>
-              </div>
-            </div>
+      <!-- ── Documentation ──────────────────────────────────────────────── -->
+      <div class="shell docs">
+        <nav class="toc" aria-label="On this page">
+          <details open>
+            <summary>On this page</summary>
+            <ol>
+              <li>
+                <a class="label" href="#start">01 Start</a>
+                <ol>
+                  <li><a href="#install">Install</a></li>
+                  <li><a href="#first-chart">Your first chart</a></li>
+                </ol>
+              </li>
+              <li>
+                <a class="label" href="#guides">02 Guides</a>
+                <ol>
+                  <li><a href="#state">State</a></li>
+                  <li><a href="#selection">Group &amp; bilateral selection</a></li>
+                  <li><a href="#colour">Intensity &amp; colour</a></li>
+                  <li><a href="#theming">Theming</a></li>
+                  <li><a href="#localization">Localization</a></li>
+                  <li><a href="#accessibility">Accessibility</a></li>
+                  <li><a href="#frameworks">Frameworks</a></li>
+                </ol>
+              </li>
+              <li>
+                <a class="label" href="#anatomy">03 Anatomy</a>
+                <ol>
+                  <li><a href="#terminology">Regions &amp; sides</a></li>
+                  <li><a href="#data-only">Data without a DOM</a></li>
+                  <li><a href="#catalog">Region catalog</a></li>
+                </ol>
+              </li>
+              <li>
+                <a class="label" href="#reference">04 Reference</a>
+                <ol>
+                  <li><a href="#options">Options</a></li>
+                  <li><a href="#methods">Methods</a></li>
+                  <li><a href="#types">Types</a></li>
+                  <li><a href="#exports">Data exports</a></li>
+                  <li><a href="#utilities">Utilities</a></li>
+                  <li><a href="#css-variables">CSS custom properties</a></li>
+                </ol>
+              </li>
+            </ol>
+          </details>
+        </nav>
 
-            <!-- Selected info -->
-            <div class="card" id="selectedCard">
-              <div
-                style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600; margin-bottom: 0.5rem"
-              >
-                Selected Muscle
-              </div>
-              <p id="selectedEmpty" style="font-size: 0.85rem; color: var(--fg-muted); font-style: italic">Click a body part to see details</p>
-              <div id="selectedDetail" hidden>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem">
-                  <strong id="selectedName" style="color: var(--accent); font-size: 1rem"></strong>
-                  <span id="selectedBadge" class="badge badge-gray">Inactive</span>
+        <div class="docs-content">
+          <!-- ── 01 Start ───────────────────────────────────────────────── -->
+          <section class="doc-part" id="start" aria-labelledby="startTitle">
+            <p class="eyebrow">01 · Start</p>
+            <h2 id="startTitle">From install to a working chart</h2>
+
+            <section class="doc-section" id="install">
+              <h3 id="installTitle"><a class="anchor" href="#install">Install</a></h3>
+              <p>
+                The package ships ES modules, CommonJS, and a browser global build. TypeScript users need
+                <strong>TypeScript 5.0 or later</strong>; the JavaScript runtime has no such requirement.
+              </p>
+              <div class="tabs" data-tabs>
+                <div class="tab-list" role="tablist" aria-label="Installation method">
+                  <button class="tab" role="tab" type="button">npm</button>
+                  <button class="tab" role="tab" type="button">pnpm</button>
+                  <button class="tab" role="tab" type="button">yarn</button>
+                  <button class="tab" role="tab" type="button">CDN script</button>
+                  <button class="tab" role="tab" type="button">CDN module</button>
                 </div>
-                <div id="selectedId" class="selected-id"></div>
-                <div class="info-row">
-                  <span class="info-label">Intensity</span>
-                  <span class="info-value" id="selectedIntensity">0 / 10</span>
+                <div class="tab-panel" role="tabpanel">
+                  <div class="code"><pre><code class="language-bash">npm install @emmorts/body-muscles</code></pre></div>
                 </div>
-                <div style="margin-top: 0.5rem">
-                  <label class="sr-only" for="intensitySlider" id="intensitySliderLabel">Intensity</label>
-                  <input type="range" id="intensitySlider" min="0" max="10" step="1" value="0" style="width: 100%; accent-color: var(--accent)" />
+                <div class="tab-panel" role="tabpanel">
+                  <div class="code"><pre><code class="language-bash">pnpm add @emmorts/body-muscles</code></pre></div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Muscle groups -->
-            <div class="card">
-              <div
-                style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600; margin-bottom: 0.5rem"
-              >
-                Muscle Groups
-              </div>
-              <div class="group-chips" id="groupChips"></div>
-            </div>
-
-            <!-- Group muscle list -->
-            <div class="card" id="groupMusclesCard" style="display: none">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem">
-                <div
-                  style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600"
-                  id="groupMusclesTitle"
-                >
-                  Muscles
+                <div class="tab-panel" role="tabpanel">
+                  <div class="code"><pre><code class="language-bash">yarn add @emmorts/body-muscles</code></pre></div>
                 </div>
-                <button class="btn btn-outline" id="btnCloseGroup" style="padding: 0.15rem 0.5rem; font-size: 0.7rem">Close</button>
-              </div>
-              <div id="groupMusclesList" class="muscle-list"></div>
-            </div>
-
-            <!-- Stats -->
-            <div class="card">
-              <div
-                style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600; margin-bottom: 0.5rem"
-              >
-                Session
-              </div>
-              <div class="info-row">
-                <span class="info-label">Selected</span>
-                <span class="info-value" id="statSelected">0</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Avg Intensity</span>
-                <span class="info-value" id="statAvg">0</span>
-              </div>
-            </div>
-
-            <!-- Intensity legend -->
-            <div class="card">
-              <div
-                style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-muted); font-weight: 600; margin-bottom: 0.5rem"
-              >
-                Intensity Scale
-              </div>
-              <div class="intensity-bar" id="intensityBar"></div>
-            </div>
-
-            <!-- Actions -->
-            <div class="demo-actions">
-              <button class="btn btn-outline" id="btnReset">Reset</button>
-              <button class="btn btn-primary" id="btnExport">Export JSON</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Installation ──────────────────────────────── -->
-    <section id="install">
-      <div class="container">
-        <h2>Installation</h2>
-        <div class="install-tabs">
-          <div class="install-tab-buttons">
-            <button class="install-tab-btn active" data-tab="npm">npm</button>
-            <button class="install-tab-btn" data-tab="yarn">yarn</button>
-            <button class="install-tab-btn" data-tab="pnpm">pnpm</button>
-            <button class="install-tab-btn" data-tab="cdn-esm">CDN (ESM)</button>
-            <button class="install-tab-btn" data-tab="cdn-umd">CDN (UMD)</button>
-          </div>
-          <div class="install-tab-panel active" data-panel="npm">
-            <pre><code class="language-bash">npm install @emmorts/body-muscles</code></pre>
-          </div>
-          <div class="install-tab-panel" data-panel="yarn">
-            <pre><code class="language-bash">yarn add @emmorts/body-muscles</code></pre>
-          </div>
-          <div class="install-tab-panel" data-panel="pnpm">
-            <pre><code class="language-bash">pnpm add @emmorts/body-muscles</code></pre>
-          </div>
-          <div class="install-tab-panel" data-panel="cdn-esm">
-            <pre><code class="language-html">&lt;script type="module"&gt;
-  import { BodyChart, ViewSide } from 'https://esm.sh/@emmorts/body-muscles';
-&lt;/script&gt;</code></pre>
-            <p class="tab-note"><a href="https://esm.sh" target="_blank" rel="noopener">esm.sh</a> — CDN that serves npm packages as native ES modules.</p>
-          </div>
-          <div class="install-tab-panel" data-panel="cdn-umd">
-            <pre><code class="language-html">&lt;!-- Global: window.BodyMuscles --&gt;
-&lt;script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"&gt;&lt;/script&gt;
-
+                <div class="tab-panel" role="tabpanel">
+                  <div class="code" data-label="index.html">
+                    <pre><code class="language-html">&lt;script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"&gt;&lt;/script&gt;
 &lt;script&gt;
-  const { BodyChart, ViewSide } = BodyMuscles;
+  const { BodyChart, ViewSide } = BodyMuscles; // browser global
 &lt;/script&gt;</code></pre>
-            <p class="tab-note">Works everywhere — no bundler needed, supports <code>file://</code>.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+                  </div>
+                  <p>No bundler needed; works from <code>file://</code>.</p>
+                </div>
+                <div class="tab-panel" role="tabpanel">
+                  <div class="code" data-label="index.html">
+                    <pre><code class="language-html">&lt;script type="module"&gt;
+  import { BodyChart, ViewSide } from "https://esm.sh/@emmorts/body-muscles";
+&lt;/script&gt;</code></pre>
+                  </div>
+                  <p><a href="https://esm.sh">esm.sh</a> serves npm packages as native ES modules.</p>
+                </div>
+              </div>
+            </section>
 
-    <!-- ── Quick Start ───────────────────────────────── -->
-    <section id="quickstart">
-      <div class="container">
-        <h2>Quick Start</h2>
-        <pre><code class="language-typescript">import { BodyChart, ViewSide } from '@emmorts/body-muscles';
+            <section class="doc-section" id="first-chart">
+              <h3 id="firstChartTitle"><a class="anchor" href="#first-chart">Your first chart</a></h3>
+              <ol class="steps" role="list">
+                <li>
+                  <div>
+                    <h4>Mount it</h4>
+                    <p>Pass a container element and an initial state. The chart fills the container's width.</p>
+                  </div>
+                  <div class="code" data-label="main.ts">
+                    <pre><code class="language-typescript">import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
-const chart = new BodyChart(document.getElementById('container'), {
+const container = document.querySelector&lt;HTMLElement&gt;("#body-map");
+if (!container) throw new Error("Missing #body-map");
+
+const chart = new BodyChart(container, {
   view: ViewSide.FRONT,
   bodyState: {},
-  onMuscleClick: (id, name) =&gt; {
-    console.log(`Clicked: ${name} (${id})`);
-  },
-  onMuscleHover: (id) =&gt; {
-    console.log('Hovered:', id);
-  },
-});
-
-// Update body state
-chart.update({
+  onMuscleClick: (id, name) =&gt; console.log(id, name),
+});</code></pre>
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <h4>Render your data</h4>
+                    <p>
+                      State maps region identifiers to an intensity from 0 to 10 and a selected flag. Each update
+                      replaces the whole mapping.
+                    </p>
+                  </div>
+                  <div class="code" data-label="main.ts">
+                    <pre><code class="language-typescript">chart.update({
   bodyState: {
-    'biceps-left': { intensity: 7, selected: true },
-    'chest-upper-right': { intensity: 4, selected: false },
-  }
-});
+    "biceps-left": { intensity: 7, selected: true },
+    "quads-right": { intensity: 3, selected: false },
+  },
+});</code></pre>
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <h4>Clean up</h4>
+                    <p>
+                      Change views in place, and destroy the chart when its widget is removed. Leave it mounted across
+                      page navigation so the back/forward cache can restore it.
+                    </p>
+                  </div>
+                  <div class="code" data-label="main.ts">
+                    <pre><code class="language-typescript">chart.update({ view: ViewSide.BOTH });
 
-// Switch to back view
-chart.update({ view: ViewSide.BACK });
+chart.destroy(); // removes the DOM and every listener</code></pre>
+                  </div>
+                </li>
+              </ol>
+              <p>
+                Runnable vanilla TypeScript and React projects, including a server-rendered React path, live in
+                <a href="https://github.com/emmorts/body-muscles/tree/main/examples"><code>examples/</code></a>.
+              </p>
+            </section>
+          </section>
 
-// Show both views side-by-side
-chart.update({ view: ViewSide.BOTH });
+          <!-- ── 02 Guides ──────────────────────────────────────────────── -->
+          <section class="doc-part" id="guides" aria-labelledby="guidesTitle">
+            <p class="eyebrow">02 · Guides</p>
+            <h2 id="guidesTitle">How the chart thinks</h2>
 
-// Cleanup when done
-chart.destroy();</code></pre>
-      </div>
-    </section>
-
-    <!-- ── API Reference ─────────────────────────────── -->
-    <section id="api">
-      <div class="container">
-        <h2>API Reference</h2>
-
-        <h3><code>new BodyChart(container, options)</code></h3>
-        <p>Creates and mounts an interactive SVG body map inside the given DOM element. Optional fields set to <code>undefined</code> use their documented defaults; explicit <code>false</code> values are preserved.</p>
-
-        <h3>BodyChartOptions</h3>
-        <div style="overflow-x: auto">
-          <table class="api-table">
-            <thead>
-              <tr>
-                <th>Property</th>
-                <th>Type</th>
-                <th>Default</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>view</code></td>
-                <td><code>ViewSide</code></td>
-                <td>—</td>
-                <td>Anatomical view: <code>"FRONT"</code>, <code>"BACK"</code>, or <code>"BOTH"</code></td>
-              </tr>
-              <tr>
-                <td><code>bodyState</code></td>
-                <td><code>BodyState</code></td>
-                <td>—</td>
-                <td>Map of muscle IDs to <code>{ intensity, selected }</code></td>
-              </tr>
-              <tr>
-                <td><code>onMuscleClick</code></td>
-                <td><code>(id, name) =&gt; void</code></td>
-                <td><code>noop</code></td>
-                <td>Fired when a muscle region is clicked</td>
-              </tr>
-              <tr>
-                <td><code>onMuscleHover</code></td>
-                <td><code>(id | null) =&gt; void</code></td>
-                <td><code>noop</code></td>
-                <td>Fired on hover enter/leave</td>
-              </tr>
-              <tr>
-                <td><code>className</code></td>
-                <td><code>string</code></td>
-                <td><code>""</code></td>
-                <td>Extra CSS class for the container</td>
-              </tr>
-              <tr>
-                <td><code>ariaLabel</code></td>
-                <td><code>string</code></td>
-                <td>auto</td>
-                <td>Accessibility label</td>
-              </tr>
-              <tr>
-                <td><code>showViewLabel</code></td>
-                <td><code>boolean</code></td>
-                <td><code>false</code></td>
-                <td>Show "Anterior / Posterior / Both" overlay labels</td>
-              </tr>
-              <tr>
-                <td><code>enableTransitions</code></td>
-                <td><code>boolean</code></td>
-                <td><code>true</code></td>
-                <td>Smooth CSS transitions</td>
-              </tr>
-              <tr>
-                <td><code>showTooltip</code></td>
-                <td><code>boolean</code></td>
-                <td><code>true</code></td>
-                <td>Display the instant floating tooltip</td>
-              </tr>
-              <tr>
-                <td><code>tooltipFormatter</code></td>
-                <td><code>(muscle, state) =&gt; string</code></td>
-                <td>muscle name</td>
-                <td>Custom tooltip content. The default appends the numeric intensity when the region has state</td>
-              </tr>
-              <tr>
-                <td><code>intensityColor</code></td>
-                <td><code>(intensity) =&gt; string</code></td>
-                <td><code>INTENSITY_COLORS</code></td>
-                <td>Fill-colour resolver for region intensity</td>
-              </tr>
-              <tr>
-                <td><code>labels</code></td>
-                <td><code>ChartLabels</code></td>
-                <td><code>{}</code></td>
-                <td>Localize the chart name, region names, tooltips, intensity wording, and view labels</td>
-              </tr>
-              <tr>
-                <td><code>interactive</code></td>
-                <td><code>boolean</code></td>
-                <td><code>true</code></td>
-                <td>Enable pointer/keyboard interaction; <code>false</code> renders a static labelled graphic</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <h3>Accessibility</h3>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          The chart is a composite widget with a <strong>single tab stop</strong>: <code>Tab</code> enters
-          on the first region and leaves in one step. Within the chart, <code>ArrowRight</code>/<code>ArrowDown</code>
-          and <code>ArrowLeft</code>/<code>ArrowUp</code> move by one region, <code>Home</code>/<code>End</code>
-          jump to the first/last region, <code>Enter</code>/<code>Space</code> activate the focused region, and
-          <code>Escape</code> dismisses the tooltip. Each region is a toggle button whose pressed state tracks
-          <code>selected</code>, and keyboard focus shows a high-contrast ring. Set <code>interactive: false</code>
-          for a display-only chart announced as a single labelled graphic.
-        </p>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          Verification covers keyboard interaction, Chromium's accessibility tree, and targeted automated audits.
-          Screen-reader announcements and browse/focus-mode behavior remain unverified; these checks do not establish full WCAG conformance.
-        </p>
-
-        <h3>Instance Methods</h3>
-        <div style="overflow-x: auto">
-          <table class="api-table">
-            <thead>
-              <tr>
-                <th>Method</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>update(options)</code></td>
-                <td>Merge partial options; <code>undefined</code> values are ignored. Changing <code>view</code> or <code>interactive</code> rebuilds the chart; every other change applies in place and preserves focus.</td>
-              </tr>
-              <tr>
-                <td><code>destroy()</code></td>
-                <td>Remove the chart from the DOM and clean up all event listeners.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <h3>State Updates</h3>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          <code>update()</code> merges the options object shallowly and ignores <code>undefined</code> values,
-          but <code>bodyState</code> is <strong>replaced as a whole</strong>: a region omitted from the new
-          mapping returns to its default (intensity 0, unselected). The chart never mutates the mapping you
-          pass and keeps no selection state of its own.
-        </p>
-        <pre><code class="language-typescript">// Keep every other region and change one.
-chart.update({ bodyState: { ...current, "biceps-left": { intensity: 7, selected: true } } });
-
-// Apply a patch built elsewhere to the current mapping.
-chart.update({ bodyState: { ...current, ...patch } });
+            <section class="doc-section" id="state">
+              <h3 id="stateGuideTitle"><a class="anchor" href="#state">State</a></h3>
+              <p>
+                You own the state; the chart keeps none of its own and never mutates what you pass.
+                <code>update()</code> merges options shallowly and ignores <code>undefined</code> values, but
+                <code>bodyState</code> is <strong>replaced as a whole</strong>: a region missing from the new mapping
+                returns to intensity 0, unselected. Use spreads to keep or remove entries — there is deliberately no
+                separate patch method with different merge rules.
+              </p>
+              <div class="code">
+                <pre><code class="language-typescript">// Keep every other region and change one.
+chart.update({ bodyState: { ...state, "biceps-left": { intensity: 7, selected: true } } });
 
 // Remove one region's state.
-const { "biceps-left": removed, ...rest } = current;
+const { "biceps-left": removed, ...rest } = state;
 chart.update({ bodyState: rest });</code></pre>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          There is deliberately no separate patch method: a spread expresses both preservation and removal,
-          and a second entry point with different merge rules would only make the two easy to mix up.
-        </p>
+              </div>
+              <p>
+                Changing <code>view</code> or <code>interactive</code> rebuilds the chart. Every other update applies in
+                place, preserving keyboard focus and any open tooltip.
+              </p>
 
-        <h3>Intensity Values</h3>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          An intensity is a <strong>finite integer from 0 to 10</strong>. <code>createBodyPartState()</code>,
-          the constructor, and <code>update()</code> enforce that rule and throw a descriptive
-          <code>Error</code> for fractions, negative numbers, values above 10, <code>NaN</code>, or
-          infinities. A rejected <code>update()</code> applies no submitted options or rendering changes.
-          It cannot undo earlier consumer mutations to already-accepted objects: the chart retains the
-          mapping and entries by reference. Validate before mutating shared state, or submit a new mapping
-          with new changed entries. Colour helpers round and clamp defensively when rendering mutated state.
-        </p>
-        <pre><code class="language-typescript">isValidIntensity(9);   // true
+              <h4>Intensity values</h4>
+              <p>
+                An intensity is a <strong>finite integer from 0 to 10</strong>. The constructor,
+                <code>update()</code>, and <code>createBodyPartState()</code> throw a descriptive error for fractions,
+                negatives, values above 10, <code>NaN</code>, or infinities, and a rejected <code>update()</code>
+                applies nothing. Use <code>isValidIntensity()</code> to check input first.
+              </p>
+              <div class="code">
+                <pre><code class="language-typescript">isValidIntensity(9);   // true
 isValidIntensity(9.5); // false
 
-// Invalid bodyState entry for "biceps-left": intensity 12. Expected an integer from 0 to 10.
+// Error: Invalid bodyState entry for "biceps-left": intensity 12. Expected an integer from 0 to 10.
 chart.update({ bodyState: { "biceps-left": { intensity: 12, selected: true } } });</code></pre>
+              </div>
+              <p class="note">
+                The chart holds your mapping by reference, so a rejected update cannot undo mutations you already made
+                to an accepted object. Validate before mutating shared state, or submit a new mapping.
+              </p>
+            </section>
 
-        <h3>Localization</h3>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          Every rendered string comes from the <code>labels</code> option; each member is optional and falls
-          back to English. The dedicated option wins over the matching member, which wins over the default:
-          <code>ariaLabel</code> beats <code>labels.chart</code>, and <code>tooltipFormatter</code> beats
-          <code>labels.tooltip</code>. Like <code>bodyState</code>, <code>labels</code> is replaced as a whole
-          by <code>update()</code> — spread the current set to change one member — and label updates apply in
-          place without rebuilding the chart or dropping focus.
-          Explicit label updates refresh every label even when the same object is mutated and reused.
-          Region and tooltip callbacks receive <code>undefined</code> state for omitted regions,
-          or the supplied state object for tracked regions, including explicit intensity 0.
-        </p>
-        <div style="overflow-x: auto">
-          <table class="api-table">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Renders</th>
-                <th>Default</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><code>chart(view)</code></td><td>Accessible name of the chart</td><td>Anterior / Posterior body map view</td></tr>
-              <tr><td><code>regionName(muscle)</code></td><td>Base region name, used by the accessible name, tooltip, and <code>onMuscleClick</code></td><td><code>muscle.name</code></td></tr>
-              <tr><td><code>region(muscle, state)</code></td><td>Complete accessible name of a region</td><td>name, plus <code>- intensity N</code> when intensity &gt; 0</td></tr>
-              <tr><td><code>intensity(value)</code></td><td>How a numeric intensity is written</td><td><code>intensity 7</code></td></tr>
-              <tr><td><code>tooltip(muscle, state)</code></td><td>Tooltip content</td><td>name, plus <code>- intensity N</code> when state exists</td></tr>
-              <tr><td><code>viewLabel(view)</code></td><td>Overlay label for one side</td><td><code>Anterior View</code> / <code>Posterior View</code></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <pre><code class="language-typescript">const labels: ChartLabels = {
-  chart: () => "Körperkarte",
-  regionName: (muscle) => GERMAN_NAMES[muscle.id] ?? muscle.name,
-  intensity: (value) => `Intensität ${value}`,
-  viewLabel: (view) => (view === ViewSide.FRONT ? "Vorderansicht" : "Rückansicht"),
+            <section class="doc-section" id="selection">
+              <h3 id="selectionGuideTitle"><a class="anchor" href="#selection">Group &amp; bilateral selection</a></h3>
+              <p>
+                Two pure helpers return a new state for a whole group or for a region and its opposite side. The
+                playground's group chips use <code>setGroupSelection</code>; its “Select both sides” button uses
+                <code>setBilateralSelection</code>.
+              </p>
+              <div class="code">
+                <pre><code class="language-typescript">import { setBilateralSelection, setGroupSelection } from "@emmorts/body-muscles";
+
+state = setGroupSelection(state, "Arms", "toggle");
+state = setBilateralSelection(state, "biceps-right", "select");
+chart.update({ bodyState: state });</code></pre>
+              </div>
+              <ul>
+                <li>
+                  Actions are explicit: <code>"select"</code>, <code>"deselect"</code>, or <code>"toggle"</code>.
+                  Toggle deselects a fully selected target and otherwise selects all of it.
+                </li>
+                <li>
+                  Groups span both views. Pairs come from <code>MUSCLE_PAIRS</code>; central regions such as
+                  <code>spine</code> act alone.
+                </li>
+                <li>
+                  Existing intensities and unrelated entries are kept. Newly selected regions start at intensity 0.
+                </li>
+                <li>Inputs are never mutated; a no-op returns the same mapping, and unchanged entries are shared.</li>
+              </ul>
+            </section>
+
+            <section class="doc-section" id="colour">
+              <h3 id="colourTitle"><a class="anchor" href="#colour">Intensity &amp; colour</a></h3>
+              <p>
+                Region fill comes from the <code>intensityColor</code> resolver, which defaults to the
+                <code>INTENSITY_COLORS</code> palette. Build a resolver from your own stops with
+                <code>createIntensityColorScale</code>; missing levels fall back to the default palette and intensities
+                are rounded and clamped into 0–10.
+              </p>
+              <div class="code">
+                <pre><code class="language-typescript">const intensityColor = createIntensityColorScale({
+  0: "var(--region-rest, #94a3b8)",
+  5: "#f59e0b",
+  10: "#dc2626",
+});
+
+new BodyChart(container, { view: ViewSide.FRONT, bodyState, intensityColor });</code></pre>
+              </div>
+              <p>
+                Resolvers may return CSS custom-property expressions. The browser resolves them on each region, so they
+                follow theme changes without an <code>update()</code> — this site's resting colour works that way.
+              </p>
+            </section>
+
+            <section class="doc-section" id="theming">
+              <h3 id="themingTitle"><a class="anchor" href="#theming">Theming</a></h3>
+              <p>
+                Every chart style reads a <code>--bm-*</code> custom property with the built-in value as its fallback.
+                Set them on the container or any ancestor — this site's light and dark themes are nothing more than
+                two sets of these. Selection draws its own outline and glow, and keyboard focus a separate halo, so
+                both stay distinguishable from any intensity palette.
+              </p>
+              <div class="code" data-label="styles.css">
+                <pre><code class="language-css">.body-map {
+  --bm-region-stroke: #4a4238;
+  --bm-region-stroke-selected: #1c1915;
+  --bm-region-stroke-focus: #1d56c9;
+  --bm-tooltip-bg: #1c1915;
+  --bm-svg-shadow: none;
+}</code></pre>
+              </div>
+              <p>
+                Transitions are disabled whenever the system requests reduced motion, regardless of
+                <code>enableTransitions</code>. All properties are listed in the
+                <a href="#css-variables">reference</a>.
+              </p>
+            </section>
+
+            <section class="doc-section" id="localization">
+              <h3 id="localizationTitle"><a class="anchor" href="#localization">Localization</a></h3>
+              <p>
+                Every rendered string comes from the optional <code>labels</code> members, falling back to English.
+                A dedicated option beats the matching member: <code>ariaLabel</code> over <code>labels.chart</code>,
+                and <code>tooltipFormatter</code> over <code>labels.tooltip</code>. Like <code>bodyState</code>,
+                <code>labels</code> is replaced as a whole and applied in place.
+              </p>
+              <div class="code">
+                <pre><code class="language-typescript">const labels: ChartLabels = {
+  chart: () =&gt; "Körperkarte",
+  regionName: (muscle) =&gt; GERMAN_NAMES[muscle.id] ?? muscle.name,
+  intensity: (value) =&gt; `Intensität ${value}`,
+  viewLabel: (view) =&gt; (view === ViewSide.FRONT ? "Vorderansicht" : "Rückansicht"),
 };
 
-chart.update({ labels: { ...labels, intensity: (value) => `${value} von 10` } });</code></pre>
+chart.update({ labels: { ...labels, intensity: (value) =&gt; `${value} von 10` } });</code></pre>
+              </div>
+              <div class="table-wrap" role="region" aria-labelledby="labelsCaption" tabindex="0">
+                <table class="table">
+                  <caption class="visually-hidden" id="labelsCaption">Label members</caption>
+                  <thead>
+                    <tr><th scope="col">Member</th><th scope="col">Renders</th><th scope="col">Default</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><code>chart(view)</code></td><td>Accessible name of the chart</td><td>Anterior / Posterior body map view</td></tr>
+                    <tr><td><code>regionName(muscle)</code></td><td>Base name used by labels, tooltip, and <code>onMuscleClick</code></td><td><code>muscle.name</code></td></tr>
+                    <tr><td><code>region(muscle, state)</code></td><td>Complete accessible name of a region</td><td>Name, plus “- intensity N” above 0</td></tr>
+                    <tr><td><code>intensity(value)</code></td><td>How an intensity is written</td><td>“intensity 7”</td></tr>
+                    <tr><td><code>tooltip(muscle, state)</code></td><td>Tooltip content</td><td>Name, plus “- intensity N” when state exists</td></tr>
+                    <tr><td><code>viewLabel(view)</code></td><td>Overlay label for one side</td><td>Anterior View / Posterior View</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                Region and tooltip callbacks receive <code>undefined</code> for regions missing from state, and the
+                supplied object otherwise — including an explicit intensity 0. Explicitly passing <code>labels</code>
+                refreshes every label, even when you mutate and resubmit the same object.
+              </p>
+            </section>
 
-        <h3>Anatomy Data &amp; Terminology</h3>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          The dataset describes <strong>regions</strong> of the body, not a muscle-by-muscle inventory: alongside
-          individual muscles it contains areas such as <code>head</code>, <code>face</code>, <code>nape</code>,
-          <code>spine</code>, and <code>knee-left</code>. Sides are the <strong>subject's own</strong> left and
-          right (the anatomical convention), not the viewer's, so <code>biceps-left</code> is the subject's left
-          arm and is drawn on the viewer's right. Regions without a side suffix are central. Canonical side and
-          group metadata is available directly, so consumers never parse identifiers.
-        </p>
-        <pre><code class="language-typescript">MUSCLE_METADATA["biceps-left"];
-// { id: "biceps-left", name: "Left Biceps", view: "FRONT", side: "left", group: "Arms" }
+            <section class="doc-section" id="accessibility">
+              <h3 id="accessibilityTitle"><a class="anchor" href="#accessibility">Accessibility</a></h3>
+              <p>
+                An interactive chart is one composite widget with a <strong>single tab stop</strong>. Each region is a
+                toggle button whose pressed state follows <code>selected</code>.
+              </p>
+              <div class="table-wrap" role="region" aria-labelledby="keysCaption" tabindex="0">
+                <table class="table">
+                  <caption class="visually-hidden" id="keysCaption">Keyboard interaction</caption>
+                  <thead>
+                    <tr><th scope="col">Key</th><th scope="col">Action</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><kbd>Tab</kbd></td><td>Enter or leave the chart in one step</td></tr>
+                    <tr><td><kbd>→</kbd> <kbd>↓</kbd> / <kbd>←</kbd> <kbd>↑</kbd></td><td>Next / previous region</td></tr>
+                    <tr><td><kbd>Home</kbd> / <kbd>End</kbd></td><td>First / last region</td></tr>
+                    <tr><td><kbd>Enter</kbd> <kbd>Space</kbd></td><td>Activate the focused region</td></tr>
+                    <tr><td><kbd>Esc</kbd></td><td>Dismiss the tooltip</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                Set <code>interactive: false</code> for a display-only chart announced as one labelled image.
+              </p>
+              <p class="note">
+                Verified with keyboard interaction, Chromium's accessibility tree, and automated audits. Screen-reader
+                announcements and browse-mode behaviour have not been verified, and these checks do not establish full
+                WCAG conformance.
+              </p>
+            </section>
 
-getMuscleMetadata(raw); // MuscleMetadata | undefined, for dynamic input</code></pre>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          <code>MUSCLE_GROUPS</code> is the canonical group table, checked at compile time against the dataset and
-          verified at build time to cover every region exactly once; <code>MuscleGroup</code> is the union of its
-          keys. <code>extractMuscleGroup(id)</code> returns the identifier prefix (<code>"biceps"</code> for
-          <code>biceps-left</code>), which is <em>not</em> the display group — use
-          <code>MUSCLE_METADATA[id].group</code> for that.
-        </p>
-
-        <h3>Types</h3>
-        <p>
-          TypeScript consumers require <strong>TypeScript 5.0+</strong>: the declarations use const type
-          parameters, which older compilers cannot parse even with <code>skipLibCheck</code>.
-          Upgrade the compiler when migrating to the strict identifier types; JavaScript runtime
-          requirements are unchanged.
-        </p>
-        <pre><code class="language-typescript">enum ViewSide {
-  FRONT = "FRONT",
-  BACK = "BACK",
-  BOTH = "BOTH",
-}
-
-// Derived from the dataset: the union of every region identifier.
-type MuscleId = "head" | "face" | "neck-left" | /* … 89 in total … */ "foot-back-right";
-
-interface BodyPartState {
-  intensity: number;  // 0-10
-  selected: boolean;
-}
-
-type BodyState = Partial&lt;Record&lt;MuscleId, BodyPartState&gt;&gt;;
-
-type IntensityColorResolver = (intensity: number) =&gt; string;
-
-type MuscleSide = "left" | "right" | "central";
-type MuscleGroup = keyof typeof MUSCLE_GROUPS;
-type SelectionAction = "select" | "deselect" | "toggle";
-
-interface MuscleMetadata {
-  id: MuscleId;
-  name: string;
-  view: ViewSide;
-  side: MuscleSide;  // the subject's own side
-  group: MuscleGroup;
-}</code></pre>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          <code>MuscleId</code> is derived from the dataset, so state keys, callbacks, and helpers are checked
-          at compile time and a misspelled literal is an error. Identifiers that only exist at runtime are not
-          narrowed automatically: narrow them with <code>isMuscleId(value)</code> before using them as keys, or
-          resolve them with <code>getMuscleDef(id)</code>, which accepts any string and returns
-          <code>undefined</code> when unknown.
-        </p>
-
-        <h3>Data Exports</h3>
-        <div style="overflow-x: auto">
-          <table class="api-table">
-            <thead>
-              <tr>
-                <th>Export</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>MUSCLE_MAP</code></td>
-                <td>All 70+ muscle definitions (front + back)</td>
-              </tr>
-              <tr>
-                <td><code>MUSCLE_DEFS</code></td>
-                <td>The same definitions keyed by identifier, for direct typed access; unknown literal keys are a compile error</td>
-              </tr>
-              <tr>
-                <td><code>FRONT_MUSCLES</code></td>
-                <td>Anterior-view muscle definitions</td>
-              </tr>
-              <tr>
-                <td><code>BACK_MUSCLES</code></td>
-                <td>Posterior-view muscle definitions</td>
-              </tr>
-              <tr>
-                <td><code>MUSCLE_GROUPS</code></td>
-                <td>Named groups: Head & Neck, Shoulders, Arms, Chest, Back, Abdominals, Legs, Hands & Feet</td>
-              </tr>
-              <tr>
-                <td><code>MUSCLE_PAIRS</code></td>
-                <td>Readonly canonical left/right counterparts in the same anatomical view</td>
-              </tr>
-              <tr>
-                <td><code>MUSCLE_METADATA</code></td>
-                <td>Canonical side, group, view, and name for every region, keyed by identifier</td>
-              </tr>
-              <tr>
-                <td><code>INTENSITY_COLORS</code></td>
-                <td>Color map (0-10) from slate → yellow → orange → red</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <h3>Data-Only Entry Points</h3>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          Rendering the map without a DOM needs the anatomy data, not the chart. Import it from the dedicated
-          subpath so the chart code and browser globals are never pulled in:
-          <code>@emmorts/body-muscles/data</code> exports the same canonical values listed above, and
-          <code>@emmorts/body-muscles/data.json</code> is the JSON document below for consumers that cannot run
-          JavaScript at all.
-        </p>
-        <pre><code class="language-typescript">import { MUSCLE_MAP, MUSCLE_METADATA, INTENSITY_COLORS } from "@emmorts/body-muscles/data";
-
-const { MUSCLE_MAP } = require("@emmorts/body-muscles/data"); // CommonJS</code></pre>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          The JSON artifact carries a versioned schema — <code>schemaVersion</code>, plus
-          <code>intensityColors</code> (11 CSS colours, index 0-10), <code>frontMuscles</code>, and
-          <code>backMuscles</code> whose <code>id</code>, <code>name</code>, <code>path</code>, and
-          <code>view</code> match <code>MuscleDef</code>. Additions keep the version; only a breaking shape change
-          bumps it. Import attributes need Node 20.10+; the module subpaths work in Node 16+ and any modern
-          bundler.
-        </p>
-
-        <h3>Utility Functions</h3>
-        <div style="overflow-x: auto">
-          <table class="api-table">
-            <thead>
-              <tr>
-                <th>Function</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>getMuscleColor(state, isHovered, resolver?)</code></td>
-                <td>Returns the fill colour for a given <code>BodyPartState</code></td>
-              </tr>
-              <tr>
-                <td><code>resolveIntensityColor(intensity)</code></td>
-                <td>Default intensity → colour resolver</td>
-              </tr>
-              <tr>
-                <td><code>createIntensityColorScale(colors)</code></td>
-                <td>Build a resolver from a custom intensity palette</td>
-              </tr>
-              <tr>
-                <td><code>setGroupSelection(state, group, action)</code></td>
-                <td>Pure selection operation on a canonical group across both views</td>
-              </tr>
-              <tr>
-                <td><code>setBilateralSelection(state, id, action)</code></td>
-                <td>Pure selection operation on a region and its canonical counterpart</td>
-              </tr>
-              <tr>
-                <td><code>filterMuscles(view)</code></td>
-                <td>Returns <code>MuscleDef[]</code> for the given view</td>
-              </tr>
-              <tr>
-                <td><code>getMuscleDef(id)</code></td>
-                <td>Region lookup by any string; <code>undefined</code> when unknown</td>
-              </tr>
-              <tr>
-                <td><code>getMuscleMetadata(id)</code></td>
-                <td>Side/group/view lookup by any string; <code>undefined</code> when unknown</td>
-              </tr>
-              <tr>
-                <td><code>isMuscleId(value)</code></td>
-                <td>Type guard narrowing a string to <code>MuscleId</code></td>
-              </tr>
-              <tr>
-                <td><code>extractMuscleSide(id)</code></td>
-                <td>Canonical side derived from the identifier suffix</td>
-              </tr>
-              <tr>
-                <td><code>extractMuscleGroup(id)</code></td>
-                <td>Identifier prefix only — not the display group</td>
-              </tr>
-              <tr>
-                <td><code>createBodyPartState(intensity?, selected?)</code></td>
-                <td>Factory with validation</td>
-              </tr>
-              <tr>
-                <td><code>isValidIntensity(value)</code></td>
-                <td>Type guard for a finite integer intensity (0-10)</td>
-              </tr>
-              <tr>
-                <td><code>extractMuscleSide(id)</code></td>
-                <td>Returns <code>"left" | "right" | "central"</code></td>
-              </tr>
-              <tr>
-                <td><code>extractMuscleGroup(id)</code></td>
-                <td>Returns base group string</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <h3>Group and bilateral selection</h3>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          Actions are explicit: <code>"select"</code>, <code>"deselect"</code>, or <code>"toggle"</code>.
-          Toggle deselects an entirely selected target set and selects a mixed set. Groups span both views;
-          bilateral selection uses canonical <code>MUSCLE_PAIRS</code>, with central/unpaired regions acting
-          alone. Neither helper mutates input or changes existing intensities or unrelated state.
-          Missing selected entries start at intensity 0; missing deselected entries stay absent.
-          No-ops return the original mapping and unchanged entries are shared, not deep-copied.
-        </p>
-        <pre><code class="language-typescript">state = setGroupSelection(state, "Arms", "toggle");
-state = setBilateralSelection(state, "biceps-right", "deselect");
-chart.update({ bodyState: state }); // Complete replacement, not a per-region patch.</code></pre>
-
-        <h3>Styling &amp; Theming</h3>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          Chart styles reference <code>--bm-*</code> CSS custom properties that fall back to the built-in
-          defaults, so the rendered appearance is unchanged until you override one. Set them on the chart
-          container or any ancestor. Selection is drawn as its own outline and glow, and keyboard focus as a
-          dual-tone halo, so both stay distinguishable from the intensity fill with any palette.
-        </p>
-        <div style="overflow-x: auto">
-          <table class="api-table">
-            <thead>
-              <tr>
-                <th>Variable</th>
-                <th>Applies to</th>
-                <th>Default</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td><code>--bm-padding</code></td><td>Wrapper padding</td><td><code>1rem</code></td></tr>
-              <tr><td><code>--bm-max-height</code></td><td>SVG height limit</td><td><code>70vh</code></td></tr>
-              <tr><td><code>--bm-max-width</code></td><td>SVG width limit, single-view charts</td><td><code>400px</code></td></tr>
-              <tr><td><code>--bm-max-width-both</code></td><td>SVG width limit, <code>BOTH</code> view</td><td><code>760px</code></td></tr>
-              <tr><td><code>--bm-svg-shadow</code></td><td>SVG drop shadow</td><td><code>drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3))</code></td></tr>
-              <tr><td><code>--bm-transition-duration</code></td><td>Transition timing</td><td><code>200ms</code></td></tr>
-              <tr><td><code>--bm-region-stroke</code></td><td>Unselected region outline</td><td><code>#1e293b</code></td></tr>
-              <tr><td><code>--bm-region-stroke-width</code></td><td>Unselected outline weight</td><td><code>0.1</code></td></tr>
-              <tr><td><code>--bm-region-stroke-selected</code></td><td>Selected region outline</td><td><code>#ffffff</code></td></tr>
-              <tr><td><code>--bm-region-stroke-width-selected</code></td><td>Selected outline weight</td><td><code>0.3</code></td></tr>
-              <tr><td><code>--bm-region-stroke-focus</code></td><td>Keyboard-focus outline</td><td><code>#1d4ed8</code></td></tr>
-              <tr><td><code>--bm-region-stroke-width-focus</code></td><td>Keyboard-focus outline weight</td><td><code>0.5</code></td></tr>
-              <tr><td><code>--bm-region-focus-shadow</code></td><td>Keyboard-focus halo filter</td><td>dual <code>drop-shadow(...)</code> ring</td></tr>
-              <tr><td><code>--bm-region-active-shadow</code></td><td>Selected / hovered filter</td><td><code>url(#glow)</code></td></tr>
-              <tr><td><code>--bm-region-inactive-opacity</code></td><td>Fill opacity of an untouched region</td><td><code>0.6</code></td></tr>
-              <tr><td><code>--bm-background-fill</code></td><td>Decorative silhouette fill</td><td><code>#cbd5e1</code></td></tr>
-              <tr><td><code>--bm-background-opacity</code></td><td>Decorative silhouette opacity</td><td><code>0.1</code></td></tr>
-              <tr><td><code>--bm-tooltip-bg</code></td><td>Tooltip background</td><td><code>rgba(15, 23, 42, 0.92)</code></td></tr>
-              <tr><td><code>--bm-tooltip-color</code></td><td>Tooltip text</td><td><code>#f8fafc</code></td></tr>
-              <tr><td><code>--bm-tooltip-padding</code></td><td>Tooltip padding</td><td><code>0.35rem 0.65rem</code></td></tr>
-              <tr><td><code>--bm-tooltip-radius</code></td><td>Tooltip corner radius</td><td><code>0.5rem</code></td></tr>
-              <tr><td><code>--bm-tooltip-font-size</code></td><td>Tooltip font size</td><td><code>0.75rem</code></td></tr>
-              <tr><td><code>--bm-tooltip-font-weight</code></td><td>Tooltip font weight</td><td><code>500</code></td></tr>
-              <tr><td><code>--bm-tooltip-line-height</code></td><td>Tooltip line height</td><td><code>1.2</code></td></tr>
-              <tr><td><code>--bm-tooltip-shadow</code></td><td>Tooltip shadow</td><td>two-layer <code>box-shadow</code></td></tr>
-              <tr><td><code>--bm-tooltip-border</code></td><td>Tooltip border</td><td><code>1px solid rgba(255, 255, 255, 0.15)</code></td></tr>
-              <tr><td><code>--bm-tooltip-backdrop-filter</code></td><td>Tooltip backdrop filter</td><td><code>blur(8px)</code></td></tr>
-              <tr><td><code>--bm-view-label-color</code></td><td>View label text</td><td><code>#64748b</code></td></tr>
-              <tr><td><code>--bm-view-label-bg</code></td><td>View label background</td><td><code>rgba(15, 23, 42, 0.5)</code></td></tr>
-              <tr><td><code>--bm-view-label-padding</code></td><td>View label padding</td><td><code>0.25rem 0.75rem</code></td></tr>
-              <tr><td><code>--bm-view-label-radius</code></td><td>View label corner radius</td><td><code>9999px</code></td></tr>
-              <tr><td><code>--bm-view-label-font-size</code></td><td>View label font size</td><td><code>0.875rem</code></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          Region fill comes from the <code>intensityColor</code> resolver. Build one from a custom palette
-          with <code>createIntensityColorScale({ 0: "#e5e7eb", 5: "#f59e0b", 10: "#dc2626" })</code>;
-          intensities are rounded and clamped into 0-10 and missing levels fall back to the default palette.
-          Resolvers can return <code>var(--application-color, #ef4444)</code>: the browser resolves
-          inherited custom properties on each SVG region. The fill attribute retains the expression;
-          <code>getComputedStyle(region).fill</code> reports the resolved colour.
-          Transitions are disabled whenever the system requests reduced motion, regardless of
-          <code>enableTransitions</code>.
-        </p>
-      </div>
-    </section>
-
-    <!-- ── Anatomy Catalog ───────────────────────────── -->
-    <section id="catalog">
-      <div class="container">
-        <h2>Anatomy Catalog</h2>
-        <p>
-          Search the canonical regions by identifier, display name, group, side, or view. This catalog is
-          generated from the library's exported anatomy data, so it always matches the installed version —
-          previews are drawn from the same geometry the chart renders.
-        </p>
-
-        <form class="catalog-controls" id="catalogControls" role="search">
-          <div class="catalog-field">
-            <label for="catalogSearch">Search regions</label>
-            <input
-              id="catalogSearch"
-              type="search"
-              placeholder="biceps, Left, Arms…"
-              autocomplete="off"
-              spellcheck="false"
-            />
-          </div>
-          <div class="catalog-field">
-            <label for="catalogGroup">Group</label>
-            <select id="catalogGroup">
-              <option value="">All groups</option>
-            </select>
-          </div>
-          <div class="catalog-field">
-            <label for="catalogSide">Side</label>
-            <select id="catalogSide">
-              <option value="">All sides</option>
-              <option value="left">Subject's left</option>
-              <option value="right">Subject's right</option>
-              <option value="central">Central</option>
-            </select>
-          </div>
-          <div class="catalog-field">
-            <label for="catalogView">View</label>
-            <select id="catalogView">
-              <option value="">All views</option>
-              <option value="FRONT">Anterior</option>
-              <option value="BACK">Posterior</option>
-            </select>
-          </div>
-        </form>
-
-        <div class="catalog-body">
-          <div class="catalog-preview">
-            <div class="catalog-preview-views">
-              <figure>
-                <div class="catalog-preview-figure" id="catalogPreviewFront"></div>
-                <figcaption>Anterior</figcaption>
-              </figure>
-              <figure>
-                <div class="catalog-preview-figure" id="catalogPreviewBack"></div>
-                <figcaption>Posterior</figcaption>
-              </figure>
-            </div>
-            <p class="catalog-preview-caption" id="catalogPreviewCaption"></p>
-          </div>
-
-          <div class="catalog-results-wrap">
-            <p class="catalog-count" id="catalogCount" role="status"></p>
-            <ul class="catalog-results" id="catalogResults" aria-label="Anatomy regions"></ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── Examples ──────────────────────────────────── -->
-    <section id="examples">
-      <div class="container">
-        <h2>Framework Examples</h2>
-        <p>
-          Runnable versions of the vanilla TypeScript and React examples live in the repository's
-          <code>examples/</code> directory, including the server-rendered path:
-        </p>
-        <pre><code class="language-bash">cd examples/vanilla-typescript &amp;&amp; npm install &amp;&amp; npm start   # http://127.0.0.1:5173
-cd examples/react            &amp;&amp; npm install &amp;&amp; npm start   # http://127.0.0.1:5174</code></pre>
-
-        <h3>Vanilla JavaScript</h3>
-        <pre><code class="language-html">&lt;div id="body-map"&gt;&lt;/div&gt;
-&lt;script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"&gt;&lt;/script&gt;
-&lt;script&gt;
-  const { BodyChart, ViewSide } = BodyMuscles;
-
-  const container = document.getElementById('body-map');
-  if (!container) throw new Error('Missing #body-map element');
-
-  const state = {};
-  const chart = new BodyChart(container, {
-    view: ViewSide.FRONT,
-    bodyState: state,
-    onMuscleClick(id) {
-      const cur = state[id] || { intensity: 0, selected: false };
-      state[id] = { ...cur, selected: !cur.selected };
-      chart.update({ bodyState: state }); // bodyState replaces the whole mapping
-    },
-  });
-
-  // Call chart.destroy() when removing this widget from the page.
-  // Leave it mounted on navigation so back/forward-cache restoration works.
-&lt;/script&gt;</code></pre>
-
-        <h3>React</h3>
-        <pre><code class="language-javascript">import { useEffect, useRef, useState } from 'react';
-import { BodyChart, ViewSide } from '@emmorts/body-muscles';
+            <section class="doc-section" id="frameworks">
+              <h3 id="frameworksTitle"><a class="anchor" href="#frameworks">Frameworks</a></h3>
+              <p>
+                The chart is plain DOM, so every framework integrates the same way: create it once the container
+                exists, forward state with <code>update()</code>, and destroy it on unmount.
+              </p>
+              <div class="tabs" data-tabs>
+                <div class="tab-list" role="tablist" aria-label="Framework">
+                  <button class="tab" role="tab" type="button">React</button>
+                  <button class="tab" role="tab" type="button">Vue</button>
+                  <button class="tab" role="tab" type="button">Svelte</button>
+                  <button class="tab" role="tab" type="button">HTML</button>
+                </div>
+                <div class="tab-panel" role="tabpanel">
+                  <div class="code" data-label="BodyMap.jsx">
+                    <pre><code class="language-javascript">import { useEffect, useRef, useState } from "react";
+import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
 export function BodyMap({ view = ViewSide.FRONT }) {
   const containerRef = useRef(null);
   const chartRef = useRef(null);
   const [bodyState, setBodyState] = useState({});
 
-  // Props are read through a ref, so the instance effect depends only on `view`.
-  const latest = useRef({ bodyState });
-  latest.current = { bodyState };
+  // Read state through a ref so the instance effect depends only on `view`.
+  const latest = useRef(bodyState);
+  latest.current = bodyState;
 
   useEffect(() =&gt; {
     const container = containerRef.current;
     if (!container) return undefined;
-
     const chart = new BodyChart(container, {
       view,
-      bodyState: latest.current.bodyState,
+      bodyState: latest.current,
       onMuscleClick(id) {
-        setBodyState(prev =&gt; ({
+        setBodyState((prev) =&gt; ({
           ...prev,
           [id]: { intensity: prev[id]?.intensity ?? 0, selected: !prev[id]?.selected },
         }));
       },
     });
     chartRef.current = chart;
-
-    // Unmounting, a changed `key`, or a view change destroys the chart and its
-    // listeners; nothing is left behind.
     return () =&gt; {
       chart.destroy();
       chartRef.current = null;
     };
   }, [view]);
 
-  // State and callback changes are applied in place, which preserves focus.
+  // State changes apply in place, preserving focus.
   useEffect(() =&gt; {
     chartRef.current?.update({ bodyState });
   }, [bodyState]);
 
   return &lt;div ref={containerRef} /&gt;;
 }</code></pre>
-        <p style="color: var(--fg-muted); font-size: 0.9rem">
-          The chart is constructed in an effect and never during render, so <code>BodyMap</code> is safe to
-          server-render: the server emits an empty container and the chart appears after hydration. Give the
-          component a <code>key</code> to force a clean remount; React 18+ development StrictMode
-          double-invokes effects and the cleanup above handles that without leaking instances.
-        </p>
+                  </div>
+                  <p>
+                    The chart is created in an effect, never during render, so the component is safe to server-render
+                    and survives StrictMode's double-invoked effects.
+                  </p>
+                </div>
+                <div class="tab-panel" role="tabpanel">
+                  <div class="code" data-label="BodyMap.vue">
+                    <pre><code class="language-html">&lt;script setup&gt;
+import { onMounted, onUnmounted, ref, watch } from "vue";
+import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
-        <h3>Vue 3</h3>
-        <pre><code class="language-html">&lt;template&gt;
-  &lt;div ref="container" /&gt;
-&lt;/template&gt;
+const container = ref(null);
+const bodyState = ref({});
+let chart;
 
-&lt;script setup&gt;
-  import { ref, onMounted, onUnmounted, watch } from 'vue';
-  import { BodyChart, ViewSide } from '@emmorts/body-muscles';
-
-  const container = ref(null);
-  const bodyState = ref({});
-  let chart;
-
-  onMounted(() =&gt; {
-    if (!container.value) return;
-    chart = new BodyChart(container.value, {
-      view: ViewSide.FRONT,
-      bodyState: bodyState.value,
-      onMuscleClick(id) {
-        const cur = bodyState.value[id] || { intensity: 0, selected: false };
-        bodyState.value = { ...bodyState.value, [id]: { ...cur, selected: !cur.selected } };
-      },
-    });
+onMounted(() =&gt; {
+  chart = new BodyChart(container.value, {
+    view: ViewSide.FRONT,
+    bodyState: bodyState.value,
+    onMuscleClick(id) {
+      const current = bodyState.value[id] ?? { intensity: 0, selected: false };
+      bodyState.value = { ...bodyState.value, [id]: { ...current, selected: !current.selected } };
+    },
   });
+});
 
-  watch(bodyState, (s) =&gt; chart?.update({ bodyState: s }), { deep: true });
-  onUnmounted(() =&gt; chart?.destroy());
-&lt;/script&gt;</code></pre>
+watch(bodyState, (state) =&gt; chart?.update({ bodyState: state }));
+onUnmounted(() =&gt; chart?.destroy());
+&lt;/script&gt;
 
-        <h3>Svelte</h3>
-        <pre><code class="language-html">&lt;script&gt;
-  import { onMount, onDestroy } from 'svelte';
-  import { BodyChart, ViewSide } from '@emmorts/body-muscles';
+&lt;template&gt;
+  &lt;div ref="container" /&gt;
+&lt;/template&gt;</code></pre>
+                  </div>
+                </div>
+                <div class="tab-panel" role="tabpanel">
+                  <div class="code" data-label="BodyMap.svelte">
+                    <pre><code class="language-html">&lt;script&gt;
+  import { onDestroy, onMount } from "svelte";
+  import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
   let container;
   let chart;
   let bodyState = {};
 
   onMount(() =&gt; {
-    if (!container) return;
     chart = new BodyChart(container, {
       view: ViewSide.FRONT,
       bodyState,
       onMuscleClick(id) {
-        const cur = bodyState[id] || { intensity: 0, selected: false };
-        bodyState = { ...bodyState, [id]: { ...cur, selected: !cur.selected } };
+        const current = bodyState[id] ?? { intensity: 0, selected: false };
+        bodyState = { ...bodyState, [id]: { ...current, selected: !current.selected } };
         chart.update({ bodyState });
       },
     });
@@ -1070,75 +668,340 @@ export function BodyMap({ view = ViewSide.FRONT }) {
 &lt;/script&gt;
 
 &lt;div bind:this={container} /&gt;</code></pre>
-      </div>
-    </section>
+                  </div>
+                </div>
+                <div class="tab-panel" role="tabpanel">
+                  <div class="code" data-label="index.html">
+                    <pre><code class="language-html">&lt;div id="body-map"&gt;&lt;/div&gt;
+&lt;script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const { BodyChart, ViewSide } = BodyMuscles;
 
+  let state = {};
+  const chart = new BodyChart(document.getElementById("body-map"), {
+    view: ViewSide.FRONT,
+    bodyState: state,
+    onMuscleClick(id) {
+      const current = state[id] ?? { intensity: 0, selected: false };
+      state = { ...state, [id]: { ...current, selected: !current.selected } };
+      chart.update({ bodyState: state });
+    },
+  });
+&lt;/script&gt;</code></pre>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </section>
+
+          <!-- ── 03 Anatomy ─────────────────────────────────────────────── -->
+          <section class="doc-part" id="anatomy" aria-labelledby="anatomyTitle">
+            <p class="eyebrow">03 · Anatomy</p>
+            <h2 id="anatomyTitle">The regions and their data</h2>
+
+            <section class="doc-section" id="terminology">
+              <h3 id="terminologyTitle"><a class="anchor" href="#terminology">Regions &amp; sides</a></h3>
+              <p>
+                The dataset describes <strong>regions</strong>, not a muscle-by-muscle inventory: alongside individual
+                muscles it includes areas such as <code>head</code>, <code>nape</code>, <code>spine</code>, and
+                <code>knee-left</code>. Sides are the <strong>subject's own</strong>, as in an anatomy atlas, so
+                <code>biceps-left</code> is drawn on the viewer's right. Read side and group from the metadata rather
+                than parsing identifiers.
+              </p>
+              <div class="code">
+                <pre><code class="language-typescript">MUSCLE_METADATA["biceps-left"];
+// { id: "biceps-left", name: "Left Biceps", view: "FRONT", side: "left", group: "Arms" }
+
+getMuscleMetadata(input); // MuscleMetadata | undefined, for untrusted strings</code></pre>
+              </div>
+            </section>
+
+            <section class="doc-section" id="data-only">
+              <h3 id="dataOnlyTitle"><a class="anchor" href="#data-only">Data without a DOM</a></h3>
+              <p>
+                Server code, native apps, and custom renderers can import the anatomy alone. The
+                <code>/data</code> subpath never loads chart code or touches browser globals, and
+                <code>/data.json</code> serves the same geometry to non-JavaScript consumers.
+              </p>
+              <div class="code">
+                <pre><code class="language-typescript">import { MUSCLE_MAP, MUSCLE_METADATA, INTENSITY_COLORS } from "@emmorts/body-muscles/data";
+const { MUSCLE_MAP } = require("@emmorts/body-muscles/data"); // CommonJS</code></pre>
+              </div>
+              <p>
+                The JSON document has a <code>schemaVersion</code>, <code>intensityColors</code> (11 colours, index
+                0–10), and <code>frontMuscles</code> / <code>backMuscles</code> entries shaped like
+                <code>MuscleDef</code>. Additions keep the version; only a breaking change bumps it. Importing JSON with
+                import attributes needs Node 20.10+; the module subpaths work in Node 16+.
+              </p>
+            </section>
+
+            <section class="doc-section" id="catalog">
+              <h3 id="catalogTitle"><a class="anchor" href="#catalog">Region catalog</a></h3>
+              <p>
+                Every region in the installed version, generated from the library's own data. Select a row to copy its
+                identifier.
+              </p>
+
+              <form class="catalog-controls" id="catalogControls" role="search" aria-label="Filter regions">
+                <div class="field">
+                  <label class="label" for="catalogSearch">Search</label>
+                  <input class="input" id="catalogSearch" type="search" placeholder="biceps, left, Arms…" autocomplete="off" spellcheck="false" />
+                </div>
+                <div class="field">
+                  <label class="label" for="catalogGroup">Group</label>
+                  <select class="select" id="catalogGroup">
+                    <option value="">All groups</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="label" for="catalogSide">Side</label>
+                  <select class="select" id="catalogSide">
+                    <option value="">All sides</option>
+                    <option value="left">Subject's left</option>
+                    <option value="right">Subject's right</option>
+                    <option value="central">Central</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="label" for="catalogView">View</label>
+                  <select class="select" id="catalogView">
+                    <option value="">All views</option>
+                    <option value="FRONT">Anterior</option>
+                    <option value="BACK">Posterior</option>
+                  </select>
+                </div>
+              </form>
+
+              <div class="catalog-body">
+                <div class="catalog-preview panel">
+                  <div class="catalog-figures">
+                    <figure>
+                      <div id="catalogPreviewFront"></div>
+                      <figcaption class="label">Anterior</figcaption>
+                    </figure>
+                    <figure>
+                      <div id="catalogPreviewBack"></div>
+                      <figcaption class="label">Posterior</figcaption>
+                    </figure>
+                  </div>
+                  <p class="catalog-caption" id="catalogPreviewCaption"></p>
+                </div>
+                <div>
+                  <p class="catalog-count label" id="catalogCount" role="status"></p>
+                  <ul class="catalog-results" id="catalogResults" role="list" aria-label="Regions"></ul>
+                </div>
+              </div>
+            </section>
+          </section>
+
+          <!-- ── 04 Reference ───────────────────────────────────────────── -->
+          <section class="doc-part" id="reference" aria-labelledby="referenceTitle">
+            <p class="eyebrow">04 · Reference</p>
+            <h2 id="referenceTitle">API reference</h2>
+
+            <section class="doc-section" id="options">
+              <h3 id="optionsTitle"><a class="anchor" href="#options"><code>new BodyChart(container, options)</code></a></h3>
+              <p>
+                Mounts a chart inside <code>container</code>. Options set to <code>undefined</code> use their defaults;
+                an explicit <code>false</code> is kept.
+              </p>
+              <div class="table-wrap" role="region" aria-labelledby="optionsCaption" tabindex="0">
+                <table class="table">
+                  <caption class="visually-hidden" id="optionsCaption">BodyChartOptions</caption>
+                  <thead>
+                    <tr><th scope="col">Option</th><th scope="col">Type</th><th scope="col">Default</th><th scope="col">Description</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><code>view</code></td><td><code>ViewSide</code></td><td>required</td><td><code>FRONT</code>, <code>BACK</code>, or <code>BOTH</code></td></tr>
+                    <tr><td><code>bodyState</code></td><td><code>BodyState</code></td><td>required</td><td>Intensity and selection per region</td></tr>
+                    <tr><td><code>onMuscleClick</code></td><td><code>(id, name) =&gt; void</code></td><td>no-op</td><td>A region was activated by pointer or keyboard</td></tr>
+                    <tr><td><code>onMuscleHover</code></td><td><code>(id | null) =&gt; void</code></td><td>no-op</td><td>Pointer entered a region, or left the chart</td></tr>
+                    <tr><td><code>interactive</code></td><td><code>boolean</code></td><td><code>true</code></td><td><code>false</code> renders a static labelled image</td></tr>
+                    <tr><td><code>intensityColor</code></td><td><code>(intensity) =&gt; string</code></td><td>default palette</td><td>Fill colour for an intensity</td></tr>
+                    <tr><td><code>labels</code></td><td><code>ChartLabels</code></td><td><code>{}</code></td><td>Localized strings; see <a href="#localization">Localization</a></td></tr>
+                    <tr><td><code>ariaLabel</code></td><td><code>string</code></td><td>per view</td><td>Accessible name of the chart</td></tr>
+                    <tr><td><code>showTooltip</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Tooltip on hover and keyboard focus</td></tr>
+                    <tr><td><code>tooltipFormatter</code></td><td><code>(muscle, state) =&gt; string</code></td><td>name and intensity</td><td>Tooltip content</td></tr>
+                    <tr><td><code>showViewLabel</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Anterior / Posterior overlay labels</td></tr>
+                    <tr><td><code>enableTransitions</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Animate state changes, unless reduced motion is requested</td></tr>
+                    <tr><td><code>className</code></td><td><code>string</code></td><td><code>""</code></td><td>Extra class on the chart wrapper</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="doc-section" id="methods">
+              <h3 id="methodsTitle"><a class="anchor" href="#methods">Methods</a></h3>
+              <div class="table-wrap" role="region" aria-labelledby="methodsCaption" tabindex="0">
+                <table class="table">
+                  <caption class="visually-hidden" id="methodsCaption">Instance methods</caption>
+                  <thead>
+                    <tr><th scope="col">Method</th><th scope="col">Description</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><code>update(options)</code></td><td>Merge partial options; <code>undefined</code> is ignored. <code>view</code> and <code>interactive</code> rebuild; everything else applies in place.</td></tr>
+                    <tr><td><code>destroy()</code></td><td>Remove the chart and all of its listeners.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="doc-section" id="types">
+              <h3 id="typesTitle"><a class="anchor" href="#types">Types</a></h3>
+              <p>
+                <code>MuscleId</code> is derived from the dataset, so a misspelled identifier is a compile error.
+                Narrow strings that only exist at runtime with <code>isMuscleId(value)</code>, or look them up with
+                <code>getMuscleDef(id)</code>, which returns <code>undefined</code> when unknown.
+              </p>
+              <div class="code" data-label="types.d.ts">
+                <pre><code class="language-typescript">enum ViewSide { FRONT = "FRONT", BACK = "BACK", BOTH = "BOTH" }
+
+type MuscleId = "head" | "face" | "neck-left" | /* … 89 in total … */ "foot-back-right";
+
+interface BodyPartState {
+  intensity: number; // integer 0–10
+  selected: boolean;
+}
+type BodyState = Partial&lt;Record&lt;MuscleId, BodyPartState&gt;&gt;;
+
+type IntensityColorResolver = (intensity: number) =&gt; string;
+type SelectionAction = "select" | "deselect" | "toggle";
+type MuscleGroup = keyof typeof MUSCLE_GROUPS;
+type MuscleSide = "left" | "right" | "central";
+
+interface MuscleMetadata {
+  id: MuscleId;
+  name: string;
+  view: ViewSide;
+  side: MuscleSide; // the subject's own side
+  group: MuscleGroup;
+}</code></pre>
+              </div>
+            </section>
+
+            <section class="doc-section" id="exports">
+              <h3 id="exportsTitle"><a class="anchor" href="#exports">Data exports</a></h3>
+              <p>Available from the package root and from <code>/data</code>.</p>
+              <div class="table-wrap" role="region" aria-labelledby="exportsCaption" tabindex="0">
+                <table class="table">
+                  <caption class="visually-hidden" id="exportsCaption">Data export contents</caption>
+                  <thead>
+                    <tr><th scope="col">Export</th><th scope="col">Contents</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><code>MUSCLE_MAP</code></td><td>Every region definition, front then back</td></tr>
+                    <tr><td><code>FRONT_MUSCLES</code>, <code>BACK_MUSCLES</code></td><td>Definitions for one view</td></tr>
+                    <tr><td><code>MUSCLE_DEFS</code></td><td>Definitions keyed by identifier</td></tr>
+                    <tr><td><code>MUSCLE_METADATA</code></td><td>Name, view, side, and group keyed by identifier</td></tr>
+                    <tr><td><code>MUSCLE_GROUPS</code></td><td>The eight canonical groups; each region belongs to exactly one</td></tr>
+                    <tr><td><code>MUSCLE_PAIRS</code></td><td>Left/right counterparts within the same view</td></tr>
+                    <tr><td><code>INTENSITY_COLORS</code></td><td>Default palette, levels 0–10</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="doc-section" id="utilities">
+              <h3 id="utilitiesTitle"><a class="anchor" href="#utilities">Utilities</a></h3>
+              <div class="table-wrap" role="region" aria-labelledby="utilitiesCaption" tabindex="0">
+                <table class="table">
+                  <caption class="visually-hidden" id="utilitiesCaption">Utility functions</caption>
+                  <thead>
+                    <tr><th scope="col">Function</th><th scope="col">Description</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><code>setGroupSelection(state, group, action)</code></td><td>New state with a whole group selected, deselected, or toggled</td></tr>
+                    <tr><td><code>setBilateralSelection(state, id, action)</code></td><td>The same for a region and its counterpart</td></tr>
+                    <tr><td><code>createBodyPartState(intensity?, selected?)</code></td><td>Validated state entry</td></tr>
+                    <tr><td><code>isValidIntensity(value)</code></td><td>Whether a value is an integer from 0 to 10</td></tr>
+                    <tr><td><code>isMuscleId(value)</code></td><td>Type guard for a known region identifier</td></tr>
+                    <tr><td><code>getMuscleDef(id)</code></td><td>Region definition, or <code>undefined</code></td></tr>
+                    <tr><td><code>getMuscleMetadata(id)</code></td><td>Region metadata, or <code>undefined</code></td></tr>
+                    <tr><td><code>filterMuscles(view)</code></td><td>Definitions drawn in a view</td></tr>
+                    <tr><td><code>getMuscleColor(state, isHovered, resolver?)</code></td><td>Fill colour for a state entry</td></tr>
+                    <tr><td><code>resolveIntensityColor(intensity)</code></td><td>The default colour resolver</td></tr>
+                    <tr><td><code>createIntensityColorScale(colors)</code></td><td>Resolver from custom palette stops</td></tr>
+                    <tr><td><code>extractMuscleSide(id)</code></td><td><code>"left"</code>, <code>"right"</code>, or <code>"central"</code></td></tr>
+                    <tr><td><code>extractMuscleGroup(id)</code></td><td>Identifier prefix such as <code>"biceps"</code> — not the display group</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="doc-section" id="css-variables">
+              <h3 id="cssVariablesTitle"><a class="anchor" href="#css-variables">CSS custom properties</a></h3>
+              <div class="table-wrap" role="region" aria-labelledby="cssCaption" tabindex="0">
+                <table class="table">
+                  <caption class="visually-hidden" id="cssCaption">Chart CSS custom properties</caption>
+                  <thead>
+                    <tr><th scope="col">Property</th><th scope="col">Applies to</th><th scope="col">Default</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><code>--bm-padding</code></td><td>Wrapper padding</td><td><code>1rem</code></td></tr>
+                    <tr><td><code>--bm-max-height</code></td><td>Chart height limit</td><td><code>70vh</code></td></tr>
+                    <tr><td><code>--bm-max-width</code></td><td>Width limit, single view</td><td><code>400px</code></td></tr>
+                    <tr><td><code>--bm-max-width-both</code></td><td>Width limit, <code>BOTH</code></td><td><code>760px</code></td></tr>
+                    <tr><td><code>--bm-svg-shadow</code></td><td>Chart drop shadow</td><td><code>drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3))</code></td></tr>
+                    <tr><td><code>--bm-transition-duration</code></td><td>Transition timing</td><td><code>200ms</code></td></tr>
+                    <tr><td><code>--bm-region-stroke</code></td><td>Region outline</td><td><code>#1e293b</code></td></tr>
+                    <tr><td><code>--bm-region-stroke-width</code></td><td>Region outline weight</td><td><code>0.1</code></td></tr>
+                    <tr><td><code>--bm-region-stroke-selected</code></td><td>Selected outline</td><td><code>#ffffff</code></td></tr>
+                    <tr><td><code>--bm-region-stroke-width-selected</code></td><td>Selected outline weight</td><td><code>0.3</code></td></tr>
+                    <tr><td><code>--bm-region-stroke-focus</code></td><td>Keyboard-focus outline</td><td><code>#1d4ed8</code></td></tr>
+                    <tr><td><code>--bm-region-stroke-width-focus</code></td><td>Keyboard-focus outline weight</td><td><code>0.5</code></td></tr>
+                    <tr><td><code>--bm-region-focus-shadow</code></td><td>Keyboard-focus halo</td><td>Two-tone <code>drop-shadow()</code></td></tr>
+                    <tr><td><code>--bm-region-active-shadow</code></td><td>Selected or hovered filter</td><td><code>url(#glow)</code></td></tr>
+                    <tr><td><code>--bm-region-inactive-opacity</code></td><td>Opacity of untouched regions</td><td><code>0.6</code></td></tr>
+                    <tr><td><code>--bm-background-fill</code></td><td>Silhouette fill</td><td><code>#cbd5e1</code></td></tr>
+                    <tr><td><code>--bm-background-opacity</code></td><td>Silhouette opacity</td><td><code>0.1</code></td></tr>
+                    <tr><td><code>--bm-tooltip-bg</code></td><td>Tooltip background</td><td><code>rgba(15, 23, 42, 0.92)</code></td></tr>
+                    <tr><td><code>--bm-tooltip-color</code></td><td>Tooltip text</td><td><code>#f8fafc</code></td></tr>
+                    <tr><td><code>--bm-tooltip-padding</code></td><td>Tooltip padding</td><td><code>0.35rem 0.65rem</code></td></tr>
+                    <tr><td><code>--bm-tooltip-radius</code></td><td>Tooltip corner radius</td><td><code>0.5rem</code></td></tr>
+                    <tr><td><code>--bm-tooltip-font-size</code></td><td>Tooltip font size</td><td><code>0.75rem</code></td></tr>
+                    <tr><td><code>--bm-tooltip-font-weight</code></td><td>Tooltip font weight</td><td><code>500</code></td></tr>
+                    <tr><td><code>--bm-tooltip-line-height</code></td><td>Tooltip line height</td><td><code>1.2</code></td></tr>
+                    <tr><td><code>--bm-tooltip-shadow</code></td><td>Tooltip shadow</td><td>Two-layer <code>box-shadow</code></td></tr>
+                    <tr><td><code>--bm-tooltip-border</code></td><td>Tooltip border</td><td><code>1px solid rgba(255, 255, 255, 0.15)</code></td></tr>
+                    <tr><td><code>--bm-tooltip-backdrop-filter</code></td><td>Tooltip backdrop</td><td><code>blur(8px)</code></td></tr>
+                    <tr><td><code>--bm-view-label-color</code></td><td>View label text</td><td><code>#64748b</code></td></tr>
+                    <tr><td><code>--bm-view-label-bg</code></td><td>View label background</td><td><code>rgba(15, 23, 42, 0.5)</code></td></tr>
+                    <tr><td><code>--bm-view-label-padding</code></td><td>View label padding</td><td><code>0.25rem 0.75rem</code></td></tr>
+                    <tr><td><code>--bm-view-label-radius</code></td><td>View label corner radius</td><td><code>9999px</code></td></tr>
+                    <tr><td><code>--bm-view-label-font-size</code></td><td>View label font size</td><td><code>0.875rem</code></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </section>
+        </div>
+      </div>
     </main>
 
-    <!-- ── Footer ────────────────────────────────────── -->
-    <footer class="footer">
-      <div class="container">
+    <footer class="site-footer">
+      <div class="shell">
         <p>
-          Body Muscles &mdash; Apache 2.0 License &middot; Maintained fork of
-          <a href="https://github.com/vulovix/body-muscles" target="_blank" rel="noopener">vulovix/body-muscles</a>,
-          published as
-          <a href="https://www.npmjs.com/package/@emmorts/body-muscles" target="_blank" rel="noopener">@emmorts/body-muscles</a>
+          Apache-2.0 · Maintained fork of
+          <a href="https://github.com/vulovix/body-muscles">vulovix/body-muscles</a>
+        </p>
+        <p>
+          <a href="https://www.npmjs.com/package/@emmorts/body-muscles">npm</a> ·
+          <a href="https://github.com/emmorts/body-muscles">GitHub</a> ·
+          <a href="https://github.com/emmorts/body-muscles/blob/main/CHANGELOG.md">Changelog</a>
         </p>
       </div>
     </footer>
 
-    <!-- ── Scripts ───────────────────────────────────── -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/typescript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/xml.min.js"></script>
-    <script>
-      // Syntax highlighting
-      hljs.highlightAll();
+    <p class="visually-hidden" id="announcer" role="status" aria-live="polite"></p>
 
-      // Install tabs
-      document.querySelectorAll(".install-tab-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const tab = btn.dataset.tab;
-          btn
-            .closest(".install-tabs")
-            .querySelectorAll(".install-tab-btn")
-            .forEach((b) => b.classList.remove("active"));
-          btn
-            .closest(".install-tabs")
-            .querySelectorAll(".install-tab-panel")
-            .forEach((p) => p.classList.remove("active"));
-          btn.classList.add("active");
-          btn.closest(".install-tabs").querySelector(`[data-panel="${tab}"]`).classList.add("active");
-        });
-      });
-
-      // Add copy buttons to all <pre> blocks
-      document.querySelectorAll("pre").forEach((pre) => {
-        pre.style.position = "relative";
-        const btn = document.createElement("button");
-        btn.className = "code-copy-btn";
-        btn.setAttribute("aria-label", "Copy code");
-        btn.innerHTML =
-          '<svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="icon-check" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="display:none"><path d="M20 6 9 17l-5-5"/></svg>';
-        btn.addEventListener("click", () => {
-          const code = pre.querySelector("code")?.textContent || pre.textContent;
-          navigator.clipboard.writeText(code).then(() => {
-            btn.classList.add("copied");
-            btn.querySelector(".icon-copy").style.display = "none";
-            btn.querySelector(".icon-check").style.display = "block";
-            setTimeout(() => {
-              btn.classList.remove("copied");
-              btn.querySelector(".icon-copy").style.display = "block";
-              btn.querySelector(".icon-check").style.display = "none";
-            }, 2000);
-          });
-        });
-        pre.appendChild(btn);
-      });
-    </script>
-    <!-- Load the local UMD build (generated by `npm run docs:build`) -->
-
-    <script src="./lib/body-muscles.umd.js"></script>
-    <script src="app.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+      integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+      defer
+    ></script>
+    <script src="lib/body-muscles.umd.js" defer></script>
+    <script type="module" src="js/main.js"></script>
   </body>
 </html>

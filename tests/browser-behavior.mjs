@@ -1112,7 +1112,15 @@ await test("anatomy metadata exposes canonical side and group", async (page) => 
   assert.equal(facts.prototypeKey, true, "inherited object keys do not leak into the lookup");
 });
 
-// ── Demo: the controls a visitor actually uses ───────────
+// ── Documentation site: the controls a visitor actually uses ─────────────
+
+const CONTENT_TYPES = {
+  ".css": "text/css",
+  ".js": "text/javascript",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".woff2": "font/woff2",
+};
 
 function startDocsServer() {
   const server = createServer((request, response) => {
@@ -1123,7 +1131,7 @@ function startDocsServer() {
       response.writeHead(403).end();
       return;
     }
-    // The demo loads a git-ignored build artifact; serve the bundle we just built.
+    // The site loads a git-ignored build artifact; serve the bundle we just built.
     let body;
     try {
       body = relative.endsWith("lib/body-muscles.umd.js") ? bundle : readFileSync(filePath);
@@ -1131,11 +1139,7 @@ function startDocsServer() {
       response.writeHead(404).end();
       return;
     }
-    const type = relative.endsWith(".css")
-      ? "text/css"
-      : relative.endsWith(".js")
-        ? "text/javascript"
-        : "text/html";
+    const type = CONTENT_TYPES[path.extname(relative)] ?? "text/html";
     response.writeHead(200, { "content-type": type }).end(body);
   });
   return new Promise((resolve) => {
@@ -1144,67 +1148,79 @@ function startDocsServer() {
 }
 
 const { server: docsServer, port: docsPort } = await startDocsServer();
+const docsOrigin = `http://127.0.0.1:${docsPort}`;
 
 async function openDemo(page) {
   await page.route("**/*", (route) =>
     new URL(route.request().url()).hostname === "127.0.0.1" ? route.continue() : route.abort(),
   );
-  await page.goto(`http://127.0.0.1:${docsPort}/index.html`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${docsOrigin}/index.html`, { waitUntil: "domcontentloaded" });
   await page.waitForSelector(".body-chart-muscle");
 }
 
-await test("demo selected-muscle slider survives repeated keyboard increments", async (page) => {
+/** Activate a chart region by its accessible-name prefix, as a pointer click would. */
+const clickRegion = (page, name) =>
+  page.locator(`.body-chart-muscle[aria-label^="${name}"]`).first().dispatchEvent("click");
+
+const groupChip = (page, group) => page.getByRole("button", { name: group, exact: true });
+
+await test("demo inspector slider survives repeated keyboard increments", async (page) => {
   await openDemo(page);
-  // Select a region through the chart so the card is populated.
   await page.locator(".body-chart-muscle").first().focus();
   await page.keyboard.press("Enter");
 
-  const name = await page.locator("#selectedName").textContent();
-  const label = await page.evaluate(
-    () => document.getElementById("intensitySlider").labels?.[0]?.textContent ?? "",
-  );
+  const name = await page.locator("#regionName").textContent();
+  assert.equal(name, "Head");
+  const label = await page.evaluate(() => document.getElementById("intensitySlider").labels?.[0]?.textContent ?? "");
   assert.ok(label.includes(name), `slider is labelled with its region, got "${label}"`);
 
   await page.locator("#intensitySlider").focus();
   for (const expected of ["1", "2", "3"]) {
     await page.keyboard.press("ArrowRight");
-    assert.equal(
-      await page.locator("#intensitySlider").inputValue(),
-      expected,
-      "each arrow press changes the value",
-    );
+    assert.equal(await page.locator("#intensitySlider").inputValue(), expected, "each arrow press changes the value");
     assert.equal(
       await page.evaluate(() => document.activeElement === document.getElementById("intensitySlider")),
       true,
       "focus stays on the slider",
     );
   }
-  assert.equal(await page.locator("#selectedIntensity").textContent(), "3 / 10");
+  assert.equal(await page.locator("#regionIntensity").textContent(), "3 / 10");
+  assert.match(
+    await page.locator("#stateCode").textContent(),
+    /"head": \{ intensity: 3, selected: true \}/,
+    "the state listing shows exactly what is passed to update()",
+  );
+  assert.equal(
+    await page.locator('.body-chart-muscle[aria-label^="Head"]').first().getAttribute("aria-label"),
+    "Head - intensity 3",
+  );
 });
 
-await test("demo muscle rows keep their slider mounted and label every control", async (page) => {
+await test("demo selection rows keep their slider mounted and label every control", async (page) => {
   await openDemo(page);
-  await page.locator(".group-chip").nth(3).click();
+  await groupChip(page, "Arms").click();
 
   const rows = await page.evaluate(() =>
-    [...document.querySelectorAll(".muscle-item")].map((row) => ({
-      checkbox: row.querySelector(".muscle-item-toggle")?.type,
-      checkboxLabel: row.querySelector(".muscle-item-toggle")?.getAttribute("aria-label"),
-      sliderLabel: row.querySelector(".muscle-item-slider")?.getAttribute("aria-label"),
+    [...document.querySelectorAll(".selection-row")].map((row) => ({
+      checkbox: row.querySelector(".checkbox")?.type,
+      checkboxLabel: row.querySelector(".checkbox")?.getAttribute("aria-label"),
+      sliderLabel: row.querySelector(".range")?.getAttribute("aria-label"),
     })),
   );
-  assert.ok(rows.length > 0, "the group renders muscle rows");
+  assert.equal(rows.length, 14, "every Arms region across both views is listed");
   assert.ok(rows.every((row) => row.checkbox === "checkbox"), "row toggles are native checkboxes");
   assert.ok(rows.every((row) => row.checkboxLabel && row.sliderLabel), "every control is labelled");
+  assert.equal(await page.locator("#selectionCount").textContent(), "14");
+  assert.equal(await groupChip(page, "Arms").getAttribute("aria-pressed"), "true");
 
-  await page.locator(".muscle-item-slider").first().focus();
+  await page.locator(".selection-row .range").first().focus();
   for (const expected of ["1", "2", "3"]) {
     await page.keyboard.press("ArrowRight");
     const focused = await page.evaluate(() => {
       const slider = document.activeElement;
       return {
         value: slider.value,
-        label: slider.closest(".muscle-item")?.querySelector(".muscle-item-value")?.textContent,
+        label: slider.closest(".selection-row")?.querySelector(".selection-row-value")?.textContent,
       };
     });
     assert.equal(focused.value, expected, "the row slider keeps increments");
@@ -1214,54 +1230,49 @@ await test("demo muscle rows keep their slider mounted and label every control",
 
 await test("demo deselecting a row hands focus to a neighbouring control", async (page) => {
   await openDemo(page);
-  await page.locator(".group-chip").nth(3).click();
+  await groupChip(page, "Arms").click();
 
-  const before = await page.evaluate(() => document.querySelectorAll(".muscle-item").length);
-  await page.locator(".muscle-item-toggle").first().focus();
+  const before = await page.locator(".selection-row").count();
+  await page.locator(".selection-row .checkbox").first().focus();
   await page.keyboard.press("Space");
 
   const after = await page.evaluate(() => ({
-    rows: document.querySelectorAll(".muscle-item").length,
-    inList: !!document.activeElement.closest("#groupMusclesList"),
-    onBody: document.activeElement === document.body,
+    rows: document.querySelectorAll(".selection-row").length,
+    inList: !!document.activeElement.closest("#selectionList"),
   }));
   assert.equal(after.rows, before - 1, "the deselected row is removed");
-  assert.equal(after.onBody, false, "focus is not dropped to the document");
   assert.equal(after.inList, true, "focus moves to a control still in the list");
+  assert.equal(await groupChip(page, "Arms").getAttribute("aria-pressed"), "false");
 });
 
 await test("demo deselecting the final row focuses its group chip", async (page) => {
   await openDemo(page);
   await page.locator(".body-chart-muscle").first().focus();
   await page.keyboard.press("Enter");
-  await page.locator(".muscle-item-toggle").focus();
+  await page.locator(".selection-row .checkbox").focus();
   await page.keyboard.press("Space");
 
-  assert.equal(await page.locator("#groupMusclesCard").isVisible(), false);
-  assert.equal(await page.locator("#statSelected").textContent(), "0");
+  assert.equal(await page.locator("#selectionEmpty").isVisible(), true);
+  assert.equal(await page.locator("#selectionCount").textContent(), "0");
   assert.equal(
     await page.evaluate(() => document.activeElement.textContent),
     "Head & Neck",
-    "focus moves to a visible group chip before the panel disappears",
+    "focus moves to the removed region's group chip",
   );
   await page.keyboard.press("Space");
-  assert.equal(
-    await page.getByRole("button", { name: "Head & Neck", exact: true }).getAttribute("aria-pressed"),
-    "true",
-    "the focused fallback remains keyboard-operable",
-  );
+  assert.equal(await groupChip(page, "Head & Neck").getAttribute("aria-pressed"), "true");
 });
 
 await test("large demo selections scroll to the final keyboard control", async (page) => {
   await openDemo(page);
-  await page.getByRole("button", { name: "Legs", exact: true }).click();
+  await groupChip(page, "Legs").click();
   assert.equal(
-    await page.locator("#groupMusclesList").evaluate((list) => list.scrollHeight > list.clientHeight),
+    await page.locator("#selectionList").evaluate((list) => list.scrollHeight > list.clientHeight),
     true,
-    "a large selection is bounded rather than expanding the whole sidebar",
+    "a large selection is bounded rather than growing the inspector",
   );
-  await page.locator(".muscle-item-slider").last().focus();
-  const visible = await page.locator("#groupMusclesList").evaluate((list) => {
+  await page.locator(".selection-row .range").last().focus();
+  const visible = await page.locator("#selectionList").evaluate((list) => {
     const bounds = list.getBoundingClientRect();
     const control = document.activeElement.getBoundingClientRect();
     return { scrollTop: list.scrollTop, top: control.top - bounds.top, bottom: bounds.bottom - control.bottom };
@@ -1270,7 +1281,98 @@ await test("large demo selections scroll to the final keyboard control", async (
   assert.ok(visible.top >= -1 && visible.bottom >= -1, "the final control is visible inside the list");
 });
 
-await test("populated demo badges and checked markers meet contrast in both themes", async (page) => {
+await test("demo bilateral selection uses canonical pairs and preserves intensity", async (page) => {
+  await openDemo(page);
+  await clickRegion(page, "Head");
+  assert.equal(await page.locator("#bilateralButton").isHidden(), true, "central regions have no pair action");
+
+  await clickRegion(page, "Left Biceps");
+  await page.locator("#intensitySlider").fill("6");
+  const bilateral = page.locator("#bilateralButton");
+  assert.equal(await bilateral.textContent(), "Select both sides");
+  await bilateral.click();
+
+  const pressed = (name) => page.locator(`.body-chart-muscle[aria-label^="${name}"]`).first().getAttribute("aria-pressed");
+  assert.equal(await pressed("Left Biceps"), "true");
+  assert.equal(await pressed("Right Biceps"), "true", "the counterpart is selected");
+  assert.equal(await bilateral.textContent(), "Deselect both sides");
+  const code = await page.locator("#stateCode").textContent();
+  assert.match(code, /"biceps-left": \{ intensity: 6, selected: true \}/, "existing intensity is kept");
+  assert.match(code, /"biceps-right": \{ intensity: 0, selected: true \}/, "the counterpart starts at zero");
+
+  await bilateral.click();
+  assert.equal(await pressed("Left Biceps"), "false");
+  assert.equal(await pressed("Right Biceps"), "false");
+});
+
+await test("demo view control rebuilds the chart and names the figure", async (page) => {
+  await openDemo(page);
+  assert.equal(await page.locator(".body-chart-muscle").count(), 89, "both views are shown by default");
+  assert.equal(await page.locator("#figureTitle").textContent(), "Fig. 1 — Anterior and posterior views.");
+  await page.getByRole("radio", { name: "Anterior" }).check();
+  assert.equal(await page.locator(".body-chart-muscle").count(), 40);
+  assert.equal(await page.locator("#figureTitle").textContent(), "Fig. 1 — Anterior view.");
+  await page.getByRole("radio", { name: "Posterior" }).check();
+  assert.equal(await page.locator(".body-chart-muscle").count(), 49);
+  assert.equal(await page.locator(".body-chart-container").count(), 1, "a view change never duplicates the chart");
+});
+
+await test("documentation tabs follow the WAI-ARIA keyboard pattern", async (page) => {
+  await openDemo(page);
+  const tabs = page.getByRole("tablist", { name: "Installation method" }).getByRole("tab");
+  const state = () =>
+    page.evaluate(() => {
+      const list = document.querySelector('[aria-label="Installation method"]');
+      const all = [...list.querySelectorAll('[role="tab"]')];
+      return {
+        selected: all.filter((tab) => tab.getAttribute("aria-selected") === "true").map((tab) => tab.textContent),
+        tabStops: all.filter((tab) => tab.tabIndex === 0).length,
+        visiblePanels: [...list.parentElement.querySelectorAll('[role="tabpanel"]')].filter((p) => !p.hidden).length,
+        focused: document.activeElement.textContent,
+        controls: all.every((tab) => document.getElementById(tab.getAttribute("aria-controls"))),
+      };
+    });
+
+  const initial = await state();
+  assert.deepEqual(initial.selected, ["npm"]);
+  assert.equal(initial.tabStops, 1, "only the selected tab is in the tab sequence");
+  assert.equal(initial.visiblePanels, 1);
+  assert.equal(initial.controls, true, "every tab controls an existing panel");
+  await tabs.first().focus();
+  await page.keyboard.press("ArrowRight");
+  assert.deepEqual((await state()).selected, ["pnpm"]);
+  assert.equal((await state()).focused, "pnpm", "focus follows the selected tab");
+  await page.keyboard.press("End");
+  assert.deepEqual((await state()).selected, ["CDN module"]);
+  await page.keyboard.press("ArrowRight");
+  assert.deepEqual((await state()).selected, ["npm"], "arrow keys wrap around");
+  assert.equal((await state()).visiblePanels, 1);
+});
+
+await test("theme toggle exposes its state and persists the choice", async (page) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await openDemo(page);
+  const toggle = page.locator("#themeToggle");
+  assert.equal(await toggle.getAttribute("aria-pressed"), "false");
+  await toggle.click();
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), "dark");
+  assert.equal(await toggle.getAttribute("aria-pressed"), "true");
+  await page.reload();
+  await page.waitForSelector(".body-chart-muscle");
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), "dark", "the stored theme wins");
+});
+
+await test("the contents rail marks the section being read", async (page) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await openDemo(page);
+  await page.locator("#selection").evaluate((section) => section.scrollIntoView({ block: "start" }));
+  await page.waitForFunction(
+    () => document.querySelector('.toc a[aria-current="location"]')?.getAttribute("href") === "#selection",
+  );
+  assert.equal(await page.locator('.toc a[aria-current="location"]').count(), 1, "exactly one entry is current");
+});
+
+await test("demo checked markers keep non-text contrast in both themes", async (page) => {
   await page.emulateMedia({ colorScheme: "light" });
   await openDemo(page);
   await page.locator(".body-chart-muscle").first().focus();
@@ -1278,35 +1380,64 @@ await test("populated demo badges and checked markers meet contrast in both them
 
   for (const theme of ["light", "dark"]) {
     if (theme === "dark") await page.locator("#themeToggle").click();
-    await page.waitForFunction(() => document.getAnimations().length === 0);
-    const ratios = await page.evaluate(() => {
-      const rgba = (color) => {
-        const values = color.match(/[\d.]+/g).map(Number);
-        if (values.length === 3) values.push(1);
-        return values;
-      };
-      const luminance = (rgb) => rgb.slice(0, 3).reduce((sum, channel, index) => {
-        const value = channel / 255;
-        const linear = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-        return sum + linear * [0.2126, 0.7152, 0.0722][index];
-      }, 0);
-      const contrast = (a, b) => {
-        const levels = [luminance(a), luminance(b)];
-        return (Math.max(...levels) + 0.05) / (Math.min(...levels) + 0.05);
-      };
-      const badge = document.getElementById("selectedBadge");
-      const badgeStyle = getComputedStyle(badge);
-      const tint = rgba(badgeStyle.backgroundColor);
-      const card = rgba(getComputedStyle(badge.closest(".card")).backgroundColor);
-      const background = tint.slice(0, 3).map((channel, index) => channel * tint[3] + card[index] * (1 - tint[3]));
-      const checkbox = document.querySelector(".muscle-item-toggle");
-      return {
-        badge: contrast(rgba(badgeStyle.color), background),
-        marker: contrast(rgba(getComputedStyle(checkbox, "::after").backgroundColor), rgba(getComputedStyle(checkbox).backgroundColor)),
-      };
+    const ratio = await page.evaluate(() => {
+      const rgb = (color) => color.match(/[\d.]+/g).slice(0, 3).map(Number);
+      const luminance = (channels) =>
+        channels.reduce((sum, channel, index) => {
+          const value = channel / 255;
+          const linear = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+          return sum + linear * [0.2126, 0.7152, 0.0722][index];
+        }, 0);
+      const checkbox = document.querySelector(".selection-row .checkbox");
+      const levels = [
+        luminance(rgb(getComputedStyle(checkbox, "::after").backgroundColor)),
+        luminance(rgb(getComputedStyle(checkbox).backgroundColor)),
+      ];
+      return (Math.max(...levels) + 0.05) / (Math.min(...levels) + 0.05);
     });
-    assert.ok(ratios.badge >= 4.5, `${theme} badge text contrast is ${ratios.badge}`);
-    assert.ok(ratios.marker >= 3, `${theme} checkbox state contrast is ${ratios.marker}`);
+    assert.ok(ratio >= 3, `${theme} checkbox marker contrast is ${ratio}`);
+  }
+});
+
+await test("the documentation passes an automated accessibility audit in both themes", async (page) => {
+  const axeSource = readFileSync(path.join(root, "node_modules", "axe-core", "axe.min.js"), "utf8");
+  for (const [theme, viewport] of [
+    ["light", { width: 1440, height: 900 }],
+    ["dark", { width: 1440, height: 900 }],
+    ["light", { width: 390, height: 844 }],
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: theme });
+    await openDemo(page);
+    // Populate every dynamic surface before auditing it.
+    await clickRegion(page, "Left Biceps");
+    await groupChip(page, "Legs").click();
+    await page.addScriptTag({ content: axeSource });
+    const violations = await page.evaluate(async () => {
+      const { violations } = await window.axe.run(document);
+      return violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(", ")}`);
+    });
+    assert.deepEqual(violations, [], `${theme} ${viewport.width}px audit`);
+  }
+});
+
+await test("the documentation never overflows horizontally", async (page) => {
+  for (const width of [390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await openDemo(page);
+    await groupChip(page, "Arms").click();
+    const facts = await page.evaluate(() => {
+      const inspector = document.querySelector(".inspector").getBoundingClientRect();
+      const escapes = [...document.querySelectorAll(".inspector *")].filter((el) => {
+        const box = el.getBoundingClientRect();
+        // Text inside a listing scrolls within its `pre`; the `pre` itself must fit.
+        const scrolled = el.parentElement.closest("pre");
+        return box.width > 0 && !scrolled && !el.closest(".visually-hidden") && box.right > inspector.right + 1;
+      });
+      return { page: document.documentElement.scrollWidth - innerWidth, inspectorEscapes: escapes.length };
+    });
+    assert.equal(facts.page, 0, `the page fits ${width}px`);
+    assert.equal(facts.inspectorEscapes, 0, `inspector content stays inside its column at ${width}px`);
   }
 });
 
@@ -1336,12 +1467,12 @@ await test("submitting catalog search preserves filters and demo state", async (
   await openDemo(page);
   await page.locator(".body-chart-muscle").first().focus();
   await page.keyboard.press("Enter");
-  const selectedName = await page.locator("#selectedName").textContent();
+  const regionName = await page.locator("#regionName").textContent();
   await page.fill("#catalogSearch", "biceps");
   await page.locator("#catalogSearch").press("Enter");
   assert.equal(await page.locator("#catalogSearch").inputValue(), "biceps");
   assert.equal(await page.locator("#catalogCount").textContent(), "4 of 89 regions");
-  assert.equal(await page.locator("#selectedName").textContent(), selectedName);
+  assert.equal(await page.locator("#regionName").textContent(), regionName);
   assert.equal(await page.locator(".body-chart-muscle").first().getAttribute("aria-pressed"), "true");
 });
 
@@ -1435,6 +1566,15 @@ await test("demo anatomy catalog previews follow keyboard focus", async (page) =
   );
 });
 
+await test("catalog rows copy their identifier and announce it", async (page) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"], { origin: docsOrigin });
+  await openDemo(page);
+  await page.fill("#catalogSearch", "nape");
+  await page.locator(".catalog-row").first().click();
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), "nape");
+  await page.waitForFunction(() => document.getElementById("announcer").textContent === "Copied nape");
+});
+
 await test("demo anatomy catalog stays usable on a narrow screen", async (page) => {
   await page.setViewportSize({ width: 390, height: 800 });
   await openDemo(page);
@@ -1457,23 +1597,26 @@ await test("demo anatomy catalog stays usable on a narrow screen", async (page) 
   assert.ok(facts.sectionWidth <= 390, "the section does not overflow");
 });
 
-await test("the demo themes chart regions through CSS custom properties", async (page) => {
+await test("the site themes the chart only through its public CSS custom properties", async (page) => {
   await page.emulateMedia({ colorScheme: "light" });
   await openDemo(page);
-  const light = await page.evaluate(
-    () => getComputedStyle(document.querySelector(".body-chart-muscle")).stroke,
-  );
-
+  // A resting region uses the resolver's `var(--region-rest)` and must follow
+  // the theme without any chart update.
+  const read = () =>
+    page.evaluate(() => {
+      const region = document.querySelector('.body-chart-muscle[aria-label="Head"]');
+      return { stroke: getComputedStyle(region).stroke, fill: getComputedStyle(region).fill };
+    });
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll(".body-chart-muscle")) el.style.transition = "none";
+  });
+  const light = await read();
   await page.locator("#themeToggle").click();
-  await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
-  // Region styles transition between themes; read the settled values.
-  await page.waitForFunction(() => document.getAnimations().length === 0);
-  const dark = await page.evaluate(
-    () => getComputedStyle(document.querySelector(".body-chart-muscle")).stroke,
-  );
+  await page.waitForFunction(() => document.documentElement.dataset.theme === "dark");
+  const dark = await read();
 
-  assert.equal(light, "rgb(30, 41, 59)", "the light theme uses the built-in outline");
-  assert.equal(dark, "rgb(203, 213, 225)", "the dark theme overrides it through --bm-region-stroke");
+  assert.deepEqual(light, { stroke: "rgb(74, 66, 56)", fill: "rgb(185, 174, 158)" });
+  assert.deepEqual(dark, { stroke: "rgb(207, 198, 184)", fill: "rgb(107, 100, 90)" });
 });
 
 await browser.close();

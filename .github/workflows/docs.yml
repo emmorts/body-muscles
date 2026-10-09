@@ -1,8 +1,8 @@
 # Publishing the documentation site to GitHub Pages.
 #
-# The site in `docs/` loads the library from `docs/lib/body-muscles.umd.js`, which is a build
-# artifact and therefore git-ignored. This workflow builds it from source and uploads `docs/` as
-# the Pages artifact, so the published site always matches the source in this repository.
+# The site in `docs/` loads the library bundle, self-hosted fonts, and version metadata from
+# `docs/lib/`, which `npm run docs:build` assembles and git ignores. This workflow builds it from
+# source and uploads `docs/` as the Pages artifact, so the published site always matches the source.
 #
 # Pages must be configured with `build_type: workflow`:
 #   gh api -X PUT repos/emmorts/body-muscles/pages -f build_type=workflow

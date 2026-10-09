@@ -22,6 +22,17 @@
   The implementation plan records before/after Chromium profiles for repeated intensity updates;
   measurements describe a local synthetic workload, not a universal frame-rate guarantee.
 
+### Documentation
+
+- Redesigned the documentation site. A live playground leads the page, showing both views with an
+  inspector, group and both-sides selection, and the exact `bodyState` passed to `update()`. The
+  guide is reorganized into Start, Guides, Anatomy, and Reference parts with a contents rail.
+  Framework and install examples use accessible tabs, catalog rows copy region identifiers, and
+  duplicate or outdated reference entries were corrected.
+- The site uses design tokens in a cascade-layered stylesheet and ES modules, self-hosts its fonts
+  through `npm run docs:build`, and themes the chart only through public `--bm-*` properties.
+  Browser tests now run an axe audit of both themes and check layout at four widths.
+
 ## 2.0.0 (2026-10-09)
 
 ### Added

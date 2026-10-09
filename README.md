@@ -718,8 +718,12 @@ npm run test:browser   # run the built bundle in headless Chromium
                        # (needs `npm run build` and `npx playwright install chromium` first)
 npm run typecheck
 npm run smooth-paths   # redraw src/data/muscles.*.ts as bezier paths (idempotent)
-npm run docs           # build the browser bundle and serve the docs site on :3000
+npm run docs           # assemble docs/lib (bundle, fonts) and serve the docs site on :3000
 ```
+
+The site is static HTML, one cascade-layered stylesheet whose colours and type live only in its
+`tokens` layer, and ES modules in `docs/js/`. It themes the chart solely through the public `--bm-*`
+properties, and `npm run test:browser` audits it with axe in both themes.
 
 The site in [`docs/`](./docs) is published to <https://emmorts.github.io/body-muscles/> by
 [`.github/workflows/docs.yml`](./.github/workflows/docs.yml), which builds the library and uploads
