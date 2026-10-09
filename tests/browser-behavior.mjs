@@ -1259,6 +1259,9 @@ await test("demo anatomy catalog filters by text, group, side, and view", async 
     page.evaluate(() => ({
       count: document.getElementById("catalogCount").textContent,
       ids: [...document.querySelectorAll(".catalog-row code")].map((code) => code.textContent),
+      highlightedIds: [...document.querySelectorAll(".catalog-preview-path.is-active")].map(
+        (path) => window.BodyMuscles.MUSCLE_MAP.find((muscle) => muscle.path === path.getAttribute("d")).id,
+      ),
     }));
 
   await page.fill("#catalogSearch", "biceps");
@@ -1270,6 +1273,7 @@ await test("demo anatomy catalog filters by text, group, side, and view", async 
     "hamstrings-lateral-left",
     "hamstrings-lateral-right",
   ]);
+  assert.deepEqual(searched.highlightedIds, ["biceps-left"], "filtering clears the previous head preview");
 
   await page.fill("#catalogSearch", "");
   await page.selectOption("#catalogGroup", "Legs");
@@ -1284,6 +1288,7 @@ await test("demo anatomy catalog filters by text, group, side, and view", async 
     "tibialis-anterior-left",
     "knee-left",
   ]);
+  assert.deepEqual(filtered.highlightedIds, ["hip-flexor-left"], "only the matching region is highlighted");
 
   await page.fill("#catalogSearch", "zzzz");
   const empty = await read();

@@ -496,7 +496,6 @@ if (catalogResults) {
       return;
     }
     if (!matches.some((region) => region.id === activeId)) {
-      activeId = null;
       setActive(matches[0].id);
     }
   };
