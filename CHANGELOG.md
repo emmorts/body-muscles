@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.1.1 (2026-10-09)
+
+No runtime or type changes: the published JavaScript and declarations are byte-identical to 2.1.0.
 
 ### Development
 

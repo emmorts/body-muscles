@@ -1,6 +1,6 @@
 {
   "name": "@emmorts/body-muscles",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Interactive, accessible SVG body map with 89 anatomical regions, intensity and selection state, and zero dependencies. Framework-agnostic. Maintained fork of vulovix/body-muscles.",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
