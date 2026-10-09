@@ -1,6 +1,13 @@
 # Changelog
 
-## 1.1.0 (Unreleased)
+## 1.1.1 (2026-10-09)
+
+No functional change. This release exists to exercise the release pipeline end to end: the tag
+`v1.1.1` is picked up by GitHub Actions, which type-checks, builds and verifies the artifacts,
+publishes the package over npm trusted publishing, then opens this GitHub release from this
+changelog section.
+
+## 1.1.0 (2026-10-09)
 
 ### Features
 
