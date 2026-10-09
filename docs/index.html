@@ -920,8 +920,8 @@ cd examples/react            &amp;&amp; npm install &amp;&amp; npm start   # htt
     },
   });
 
-  // Remove the chart and every listener it added.
-  window.addEventListener('pagehide', () =&gt; chart.destroy(), { once: true });
+  // Call chart.destroy() when removing this widget from the page.
+  // Leave it mounted on navigation so back/forward-cache restoration works.
 &lt;/script&gt;</code></pre>
 
         <h3>React</h3>

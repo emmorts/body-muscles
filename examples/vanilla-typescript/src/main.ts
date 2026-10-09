@@ -91,5 +91,5 @@ requireElement("rebuild").addEventListener("click", rebuildChart);
 
 syncViewButtons();
 
-// A real application would also tear down on navigation:
-window.addEventListener("beforeunload", () => chart.destroy());
+// Rebuilds explicitly destroy the old widget. Document navigation needs no
+// teardown: the browser releases it on unload or retains it in the back/forward cache.
