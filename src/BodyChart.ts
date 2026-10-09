@@ -267,7 +267,8 @@ export class BodyChart {
       return;
     }
 
-    const labelsChanged = next.labels !== previous.labels;
+    // Explicit updates also refresh mutated/reused label configurations.
+    const labelsChanged = options.labels !== undefined;
 
     if (next.className !== previous.className) this.applyClassName();
     if (next.ariaLabel !== previous.ariaLabel || labelsChanged) this.applyChartLabel();

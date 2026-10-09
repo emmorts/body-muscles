@@ -544,6 +544,7 @@ chart.update({ bodyState: { "biceps-left": { intensity: 12, selected: true } } }
           <code>labels.tooltip</code>. Like <code>bodyState</code>, <code>labels</code> is replaced as a whole
           by <code>update()</code> — spread the current set to change one member — and label updates apply in
           place without rebuilding the chart or dropping focus.
+          Explicit label updates refresh every label even when the same object is mutated and reused.
         </p>
         <div style="overflow-x: auto">
           <table class="api-table">

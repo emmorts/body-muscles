@@ -371,6 +371,7 @@ chart.update({ labels: { ...labels, intensity: (value) => `${value} von 10` } })
 `labels` is replaced as a whole by `update()`, like `bodyState`, so spread the current set to change
 one member. Label updates apply in place: the overlay, the tooltip, and the accessible names all
 change without rebuilding the chart or dropping focus.
+Explicit `update({ labels })` calls also refresh every label when you mutate and reuse the same object.
 
 ## Anatomy Data and Terminology
 

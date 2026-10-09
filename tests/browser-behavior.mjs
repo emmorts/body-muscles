@@ -942,28 +942,42 @@ await test("labels localize rendered strings, respect precedence, and update at 
   assert.match(snapshot, /Kopf - 7 von 10/, "the accessibility tree carries the localized name");
 });
 
-await test("default labels stay English", async (page) => {
+await test("explicit label updates refresh reused objects without dropping focus", async (page) => {
   await mount(page);
-  const facts = await page.evaluate(() => {
+  await page.evaluate(() => {
     const { BodyChart, ViewSide } = window.BodyMuscles;
-    const host = document.getElementById("host");
-    const chart = new BodyChart(host, {
-      view: ViewSide.BOTH,
-      bodyState: { head: { intensity: 7, selected: false } },
-      showViewLabel: true,
-    });
-    const out = {
-      chartName: document.querySelector(".body-chart-svg").getAttribute("aria-label"),
-      headLabel: host.querySelector('.body-chart-muscle[aria-label^="Head"]').getAttribute("aria-label"),
-      viewLabels: [...document.querySelectorAll(".body-chart-view-label")].map((el) => el.textContent),
+    window.labels = {
+      chart: () => "English map",
+      regionName: (muscle) => muscle.name,
+      intensity: (value) => `intensity ${value}`,
+      viewLabel: () => "English view",
     };
-    chart.destroy();
-    return out;
+    window.chart = new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT, bodyState: { head: { intensity: 4, selected: true } },
+      showViewLabel: true, labels: window.labels,
+    });
   });
-
-  assert.equal(facts.chartName, "Anterior and posterior body map views");
-  assert.equal(facts.headLabel, "Head - intensity 7");
-  assert.deepEqual(facts.viewLabels, ["Anterior View", "Posterior View"]);
+  await page.keyboard.press("Tab");
+  const facts = await page.evaluate(() => {
+    const focused = document.activeElement;
+    window.labels.chart = () => "Körperkarte";
+    window.labels.regionName = () => "Kopf";
+    window.labels.intensity = (value) => `Intensität ${value}`;
+    window.labels.viewLabel = () => "Vorderansicht";
+    window.chart.update({ labels: window.labels });
+    return {
+      focusKept: document.activeElement === focused,
+      chart: document.querySelector(".body-chart-svg").getAttribute("aria-label"),
+      region: focused.getAttribute("aria-label"),
+      tooltip: document.querySelector(".body-chart-tooltip").textContent,
+      overlay: document.querySelector(".body-chart-view-label").textContent,
+    };
+  });
+  assert.equal(facts.focusKept, true);
+  assert.equal(facts.chart, "Körperkarte");
+  assert.equal(facts.region, "Kopf - Intensität 4");
+  assert.equal(facts.tooltip, facts.region, "the open tooltip and accessible name share the new labels");
+  assert.equal(facts.overlay, "Vorderansicht");
 });
 
 await test("anatomy metadata exposes canonical side and group", async (page) => {
