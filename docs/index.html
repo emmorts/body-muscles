@@ -545,6 +545,8 @@ chart.update({ bodyState: { "biceps-left": { intensity: 12, selected: true } } }
           by <code>update()</code> — spread the current set to change one member — and label updates apply in
           place without rebuilding the chart or dropping focus.
           Explicit label updates refresh every label even when the same object is mutated and reused.
+          Region and tooltip callbacks receive <code>undefined</code> state for omitted regions,
+          or the supplied state object for tracked regions, including explicit intensity 0.
         </p>
         <div style="overflow-x: auto">
           <table class="api-table">

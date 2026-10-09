@@ -32,6 +32,8 @@
 
 - Explicit `labels` updates refresh the chart name, view labels, region names, and visible tooltip
   even when the consumer mutates and reuses the same object, preserving focus.
+- `labels.region` receives `undefined` for regions omitted from `bodyState`, consistently with
+  tooltip callbacks; rendering defaults no longer fabricate tracked state for accessible names.
 - `BodyChart.update()` now applies every option it accepts. It previously refreshed only the
   region colours (and rebuilt on `view`), so changes to `ariaLabel`, `className`,
   `showViewLabel`, `showTooltip`, `tooltipFormatter`, or `enableTransitions` were silently

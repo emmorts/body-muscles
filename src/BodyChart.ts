@@ -48,6 +48,7 @@ export interface ChartLabels {
   /**
    * Complete accessible name of a region. Defaults to the region name plus the
    * intensity phrase when the region has an intensity above 0.
+   * `state` is `undefined` when the consumer's mapping omits the region.
    */
   region?: (muscle: MuscleDef, state: BodyPartState | undefined) => string;
   /** How a numeric intensity is written; defaults to `intensity 7`. */
@@ -851,7 +852,8 @@ export class BodyChart {
     const path = this.musclePaths.get(muscleId);
     if (!path) return;
 
-    const state = this.options.bodyState[muscleId] || { intensity: 0, selected: false };
+    const suppliedState = this.options.bodyState[muscleId];
+    const state = suppliedState || { intensity: 0, selected: false };
     const isSelected = state.selected || false;
     const isHovered = this.hoveredMuscle === muscleId;
     let isFocused = false;
@@ -887,7 +889,7 @@ export class BodyChart {
       // Selection is exposed as a toggle-button state, not only as a colour or
       // label suffix, so assistive technology announces it reliably.
       path.setAttribute("aria-pressed", isSelected ? "true" : "false");
-      path.setAttribute("aria-label", muscle ? this.regionLabel(muscle, state) : muscleId);
+      path.setAttribute("aria-label", muscle ? this.regionLabel(muscle, suppliedState) : muscleId);
     }
 
     path.style.fillOpacity = opacity;

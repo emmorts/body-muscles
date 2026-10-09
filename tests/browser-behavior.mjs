@@ -980,6 +980,27 @@ await test("explicit label updates refresh reused objects without dropping focus
   assert.equal(facts.overlay, "Vorderansicht");
 });
 
+await test("region and tooltip labels distinguish omitted state from explicit zero state", async (page) => {
+  await mount(page);
+  await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const format = (muscle, state) => `${muscle.name}: ${state ? "tracked" : "not tracked"}`;
+    window.chart = new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT, bodyState: {}, labels: { region: format, tooltip: format },
+    });
+  });
+  await page.keyboard.press("Tab");
+  for (const [bodyState, expected] of [
+    [{}, "Head: not tracked"],
+    [{ head: { intensity: 0, selected: false } }, "Head: tracked"],
+    [{}, "Head: not tracked"],
+  ]) {
+    await page.evaluate((state) => window.chart.update({ bodyState: state }), bodyState);
+    assert.equal(await page.locator(".body-chart-muscle").first().getAttribute("aria-label"), expected);
+    assert.equal(await page.locator(".body-chart-tooltip").textContent(), expected);
+  }
+});
+
 await test("anatomy metadata exposes canonical side and group", async (page) => {
   await mount(page);
   const facts = await page.evaluate(() => {

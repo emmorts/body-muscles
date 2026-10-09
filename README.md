@@ -356,6 +356,8 @@ without patching the library. Each member is optional and falls back to the Engl
 
 Precedence: the dedicated option wins over the matching `labels` member, which wins over the
 default — `ariaLabel` beats `labels.chart`, and `tooltipFormatter` beats `labels.tooltip`.
+`region`, `tooltip`, and `tooltipFormatter` receive `undefined` state for omitted regions, and the
+supplied state object for tracked regions, including explicit intensity 0.
 
 ```ts
 const labels: ChartLabels = {
