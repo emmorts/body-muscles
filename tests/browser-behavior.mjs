@@ -573,6 +573,46 @@ await test("large demo selections scroll to the final keyboard control", async (
   assert.ok(visible.top >= -1 && visible.bottom >= -1, "the final control is visible inside the list");
 });
 
+await test("populated demo badges and checked markers meet contrast in both themes", async (page) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await openDemo(page);
+  await page.locator(".body-chart-muscle").first().focus();
+  await page.keyboard.press("Enter");
+
+  for (const theme of ["light", "dark"]) {
+    if (theme === "dark") await page.locator("#themeToggle").click();
+    await page.waitForFunction(() => document.getAnimations().length === 0);
+    const ratios = await page.evaluate(() => {
+      const rgba = (color) => {
+        const values = color.match(/[\d.]+/g).map(Number);
+        if (values.length === 3) values.push(1);
+        return values;
+      };
+      const luminance = (rgb) => rgb.slice(0, 3).reduce((sum, channel, index) => {
+        const value = channel / 255;
+        const linear = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+        return sum + linear * [0.2126, 0.7152, 0.0722][index];
+      }, 0);
+      const contrast = (a, b) => {
+        const levels = [luminance(a), luminance(b)];
+        return (Math.max(...levels) + 0.05) / (Math.min(...levels) + 0.05);
+      };
+      const badge = document.getElementById("selectedBadge");
+      const badgeStyle = getComputedStyle(badge);
+      const tint = rgba(badgeStyle.backgroundColor);
+      const card = rgba(getComputedStyle(badge.closest(".card")).backgroundColor);
+      const background = tint.slice(0, 3).map((channel, index) => channel * tint[3] + card[index] * (1 - tint[3]));
+      const checkbox = document.querySelector(".muscle-item-toggle");
+      return {
+        badge: contrast(rgba(badgeStyle.color), background),
+        marker: contrast(rgba(getComputedStyle(checkbox, "::after").backgroundColor), rgba(getComputedStyle(checkbox).backgroundColor)),
+      };
+    });
+    assert.ok(ratios.badge >= 4.5, `${theme} badge text contrast is ${ratios.badge}`);
+    assert.ok(ratios.marker >= 3, `${theme} checkbox state contrast is ${ratios.marker}`);
+  }
+});
+
 await browser.close();
 docsServer.close();
 

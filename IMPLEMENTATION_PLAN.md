@@ -334,7 +334,7 @@ Review findings are tracked individually; each correction is committed separatel
 - [x] R1 — Refresh visible tooltips for reused state objects.
 - [x] R2 — Preserve focus when the final demo row is deselected.
 - [x] R3 — Restore bounded scrolling and spacing to the demo muscle list.
-- [ ] R4 — Fix populated-state contrast and CDN prose-link styling.
+- [x] R4 — Fix populated-state contrast and CDN prose-link styling.
 - [ ] R5 — Preserve constructor defaults for undefined options.
 - [ ] R6 — Reposition visible tooltips after content updates.
 - [ ] R7 — Restore tooltip visibility and description when enabled during focus.
@@ -393,7 +393,7 @@ For each completed item, append a record containing:
 - **Commit:** `fix(docs): meet WCAG AA contrast and add landmarks` (see git history for the hash).
 - **Files:** `docs/style.css`, `docs/index.html`, `docs/app.js`.
 - **Changes:** the light theme's `--accent` went from `#3b82f6` to `#2563eb` (white-on-accent 3.68→5.17, accent-on-card 3.52→4.94, accent-on-code 3.36→4.72) and `--fg-muted` from `#64748b` to `#5d6b7e` (on code background 4.34→4.95). Because a single accent cannot both carry white text and stay legible on dark surfaces, the dark theme now defines its own `--accent: #60a5fa` with `--accent-fg: #0b1220`. `--ring` follows both accents. The intensity-legend swatches use `#0f172a` instead of `#1e293b` for levels 0–7, which were failing on the orange and red steps (levels 8–10 keep white). The three failing highlight.js light-theme token colours are overridden under `[data-theme="light"]` — `#d73a49`→`#b31d28`, `#e36209`→`#b04a00`, `#22863a`→`#1b6e30`, covering every class that uses them in that theme. Links inside `p`/`li`/`dd`/`td` are underlined so they no longer rely on colour alone (WCAG 1.4.1). The page's sections are wrapped in a single `<main>` between the header and footer.
-- **Verification:** axe-core on the served docs page reports 0 violations and 1 "incomplete" (axe's manual-review bucket) in both the light and dark themes, down from 4 violations (73 contrast nodes plus landmark, region, and link-in-text-block findings). An independent in-page scan that resolves each element's effective background confirmed 0 elements below their required ratio in either theme. `npm run typecheck` passes and the 12-test browser suite still passes. Screenshots of both themes confirm the palette reads correctly, including the dark theme's light-blue accent with dark button text.
+- **Initial verification:** axe-core reported 0 violations and 1 incomplete result in each theme on the initial page, and the 12-test browser suite passed. This did not cover populated selection details or the hidden CDN panel and does not establish full WCAG conformance. The review found additional contrast and link-distinction failures in those states; R4 records their corrections and expanded verification.
 - **Note:** section indentation inside `<main>` was intentionally left as-is rather than re-indenting ~590 lines, keeping the diff reviewable; the markup is valid either way.
 - **Compatibility:** documentation-site only; no package-facing API or artifact impact, so no changelog entry. No `[INFERENCE]` items outstanding.
 
@@ -419,4 +419,13 @@ For each completed item, append a record containing:
 - **Commit:** `fix(docs): restore scrollable muscle list layout`.
 - **Changes:** the persistent list container carries the existing muscle-list class again; no duplicate layout convention.
 - **Verification:** 14 browser tests pass, including scrolling a large selection to its final keyboard control. Demo screenshot and measurements show 22 Legs rows in a 320px viewport with 945px scroll content and 5.6px row gaps.
+- **Compatibility:** documentation-site only; no package API or changelog change.
+
+### R4 — Populated-state accessibility corrections
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix(docs): correct populated-state contrast and prose links`.
+- **Changes:** retain the tinted badge but use darker blue text in light mode; use the theme's accent foreground for checked-checkbox markers; remove the CDN note's overriding text-decoration rule so the prose underline applies.
+- **Verification:** 15 browser tests pass. The new regression computes badge text contrast against its composited background (at least 4.5:1) and checked-marker contrast (at least 3:1) in both themes. Separate served-demo axe audits with a selected muscle and the CDN (ESM) panel visible report 0 violations, 1 incomplete, and 45 passing rules in each theme. The dark checkbox screenshot shows its dark marker; the CDN link's computed decoration is underline. The previously observed color-contrast and link-in-text-block failures are gone; landmark-one-main and region remain passing.
+- **Limit:** automated audits and these targeted measurements are not a full WCAG conformance assessment or a screen-reader check.
 - **Compatibility:** documentation-site only; no package API or changelog change.

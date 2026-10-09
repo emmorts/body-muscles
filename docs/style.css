@@ -439,7 +439,6 @@ pre code.hljs {
 }
 .tab-note a {
   color: var(--accent);
-  text-decoration: none;
 }
 .tab-note a:hover {
   text-decoration: underline;
@@ -526,6 +525,9 @@ pre code.hljs {
 .badge-blue {
   background: rgba(59, 130, 246, 0.12);
   color: var(--accent);
+}
+[data-theme="light"] .badge-blue {
+  color: #1d4ed8;
 }
 .badge-gray {
   background: var(--bg-code);
@@ -655,7 +657,7 @@ pre code.hljs {
   width: 6px;
   height: 6px;
   border-radius: 2px;
-  background: #fff;
+  background: var(--accent-fg);
 }
 .muscle-item-toggle:focus-visible {
   outline: 2px solid var(--accent);
