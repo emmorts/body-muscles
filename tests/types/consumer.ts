@@ -10,11 +10,13 @@ import {
   BodyChart,
   ViewSide,
   MUSCLE_DEFS,
+  MUSCLE_GROUPS,
+  MUSCLE_METADATA,
   createBodyPartState,
   getMuscleDef,
   isMuscleId,
 } from "../../dist/index";
-import type { BodyState, ChartLabels, MuscleId } from "../../dist/index";
+import type { BodyState, ChartLabels, MuscleGroup, MuscleId, MuscleSide } from "../../dist/index";
 
 const host = document.getElementById("host") ?? document.body;
 
@@ -69,6 +71,29 @@ const labels: ChartLabels = {
 // @ts-expect-error - regionName must return a string
 const badLabels: ChartLabels = { regionName: () => 1 };
 
+// Canonical metadata is typed: side and group narrow, unknown keys do not.
+const side: MuscleSide = MUSCLE_METADATA["biceps-left"].side;
+const group: MuscleGroup = MUSCLE_METADATA["biceps-left"].group;
+const groupIds: readonly MuscleId[] = MUSCLE_GROUPS[group];
+
+// @ts-expect-error - unknown metadata key
+const missingMetadata = MUSCLE_METADATA["bicepz-left"];
+
+// @ts-expect-error - unknown group name
+const wrongGroup: MuscleGroup = "Wings";
+
 chart.update({ bodyState: dynamic, labels });
 
-export { typo, badId, missingDef, bicepsName, resolvedName, badLabels, labels };
+export {
+  typo,
+  badId,
+  missingDef,
+  bicepsName,
+  resolvedName,
+  badLabels,
+  labels,
+  side,
+  groupIds,
+  missingMetadata,
+  wrongGroup,
+};

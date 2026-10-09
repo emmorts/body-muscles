@@ -1,4 +1,14 @@
-export const MUSCLE_GROUPS: Record<string, string[]> = {
+import type { MuscleId } from "../types";
+
+/**
+ * Canonical region groups.
+ *
+ * Declared `as const satisfies Record<string, readonly MuscleId[]>` so the group
+ * names become literal types (`MuscleGroup`) and every listed identifier is
+ * checked against the dataset: a typo or a renamed region fails compilation
+ * instead of silently dropping that region from its group.
+ */
+export const MUSCLE_GROUPS = {
   "Head & Neck": ["head", "face", "neck-right", "neck-left", "head-back", "nape"],
   Shoulders: [
     "shoulder-front-left",
@@ -83,4 +93,7 @@ export const MUSCLE_GROUPS: Record<string, string[]> = {
     "hip-flexor-right",
   ],
   "Hands & Feet": ["hand-left", "hand-right", "foot-left", "foot-right", "hand-back-left", "hand-back-right", "foot-back-left", "foot-back-right"],
-};
+} as const satisfies Record<string, readonly MuscleId[]>;
+
+/** Every group name, derived from the canonical group table. */
+export type MuscleGroup = keyof typeof MUSCLE_GROUPS;

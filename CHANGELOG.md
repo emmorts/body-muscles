@@ -18,6 +18,11 @@
   `viewLabel`, and `chart` members, so every rendered string — chart name, region names, accessible
   names, tooltips, intensity wording, and view labels — can be localized. Defaults remain English,
   `ariaLabel` still beats `labels.chart`, and `tooltipFormatter` still beats `labels.tooltip`.
+- `MUSCLE_METADATA` and `getMuscleMetadata(id)`, plus the `MuscleMetadata` and `MuscleGroup` types:
+  canonical side (the subject's own left/right), display group, view, and name for every region, so
+  consumers no longer have to parse identifiers. `MUSCLE_GROUPS` is now declared as a readonly
+  literal table whose identifiers are checked against the dataset at compile time, and the release
+  gate verifies that every region belongs to exactly one group.
 
 ### Fixed
 

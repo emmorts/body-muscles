@@ -187,6 +187,17 @@ interface BodyPartState {
 type BodyState = Partial<Record<MuscleId, BodyPartState>>;
 
 type IntensityColorResolver = (intensity: number) => string;
+
+type MuscleSide = "left" | "right" | "central";
+type MuscleGroup = keyof typeof MUSCLE_GROUPS;
+
+interface MuscleMetadata {
+  id: MuscleId;
+  name: string;
+  view: ViewSide;
+  side: MuscleSide; // the subject's own side
+  group: MuscleGroup;
+}
 ```
 
 ### Data Exports
@@ -198,6 +209,7 @@ type IntensityColorResolver = (intensity: number) => string;
 | `FRONT_MUSCLES`    | Anterior-view muscle definitions                                                       |
 | `BACK_MUSCLES`     | Posterior-view muscle definitions                                                      |
 | `MUSCLE_GROUPS`    | Named groups: Head & Neck, Shoulders, Arms, Chest, Back, Abdominals, Legs, Hands & Feet |
+| `MUSCLE_METADATA`  | Canonical side, group, view, and name for every region, keyed by identifier             |
 | `INTENSITY_COLORS` | Color map (0-10) from slate → yellow → orange → red                                    |
 
 ### Utility Functions
@@ -209,7 +221,10 @@ type IntensityColorResolver = (intensity: number) => string;
 | `createIntensityColorScale(colors)`          | Build a resolver from a custom palette    |
 | `filterMuscles(view)`                        | Returns `MuscleDef[]` for the given view  |
 | `getMuscleDef(id)`                           | Region lookup by any string; `undefined` when unknown |
+| `getMuscleMetadata(id)`                      | Side/group/view lookup by any string; `undefined` when unknown |
 | `isMuscleId(value)`                          | Type guard narrowing a string to `MuscleId` |
+| `extractMuscleSide(id)`                      | Canonical side derived from the identifier suffix |
+| `extractMuscleGroup(id)`                     | Identifier prefix only — not the display group |
 | `createBodyPartState(intensity?, selected?)` | Factory with validation                   |
 | `isValidIntensity(value)`                    | Type guard for a finite integer intensity (0-10) |
 | `extractMuscleSide(id)`                      | Returns `"left" \| "right" \| "central"`  |
@@ -353,6 +368,33 @@ chart.update({ labels: { ...labels, intensity: (value) => `${value} von 10` } })
 `labels` is replaced as a whole by `update()`, like `bodyState`, so spread the current set to change
 one member. Label updates apply in place: the overlay, the tooltip, and the accessible names all
 change without rebuilding the chart or dropping focus.
+
+## Anatomy Data and Terminology
+
+The dataset describes **regions** of the body rather than a muscle-by-muscle inventory: alongside
+individual muscles it contains areas such as `head`, `face`, `nape`, `spine`, and `knee-left`.
+`MuscleId`, `MuscleDef`, and every helper name the region drawn in the SVG, so `name` is that
+region's display name, not a claim about anatomy.
+
+Sides are the **subject's own** left and right (the anatomical convention), not the viewer's. The
+subject faces the camera in the anterior view, so `biceps-left` is the subject's left arm and is
+drawn on the viewer's right. Regions without a side suffix — `spine`, `nape`, `head` — are central.
+
+Canonical side and group metadata is available directly, so consumers never parse identifiers:
+
+```ts
+MUSCLE_METADATA["biceps-left"];
+// { id: "biceps-left", name: "Left Biceps", view: "FRONT", side: "left", group: "Arms" }
+
+getMuscleMetadata(raw); // MuscleMetadata | undefined, for dynamic input
+```
+
+`MUSCLE_GROUPS` is the canonical group table — group name to region identifiers — checked at compile
+time against the dataset and verified at build time to cover every region exactly once;
+`MuscleGroup` is the union of its keys. `extractMuscleSide(id)` and `extractMuscleGroup(id)` remain
+available for identifier-shaped input, but note that `extractMuscleGroup` returns the identifier
+prefix (`"biceps"` for `biceps-left`), which is *not* the display group: use
+`MUSCLE_METADATA[id].group` for that.
 
 ## Framework Examples
 

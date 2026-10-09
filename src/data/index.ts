@@ -1,10 +1,14 @@
 import type { MuscleId } from "../types";
-import type { MuscleDef } from "./types";
+import { extractMuscleSide } from "../types";
+import type { MuscleDef, MuscleMetadata } from "./types";
+import { MUSCLE_GROUPS } from "./muscle-groups";
+import type { MuscleGroup } from "./muscle-groups";
 import { FRONT_MUSCLES } from "./muscles.front";
 import { BACK_MUSCLES } from "./muscles.back";
 
-export { MUSCLE_GROUPS } from "./muscle-groups";
-export type { MuscleDef } from "./types";
+export { MUSCLE_GROUPS };
+export type { MuscleGroup } from "./muscle-groups";
+export type { MuscleDef, MuscleMetadata } from "./types";
 export type { MuscleSpec, MuscleEntry } from "./muscle-spec";
 export type { FrontMuscleId } from "./muscles.front";
 export type { BackMuscleId } from "./muscles.back";
@@ -41,6 +45,42 @@ export function getMuscleDef(id: string): MuscleDef | undefined {
  */
 export function isMuscleId(value: string): value is MuscleId {
   return Object.prototype.hasOwnProperty.call(MUSCLE_DEFS, value);
+}
+
+/** Group name for every region, inverted from the canonical group table. */
+const GROUP_BY_ID: Record<string, MuscleGroup> = {};
+for (const group of Object.keys(MUSCLE_GROUPS) as MuscleGroup[]) {
+  for (const id of MUSCLE_GROUPS[group]) GROUP_BY_ID[id] = group;
+}
+
+/**
+ * Canonical anatomy metadata for every region, keyed by identifier.
+ *
+ * `side` comes from the identifier convention through `extractMuscleSide`, and
+ * `group` from `MUSCLE_GROUPS`, so metadata, the group table, and the exported
+ * helpers cannot drift apart. Sides are the **subject's** left/right; see
+ * `MuscleMetadata`.
+ */
+export const MUSCLE_METADATA: Record<MuscleId, MuscleMetadata> = Object.fromEntries(
+  MUSCLE_MAP.map((muscle) => [
+    muscle.id,
+    {
+      id: muscle.id,
+      name: muscle.name,
+      view: muscle.view,
+      side: extractMuscleSide(muscle.id),
+      group: GROUP_BY_ID[muscle.id],
+    },
+  ]),
+) as Record<MuscleId, MuscleMetadata>;
+
+/**
+ * Look up anatomy metadata by identifier. Unknown identifiers return
+ * `undefined`, so dynamic input needs no cast.
+ */
+export function getMuscleMetadata(id: string): MuscleMetadata | undefined {
+  if (!Object.prototype.hasOwnProperty.call(MUSCLE_METADATA, id)) return undefined;
+  return (MUSCLE_METADATA as Record<string, MuscleMetadata>)[id];
 }
 
 /**

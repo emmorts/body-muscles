@@ -966,6 +966,60 @@ await test("default labels stay English", async (page) => {
   assert.deepEqual(facts.viewLabels, ["Anterior View", "Posterior View"]);
 });
 
+await test("anatomy metadata exposes canonical side and group", async (page) => {
+  await mount(page);
+  const facts = await page.evaluate(() => {
+    const { MUSCLE_MAP, MUSCLE_GROUPS, MUSCLE_METADATA, getMuscleMetadata } = window.BodyMuscles;
+    const read = (id) => {
+      const metadata = MUSCLE_METADATA[id];
+      return {
+        id: metadata.id,
+        name: metadata.name,
+        side: metadata.side,
+        group: metadata.group,
+        view: metadata.view,
+      };
+    };
+    return {
+      bicepsLeft: read("biceps-left"),
+      bicepsRight: read("biceps-right"),
+      spine: read("spine"),
+      nape: read("nape"),
+      kneeBackLeft: read("knee-back-left"),
+      groups: Object.keys(MUSCLE_GROUPS),
+      everyRegionInItsOwnGroup: MUSCLE_MAP.every((muscle) =>
+        MUSCLE_GROUPS[MUSCLE_METADATA[muscle.id].group].includes(muscle.id),
+      ),
+      exactlyOneGroupPerRegion:
+        new Set(Object.values(MUSCLE_GROUPS).flat()).size === MUSCLE_MAP.length,
+      unknown: getMuscleMetadata("bicepz-left") === undefined,
+      prototypeKey: getMuscleMetadata("constructor") === undefined,
+    };
+  });
+
+  assert.deepEqual(facts.bicepsLeft, {
+    id: "biceps-left",
+    name: "Left Biceps",
+    side: "left",
+    group: "Arms",
+    view: "FRONT",
+  });
+  assert.equal(facts.bicepsRight.side, "right", "the subject's right, not the viewer's");
+  assert.deepEqual(
+    { side: facts.spine.side, group: facts.spine.group, view: facts.spine.view },
+    { side: "central", group: "Back", view: "BACK" },
+    "a central region has no side suffix and belongs to its own view",
+  );
+  assert.equal(facts.nape.side, "central", "a singular region is central");
+  assert.equal(facts.kneeBackLeft.side, "left", "a suffixed region keeps its side in either view");
+  assert.equal(facts.kneeBackLeft.group, "Legs");
+  assert.equal(facts.groups.length, 8, "the canonical group table has eight groups");
+  assert.equal(facts.everyRegionInItsOwnGroup, true);
+  assert.equal(facts.exactlyOneGroupPerRegion, true, "every region belongs to exactly one group");
+  assert.equal(facts.unknown, true, "unknown identifiers resolve to undefined");
+  assert.equal(facts.prototypeKey, true, "inherited object keys do not leak into the lookup");
+});
+
 // ── Demo: the controls a visitor actually uses ───────────
 
 function startDocsServer() {

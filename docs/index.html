@@ -572,6 +572,27 @@ chart.update({ bodyState: { "biceps-left": { intensity: 12, selected: true } } }
 
 chart.update({ labels: { ...labels, intensity: (value) => `${value} von 10` } });</code></pre>
 
+        <h3>Anatomy Data &amp; Terminology</h3>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          The dataset describes <strong>regions</strong> of the body, not a muscle-by-muscle inventory: alongside
+          individual muscles it contains areas such as <code>head</code>, <code>face</code>, <code>nape</code>,
+          <code>spine</code>, and <code>knee-left</code>. Sides are the <strong>subject's own</strong> left and
+          right (the anatomical convention), not the viewer's, so <code>biceps-left</code> is the subject's left
+          arm and is drawn on the viewer's right. Regions without a side suffix are central. Canonical side and
+          group metadata is available directly, so consumers never parse identifiers.
+        </p>
+        <pre><code class="language-typescript">MUSCLE_METADATA["biceps-left"];
+// { id: "biceps-left", name: "Left Biceps", view: "FRONT", side: "left", group: "Arms" }
+
+getMuscleMetadata(raw); // MuscleMetadata | undefined, for dynamic input</code></pre>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          <code>MUSCLE_GROUPS</code> is the canonical group table, checked at compile time against the dataset and
+          verified at build time to cover every region exactly once; <code>MuscleGroup</code> is the union of its
+          keys. <code>extractMuscleGroup(id)</code> returns the identifier prefix (<code>"biceps"</code> for
+          <code>biceps-left</code>), which is <em>not</em> the display group — use
+          <code>MUSCLE_METADATA[id].group</code> for that.
+        </p>
+
         <h3>Types</h3>
         <pre><code class="language-typescript">enum ViewSide {
   FRONT = "FRONT",
@@ -589,7 +610,18 @@ interface BodyPartState {
 
 type BodyState = Partial&lt;Record&lt;MuscleId, BodyPartState&gt;&gt;;
 
-type IntensityColorResolver = (intensity: number) =&gt; string;</code></pre>
+type IntensityColorResolver = (intensity: number) =&gt; string;
+
+type MuscleSide = "left" | "right" | "central";
+type MuscleGroup = keyof typeof MUSCLE_GROUPS;
+
+interface MuscleMetadata {
+  id: MuscleId;
+  name: string;
+  view: ViewSide;
+  side: MuscleSide;  // the subject's own side
+  group: MuscleGroup;
+}</code></pre>
         <p style="color: var(--fg-muted); font-size: 0.9rem">
           <code>MuscleId</code> is derived from the dataset, so state keys, callbacks, and helpers are checked
           at compile time and a misspelled literal is an error. Identifiers that only exist at runtime are not
@@ -627,6 +659,10 @@ type IntensityColorResolver = (intensity: number) =&gt; string;</code></pre>
               <tr>
                 <td><code>MUSCLE_GROUPS</code></td>
                 <td>Named groups: Head & Neck, Shoulders, Arms, Chest, Back, Abdominals, Legs, Hands & Feet</td>
+              </tr>
+              <tr>
+                <td><code>MUSCLE_METADATA</code></td>
+                <td>Canonical side, group, view, and name for every region, keyed by identifier</td>
               </tr>
               <tr>
                 <td><code>INTENSITY_COLORS</code></td>
@@ -667,8 +703,20 @@ type IntensityColorResolver = (intensity: number) =&gt; string;</code></pre>
                 <td>Region lookup by any string; <code>undefined</code> when unknown</td>
               </tr>
               <tr>
+                <td><code>getMuscleMetadata(id)</code></td>
+                <td>Side/group/view lookup by any string; <code>undefined</code> when unknown</td>
+              </tr>
+              <tr>
                 <td><code>isMuscleId(value)</code></td>
                 <td>Type guard narrowing a string to <code>MuscleId</code></td>
+              </tr>
+              <tr>
+                <td><code>extractMuscleSide(id)</code></td>
+                <td>Canonical side derived from the identifier suffix</td>
+              </tr>
+              <tr>
+                <td><code>extractMuscleGroup(id)</code></td>
+                <td>Identifier prefix only — not the display group</td>
               </tr>
               <tr>
                 <td><code>createBodyPartState(intensity?, selected?)</code></td>

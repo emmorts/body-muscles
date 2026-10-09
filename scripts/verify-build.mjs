@@ -10,11 +10,38 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dist = path.join(root, "dist");
 
-const { BodyChart, ViewSide, filterMuscles, FRONT_MUSCLES, BACK_MUSCLES, INTENSITY_COLORS } =
-  await import(path.join(dist, "esm", "index.js"));
+const {
+  BodyChart,
+  ViewSide,
+  filterMuscles,
+  FRONT_MUSCLES,
+  BACK_MUSCLES,
+  MUSCLE_MAP,
+  MUSCLE_GROUPS,
+  MUSCLE_METADATA,
+  getMuscleMetadata,
+  extractMuscleSide,
+  INTENSITY_COLORS,
+} = await import(path.join(dist, "esm", "index.js"));
 
 assert.equal(typeof BodyChart, "function");
 assert.deepEqual(Object.keys(ViewSide).sort(), ["BACK", "BOTH", "FRONT"]);
+
+// Metadata must agree with the group table and the identifier convention, so the
+// three cannot drift apart in a release.
+const grouped = Object.values(MUSCLE_GROUPS).flat();
+assert.equal(new Set(grouped).size, grouped.length, "a region appears in more than one group");
+assert.equal(grouped.length, MUSCLE_MAP.length, "group coverage does not match the dataset");
+assert.equal(Object.keys(MUSCLE_METADATA).length, MUSCLE_MAP.length);
+for (const muscle of MUSCLE_MAP) {
+  const metadata = MUSCLE_METADATA[muscle.id];
+  assert.ok(MUSCLE_GROUPS[metadata.group].includes(muscle.id), `${muscle.id} is not in its own group`);
+  assert.equal(metadata.side, extractMuscleSide(muscle.id), `${muscle.id} side disagrees with its id`);
+  assert.equal(metadata.name, muscle.name);
+  assert.equal(metadata.view, muscle.view);
+}
+assert.equal(getMuscleMetadata("not-a-region"), undefined);
+assert.equal(getMuscleMetadata("constructor"), undefined);
 
 // A side-by-side view must render every region from both sides, once each.
 const both = filterMuscles(ViewSide.BOTH);

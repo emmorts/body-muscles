@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B5 complete).
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B6 complete).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -206,7 +206,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### B6 — Explicit anatomy metadata and terminology
 
-- [ ] Complete B6
+- [x] Complete B6
 
 **Problem:** Side/group helpers infer metadata from identifier strings. The dataset contains anatomical regions such as Head, not only individual muscles, and anatomical left/right conventions need an explicit explanation.
 
@@ -532,3 +532,11 @@ For each completed item, append a record containing:
 - **Precedence and ownership:** documented in the option JSDoc, README, and site reference. `labels` follows the same whole-object replacement rule as `bodyState` (spread to change one member), which keeps the two consistent rather than introducing a second merge rule. Selection needs no wording: it is exposed as `aria-pressed`, so no label member was invented for it.
 - **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build`, `npm run test:types`, and 30 browser tests pass. The localization regression renders a German configuration and asserts the chart name, region accessible names (with and without intensity), the overlay label, the `labels.tooltip` content, precedence for both `tooltipFormatter` and `ariaLabel`, a runtime member change applied without a rebuild while focus is retained, the localized name reaching `onMuscleClick`, and the localized name appearing in Playwright's accessibility-tree snapshot. A second regression pins the English defaults, including the two `BOTH`-view labels. The type fixture adds a `ChartLabels` usage plus a rejected non-string `regionName`.
 - **Compatibility:** additive; defaults are byte-identical to the previous English wording, verified by the defaults regression.
+
+### B6 — Explicit anatomy metadata and terminology
+
+- **Completed:** 2026-10-09.
+- **Commit:** `feat(data): expose canonical anatomy metadata` (see git history for the hash).
+- **Changes:** `MUSCLE_GROUPS` is now `as const satisfies Record<string, readonly MuscleId[]>`, so its names become the `MuscleGroup` literal union and every listed identifier is checked against the dataset at compile time. New `MuscleMetadata` (`id`, `name`, `view`, `side`, `group`), the canonical `MUSCLE_METADATA` record keyed by identifier, and `getMuscleMetadata(id)` for dynamic input. `side` is derived through the existing `extractMuscleSide` (one implementation, so metadata and helper cannot disagree) and `group` is inverted from `MUSCLE_GROUPS`, so the table is not a second source of truth. README and site documentation state that sides are the subject's own left/right (anatomical convention, `biceps-left` drawn on the viewer's right in the anterior view), that the dataset describes regions rather than only individual muscles, and that `extractMuscleGroup` returns the identifier prefix rather than the display group.
+- **Verification:** `npm run build`, `npm run verify-build` (now additionally asserts metadata/group consistency across all 89 regions, single-group coverage, and no prototype leakage from the lookups), `npm run test:types` (typed side/group access, rejected unknown keys and group names), and 31 browser tests pass. The new browser regression pins representative front, bilateral, back, and central regions, group membership for every region, exactly one group per region, the eight group names, and undefined results for unknown and prototype keys. Identifier values and geometry are unchanged (89 regions, 11 intensity colours).
+- **Compatibility:** additive for metadata; `MUSCLE_GROUPS` values are now `readonly` and its keys are a literal union, so in-place mutation of that canonical table stops compiling. No identifier changed.

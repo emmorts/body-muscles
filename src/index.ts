@@ -15,8 +15,18 @@ export {
   BACK_MUSCLES,
   getMuscleDef,
   isMuscleId,
+  MUSCLE_METADATA,
+  getMuscleMetadata,
 } from "./data";
-export type { MuscleDef, MuscleSpec, FrontMuscleId, BackMuscleId } from "./data";
+export type {
+  MuscleDef,
+  MuscleSpec,
+  MuscleMetadata,
+  MuscleGroup,
+  FrontMuscleId,
+  BackMuscleId,
+  MuscleEntry,
+} from "./data";
 
 // Utility exports
 export {
