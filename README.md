@@ -34,6 +34,9 @@ yarn add @emmorts/body-muscles
 pnpm add @emmorts/body-muscles
 ```
 
+TypeScript consumers require **TypeScript 5.0+**. The declarations use const type parameters;
+`skipLibCheck` cannot make older compilers parse them. JavaScript consumers need no TypeScript compiler.
+
 **CDN (ESM):**
 
 ```html
@@ -612,6 +615,9 @@ onUnmounted(() => chart?.destroy());
 ```
 
 ### Typed identifiers
+
+This is a breaking typing change: upgrade the consumer compiler to TypeScript 5.0+ before migrating
+state keys and dynamic identifiers. The JavaScript runtime requirements are unchanged.
 
 `MuscleId` is a union derived from the dataset, so `bodyState` keys, callbacks, and helpers are
 checked at compile time:

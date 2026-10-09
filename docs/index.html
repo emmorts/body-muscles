@@ -598,6 +598,12 @@ getMuscleMetadata(raw); // MuscleMetadata | undefined, for dynamic input</code><
         </p>
 
         <h3>Types</h3>
+        <p>
+          TypeScript consumers require <strong>TypeScript 5.0+</strong>: the declarations use const type
+          parameters, which older compilers cannot parse even with <code>skipLibCheck</code>.
+          Upgrade the compiler when migrating to the strict identifier types; JavaScript runtime
+          requirements are unchanged.
+        </p>
         <pre><code class="language-typescript">enum ViewSide {
   FRONT = "FRONT",
   BACK = "BACK",

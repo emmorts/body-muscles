@@ -55,6 +55,9 @@
 
 ### Changed
 
+- **BREAKING:** published declarations require TypeScript 5.0+ because the anatomy declaration
+  helper uses const type parameters. Upgrade older consumer compilers; `skipLibCheck` cannot
+  suppress syntax errors. JavaScript runtime requirements are unchanged.
 - **BREAKING:** intensities are validated as finite integers from 0 to 10. The `BodyChart`
   constructor, `update()`, and `createBodyPartState()` now throw a descriptive `Error` describing
   the offending region and value instead of the renderer silently rounding and clamping. Validation
