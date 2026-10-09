@@ -47,7 +47,8 @@ listeners.
 
 ## Notes
 
-- Both examples use esbuild and TypeScript 5.0+. Use Node 20+ for the repository's development tooling.
+- Both examples build with esbuild and type-check with their own TypeScript 7 install; the library
+  itself supports consumers on TypeScript 5.0+. Use Node 20+ for the repository's development tooling.
 - The examples are not part of the published package (the `files` field ships only `dist` plus the
   root documentation), and they are not workspaces of the root package, so installing them never
   affects the library's dependencies.

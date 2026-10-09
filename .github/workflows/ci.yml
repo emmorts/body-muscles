@@ -36,6 +36,11 @@ jobs:
       - name: Consumer type tests
         run: npm run test:types
 
+      # The declarations are emitted by the current compiler but must still parse in the
+      # documented consumer minimum.
+      - name: Consumer type tests on TypeScript 5.0
+        run: npm run test:types:min
+
       - name: Selection behaviour tests
         run: npm run test:selection
 

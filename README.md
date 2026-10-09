@@ -616,6 +616,7 @@ npm run typecheck
 npm run build          # ESM, CommonJS, UMD, and dist/data/body-muscles-data.json
 npm run verify-build   # assert the built artifacts are complete
 npm run test:types     # compile a consumer against the built declarations
+npm run test:types:min # the same on TypeScript 5.0, the supported minimum
 npm run test:selection # selection helper behaviour
 npm run test:package   # pack the package and import it from ESM and CommonJS
 npm run test:browser   # chart, docs, and accessibility tests in headless Chromium

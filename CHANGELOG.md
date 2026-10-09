@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Development
+
+- Build with TypeScript 7 (previously 5.9). Both configs now use `moduleResolution: "bundler"`,
+  because TypeScript 7 removed the legacy `node` (node10) resolution. The examples moved to
+  TypeScript 7 too.
+- CI now also compiles the consumer type fixture with TypeScript 5.0.4, so the documented consumer
+  minimum is checked on every change rather than by hand.
+
 ### Documentation
 
 - Credited the original project and author, Ivan Vulović, in the README, the documentation site
