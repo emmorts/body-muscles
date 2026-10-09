@@ -333,7 +333,7 @@ Review findings are tracked individually; each correction is committed separatel
 
 - [x] R1 — Refresh visible tooltips for reused state objects.
 - [x] R2 — Preserve focus when the final demo row is deselected.
-- [ ] R3 — Restore bounded scrolling and spacing to the demo muscle list.
+- [x] R3 — Restore bounded scrolling and spacing to the demo muscle list.
 - [ ] R4 — Fix populated-state contrast and CDN prose-link styling.
 - [ ] R5 — Preserve constructor defaults for undefined options.
 - [ ] R6 — Reposition visible tooltips after content updates.
@@ -411,4 +411,12 @@ For each completed item, append a record containing:
 - **Commit:** `fix(docs): retain focus when the final muscle row disappears`.
 - **Changes:** move focus to the active group's persistent chip (or Reset) before hiding an empty panel, only when focus is inside that panel.
 - **Verification:** 13 browser tests pass, including final-row deselection and keyboard activation of the fallback chip. Separate demo smoke confirmed zero rows, a hidden panel, and focus on Head & Neck rather than the document body.
+- **Compatibility:** documentation-site only; no package API or changelog change.
+
+### R3 — Bounded muscle-list layout
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix(docs): restore scrollable muscle list layout`.
+- **Changes:** the persistent list container carries the existing muscle-list class again; no duplicate layout convention.
+- **Verification:** 14 browser tests pass, including scrolling a large selection to its final keyboard control. Demo screenshot and measurements show 22 Legs rows in a 320px viewport with 945px scroll content and 5.6px row gaps.
 - **Compatibility:** documentation-site only; no package API or changelog change.

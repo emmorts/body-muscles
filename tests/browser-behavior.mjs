@@ -555,6 +555,24 @@ await test("demo deselecting the final row focuses its group chip", async (page)
   );
 });
 
+await test("large demo selections scroll to the final keyboard control", async (page) => {
+  await openDemo(page);
+  await page.getByRole("button", { name: "Legs", exact: true }).click();
+  assert.equal(
+    await page.locator("#groupMusclesList").evaluate((list) => list.scrollHeight > list.clientHeight),
+    true,
+    "a large selection is bounded rather than expanding the whole sidebar",
+  );
+  await page.locator(".muscle-item-slider").last().focus();
+  const visible = await page.locator("#groupMusclesList").evaluate((list) => {
+    const bounds = list.getBoundingClientRect();
+    const control = document.activeElement.getBoundingClientRect();
+    return { scrollTop: list.scrollTop, top: control.top - bounds.top, bottom: bounds.bottom - control.bottom };
+  });
+  assert.ok(visible.scrollTop > 0, "keyboard focus scrolls the list");
+  assert.ok(visible.top >= -1 && visible.bottom >= -1, "the final control is visible inside the list");
+});
+
 await browser.close();
 docsServer.close();
 
