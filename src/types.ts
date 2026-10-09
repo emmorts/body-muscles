@@ -98,8 +98,8 @@ export function createBodyPartState(intensity: number = 0, selected: boolean = f
  * rounded or clamped. Entries that are `undefined` are allowed, because
  * `BodyState` is a sparse partial record.
  *
- * The chart calls this from its constructor and from `update()` before any
- * internal state changes, so a rejected update leaves the chart as it was.
+ * The chart calls this before applying submitted options or rendering changes.
+ * It cannot roll back consumer mutations to previously accepted shared objects.
  *
  * @param bodyState - State mapping to validate
  * @throws Error describing the offending region and value

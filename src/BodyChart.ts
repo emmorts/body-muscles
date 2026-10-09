@@ -248,8 +248,8 @@ export class BodyChart {
    * focus); every other change is applied in place and preserves focus.
    */
   update(options: Partial<BodyChartOptions>): void {
-    // Validate before mutating anything, so a rejected update leaves the chart
-    // — options and rendered output — exactly as it was.
+    // Validate before applying submitted options or rendering changes. This
+    // cannot roll back consumer mutations to previously accepted shared objects.
     if (options.bodyState !== undefined) assertValidBodyState(options.bodyState);
 
     const previous = this.options;

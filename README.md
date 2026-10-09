@@ -154,8 +154,10 @@ and a second entry point with different merge rules would only make the two easy
 
 An intensity is a **finite integer from 0 to 10**. `createBodyPartState()`, the `BodyChart`
 constructor, and `update()` all enforce that rule and throw a descriptive `Error` for fractions,
-negative numbers, values above 10, `NaN`, or infinities. Validation runs before anything is applied,
-so a rejected `update()` leaves the chart exactly as it was:
+negative numbers, values above 10, `NaN`, or infinities. A rejected `update()` applies none of the
+submitted options and performs no rendering changes. It cannot undo your earlier mutations to an
+already-accepted mapping or its entries: the chart retains those objects by reference. Validate before
+mutating shared state, or submit a new mapping with new changed entries to preserve the previous state:
 
 ```ts
 try {

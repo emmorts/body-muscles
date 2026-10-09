@@ -526,9 +526,10 @@ chart.update({ bodyState: rest });</code></pre>
           An intensity is a <strong>finite integer from 0 to 10</strong>. <code>createBodyPartState()</code>,
           the constructor, and <code>update()</code> enforce that rule and throw a descriptive
           <code>Error</code> for fractions, negative numbers, values above 10, <code>NaN</code>, or
-          infinities. Validation runs before anything is applied, so a rejected <code>update()</code> leaves
-          the chart exactly as it was. The colour helpers never throw — they round and clamp into 0-10, because
-          they also render mappings a consumer mutated after the chart accepted them.
+          infinities. A rejected <code>update()</code> applies no submitted options or rendering changes.
+          It cannot undo earlier consumer mutations to already-accepted objects: the chart retains the
+          mapping and entries by reference. Validate before mutating shared state, or submit a new mapping
+          with new changed entries. Colour helpers round and clamp defensively when rendering mutated state.
         </p>
         <pre><code class="language-typescript">isValidIntensity(9);   // true
 isValidIntensity(9.5); // false
