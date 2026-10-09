@@ -441,6 +441,7 @@ if (catalogResults) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "catalog-row";
+    if (region.id === activeId) button.setAttribute("aria-current", "true");
 
     const head = document.createElement("span");
     head.className = "catalog-row-head";

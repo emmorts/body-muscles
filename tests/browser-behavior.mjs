@@ -1364,6 +1364,18 @@ await test("demo anatomy catalog previews follow keyboard focus", async (page) =
   assert.equal(facts.frontPaths, 40, "the anterior preview uses the canonical geometry");
   assert.equal(facts.backPaths, 49);
   assert.equal(facts.previewHidden, "true", "previews are decorative; the caption carries the description");
+
+  await page.fill("#catalogSearch", "knee-back");
+  const current = page.locator('.catalog-row[aria-current="true"]');
+  assert.equal(await current.count(), 1, "a retained current row survives result replacement");
+  assert.equal(await current.locator("code").textContent(), "knee-back-left");
+  await current.focus();
+  await page.keyboard.press("Tab");
+  assert.equal(
+    await page.locator('.catalog-row[aria-current="true"] code').textContent(),
+    "knee-back-right",
+    "keyboard navigation moves the current marker to the next filtered region",
+  );
 });
 
 await test("demo anatomy catalog stays usable on a narrow screen", async (page) => {
