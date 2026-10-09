@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B8 complete).
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 complete (B1–B9).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -258,7 +258,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### B9 — Runnable TypeScript and framework integration examples
 
-- [ ] Complete B9
+- [x] Complete B9
 
 **Problem:** Documentation snippets do not provide runnable integration projects or fully demonstrate changing props and client-only mounting. The TypeScript quick start passes a potentially null DOM lookup to the constructor.
 
@@ -557,3 +557,11 @@ For each completed item, append a record containing:
 - **Design decision resolved:** `./data` as the documented subpath with a typed JSON-backed artifact, ESM + CommonJS + types, schema-versioned.
 - **Verification:** `npm run build`, `npm run verify-build` (89 regions, 11 intensity colours, schema version checked), `npm run test:package` (`verified package: emmorts-body-muscles-1.1.1.tgz serves ./data and ./data.json to ESM and CommonJS`), `npm run test:types`, and 35 browser tests pass. The ESM consumer also imports the root entry in Node, proving no browser global is touched at import time.
 - **Compatibility:** additive. The `exports` map already restricted undeclared subpaths, and only new subpaths were added, so existing imports are unaffected. `schemaVersion`, `./data`, and `./data.json` are recorded in the CHANGELOG.
+
+### B9 — Runnable TypeScript and framework integration examples
+
+- **Completed:** 2026-10-09.
+- **Commit:** `docs: add runnable integration examples` (see git history for the hash).
+- **Changes:** new `examples/vanilla-typescript` and `examples/react` projects, each with its own `package.json` (lockfile committed), `tsconfig.json`, esbuild build script, and a small static server; they install the library through `file:../..`, so they consume the published entry points rather than sources. `examples/README.md` documents the build and run commands. The vanilla example covers the DOM null check, application-owned state, view switching, callback replacement, and `destroy()` plus rebuild. The React example constructs the chart in an effect (never during render), applies prop and callback changes through `update()`, destroys on cleanup (including a `key`-driven remount), keeps visible mounted/unmounted counters, and is served both server-rendered with `renderToString` plus `hydrateRoot` and client-only with `createRoot`. The README quick start now null-checks its container, the README framework snippets were rewritten to the final API (null checks in every snippet, ref-based React pattern, SSR and StrictMode notes), and the site's example snippets match. CI gains a separate `Examples` job that installs and builds both examples.
+- **Verification:** `npm run build` in both examples (esbuild + `tsc --noEmit`) after a clean `npm ci --prefix` each, matching the CI commands. Real-browser checks on the served pages: the vanilla page rendered 40 anterior regions, toggled a region through `onMuscleClick` state updates, switched to the both-views chart (89 regions), and — after `Rebuild chart` — a click still toggled exactly once, proving the previous chart's listeners were detached, with exactly one container and one tooltip in the DOM throughout. The React page hydrated from server markup, updated state on click, rebuilt on a view change (mounted 2 / unmounted 1), reached the chart with a replaced callback prop, and after `Remount the chart` reported mounted 3 / unmounted 2 with exactly one container and tooltip. The server response for `/` contains 0 chart SVGs, one empty `.chart` container, the rendered controls, the injected initial props, and the client script; `/client-only` mounts the same component with `createRoot`.
+- **Compatibility:** repository-only additions plus documentation; no package API, changelog, or behaviour change. Examples are excluded from the published package by the `files` field.

@@ -56,7 +56,10 @@ pnpm add @emmorts/body-muscles
 ```typescript
 import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
-const chart = new BodyChart(document.getElementById("container"), {
+const container = document.getElementById("container");
+if (!container) throw new Error("Missing #container element");
+
+const chart = new BodyChart(container, {
   view: ViewSide.FRONT,
   bodyState: {},
   onMuscleClick: (id, name) => {
@@ -443,6 +446,14 @@ CommonJS and in any modern bundler; JSON import attributes need Node 20.10 or la
 
 ## Framework Examples
 
+Runnable versions of the vanilla TypeScript and React examples live in
+[`examples/`](examples/README.md), including the server-rendered path:
+
+```bash
+cd examples/vanilla-typescript && npm install && npm start   # http://127.0.0.1:5173
+cd examples/react            && npm install && npm start   # http://127.0.0.1:5174
+```
+
 ### Vanilla JavaScript
 
 ```html
@@ -450,55 +461,79 @@ CommonJS and in any modern bundler; JSON import attributes need Node 20.10 or la
 <script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"></script>
 <script>
   const { BodyChart, ViewSide } = BodyMuscles;
+  const container = document.getElementById("body-map");
+  if (!container) throw new Error("Missing #body-map element");
+
+  // The application owns the state; the chart renders it and keeps no copy.
   const state = {};
 
-  const chart = new BodyChart(document.getElementById("body-map"), {
+  const chart = new BodyChart(container, {
     view: ViewSide.FRONT,
     bodyState: state,
-    onMuscleClick(id, name) {
+    onMuscleClick(id) {
       const cur = state[id] || { intensity: 0, selected: false };
       state[id] = { ...cur, selected: !cur.selected };
-      chart.update({ bodyState: state });
+      chart.update({ bodyState: state }); // bodyState replaces the whole mapping
     },
   });
+
+  // Remove the chart and every listener it added.
+  window.addEventListener("pagehide", () => chart.destroy(), { once: true });
 </script>
 ```
 
 ### React
 
 ```jsx
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
-function BodyMap() {
-  const ref = useRef(null);
+export function BodyMap({ view = ViewSide.FRONT }) {
+  const containerRef = useRef(null);
   const chartRef = useRef(null);
   const [bodyState, setBodyState] = useState({});
 
+  // Props are read through a ref, so the instance effect depends only on `view`.
+  const latest = useRef({ bodyState });
+  latest.current = { bodyState };
+
   useEffect(() => {
-    chartRef.current = new BodyChart(ref.current, {
-      view: ViewSide.FRONT,
-      bodyState,
+    const container = containerRef.current;
+    if (!container) return undefined;
+
+    const chart = new BodyChart(container, {
+      view,
+      bodyState: latest.current.bodyState,
       onMuscleClick(id) {
         setBodyState((prev) => ({
           ...prev,
-          [id]: {
-            intensity: prev[id]?.intensity ?? 0,
-            selected: !prev[id]?.selected,
-          },
+          [id]: { intensity: prev[id]?.intensity ?? 0, selected: !prev[id]?.selected },
         }));
       },
     });
-    return () => chartRef.current?.destroy();
-  }, []);
+    chartRef.current = chart;
 
+    // Unmounting, a changed `key`, or a view change destroys the chart and its
+    // listeners; nothing is left behind.
+    return () => {
+      chart.destroy();
+      chartRef.current = null;
+    };
+  }, [view]);
+
+  // State and callback changes are applied in place, which preserves focus.
   useEffect(() => {
     chartRef.current?.update({ bodyState });
   }, [bodyState]);
 
-  return <div ref={ref} />;
+  return <div ref={containerRef} />;
 }
 ```
+
+The chart is constructed in an effect and never during render, so `BodyMap` is safe to
+server-render: the server emits an empty container and the chart appears after hydration. Give the
+component a `key` to force a clean remount, and note that React 18+ development StrictMode
+double-invokes effects — the cleanup above handles that without leaking instances.
 
 ### Vue 3
 
@@ -516,6 +551,7 @@ const bodyState = ref({});
 let chart;
 
 onMounted(() => {
+  if (!container.value) return;
   chart = new BodyChart(container.value, {
     view: ViewSide.FRONT,
     bodyState: bodyState.value,
@@ -546,6 +582,7 @@ onUnmounted(() => chart?.destroy());
   let bodyState = {};
 
   onMount(() => {
+    if (!container) return;
     chart = new BodyChart(container, {
       view: ViewSide.FRONT,
       bodyState,

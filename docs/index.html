@@ -894,37 +894,56 @@ const { MUSCLE_MAP } = require("@emmorts/body-muscles/data"); // CommonJS</code>
     <section id="examples">
       <div class="container">
         <h2>Framework Examples</h2>
+        <p>
+          Runnable versions of the vanilla TypeScript and React examples live in the repository's
+          <code>examples/</code> directory, including the server-rendered path:
+        </p>
+        <pre><code class="language-bash">cd examples/vanilla-typescript &amp;&amp; npm install &amp;&amp; npm start   # http://127.0.0.1:5173
+cd examples/react            &amp;&amp; npm install &amp;&amp; npm start   # http://127.0.0.1:5174</code></pre>
 
         <h3>Vanilla JavaScript</h3>
         <pre><code class="language-html">&lt;div id="body-map"&gt;&lt;/div&gt;
 &lt;script type="module"&gt;
-  import { BodyChart, ViewSide } from './dist/esm/index.js';
+  import { BodyChart, ViewSide } from '@emmorts/body-muscles';
+
+  const container = document.getElementById('body-map');
+  if (!container) throw new Error('Missing #body-map element');
 
   const state = {};
-  const chart = new BodyChart(document.getElementById('body-map'), {
+  const chart = new BodyChart(container, {
     view: ViewSide.FRONT,
     bodyState: state,
-    onMuscleClick(id, name) {
+    onMuscleClick(id) {
       const cur = state[id] || { intensity: 0, selected: false };
       state[id] = { ...cur, selected: !cur.selected };
-      chart.update({ bodyState: state });
+      chart.update({ bodyState: state }); // bodyState replaces the whole mapping
     },
   });
+
+  // Remove the chart and every listener it added.
+  window.addEventListener('pagehide', () =&gt; chart.destroy(), { once: true });
 &lt;/script&gt;</code></pre>
 
         <h3>React</h3>
-        <pre><code class="language-javascript">import { useRef, useEffect, useState } from 'react';
+        <pre><code class="language-javascript">import { useEffect, useRef, useState } from 'react';
 import { BodyChart, ViewSide } from '@emmorts/body-muscles';
 
-function BodyMap() {
-  const ref = useRef(null);
+export function BodyMap({ view = ViewSide.FRONT }) {
+  const containerRef = useRef(null);
   const chartRef = useRef(null);
   const [bodyState, setBodyState] = useState({});
 
+  // Props are read through a ref, so the instance effect depends only on `view`.
+  const latest = useRef({ bodyState });
+  latest.current = { bodyState };
+
   useEffect(() =&gt; {
-    chartRef.current = new BodyChart(ref.current, {
-      view: ViewSide.FRONT,
-      bodyState,
+    const container = containerRef.current;
+    if (!container) return undefined;
+
+    const chart = new BodyChart(container, {
+      view,
+      bodyState: latest.current.bodyState,
       onMuscleClick(id) {
         setBodyState(prev =&gt; ({
           ...prev,
@@ -932,15 +951,29 @@ function BodyMap() {
         }));
       },
     });
-    return () =&gt; chartRef.current?.destroy();
-  }, []);
+    chartRef.current = chart;
 
+    // Unmounting, a changed `key`, or a view change destroys the chart and its
+    // listeners; nothing is left behind.
+    return () =&gt; {
+      chart.destroy();
+      chartRef.current = null;
+    };
+  }, [view]);
+
+  // State and callback changes are applied in place, which preserves focus.
   useEffect(() =&gt; {
     chartRef.current?.update({ bodyState });
   }, [bodyState]);
 
-  return &lt;div ref={ref} /&gt;;
+  return &lt;div ref={containerRef} /&gt;;
 }</code></pre>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          The chart is constructed in an effect and never during render, so <code>BodyMap</code> is safe to
+          server-render: the server emits an empty container and the chart appears after hydration. Give the
+          component a <code>key</code> to force a clean remount; React 18+ development StrictMode
+          double-invokes effects and the cleanup above handles that without leaking instances.
+        </p>
 
         <h3>Vue 3</h3>
         <pre><code class="language-html">&lt;template&gt;
@@ -956,6 +989,7 @@ function BodyMap() {
   let chart;
 
   onMounted(() =&gt; {
+    if (!container.value) return;
     chart = new BodyChart(container.value, {
       view: ViewSide.FRONT,
       bodyState: bodyState.value,
@@ -980,6 +1014,7 @@ function BodyMap() {
   let bodyState = {};
 
   onMount(() =&gt; {
+    if (!container) return;
     chart = new BodyChart(container, {
       view: ViewSide.FRONT,
       bodyState,

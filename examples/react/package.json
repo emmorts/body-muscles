@@ -1,0 +1,22 @@
+{
+  "name": "body-muscles-example-react",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Runnable React example for @emmorts/body-muscles, including server rendering",
+  "scripts": {
+    "build": "node build.mjs && tsc --noEmit -p tsconfig.json",
+    "start": "node build.mjs && node serve.mjs"
+  },
+  "dependencies": {
+    "@emmorts/body-muscles": "file:../..",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^5.0.0"
+  }
+}

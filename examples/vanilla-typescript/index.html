@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>body-muscles — vanilla TypeScript example</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      body {
+        margin: 0 auto;
+        padding: 1.5rem;
+        max-width: 52rem;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      button {
+        font: inherit;
+        padding: 0.4rem 0.7rem;
+        border-radius: 0.4rem;
+        border: 1px solid currentColor;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+      button[aria-pressed="true"] {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+      }
+      #chart {
+        width: 100%;
+        min-height: 24rem;
+        border: 1px solid rgba(128, 128, 128, 0.3);
+        border-radius: 0.5rem;
+      }
+      .log {
+        font-family: ui-monospace, monospace;
+        font-size: 0.8rem;
+        min-height: 1.2em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vanilla TypeScript example</h1>
+    <p>
+      The application owns <code>bodyState</code>; the chart renders it and never keeps a second copy.
+    </p>
+
+    <div class="toolbar" role="group" aria-label="Chart controls">
+      <button id="view-front" type="button">Anterior</button>
+      <button id="view-back" type="button">Posterior</button>
+      <button id="view-both" type="button">Both</button>
+      <button id="replace-callbacks" type="button">Replace callbacks</button>
+      <button id="rebuild" type="button">Rebuild chart</button>
+    </div>
+
+    <div id="chart"></div>
+    <p class="log" id="log" role="status"></p>
+
+    <script type="module" src="./dist/app.js"></script>
+  </body>
+</html>
