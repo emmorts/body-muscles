@@ -107,6 +107,8 @@ Creates an interactive body map inside the given DOM element.
 | `tooltipFormatter`  | `(muscle, state) => string`            | default     | Custom tooltip content formatter callback   |
 | `interactive`       | `boolean`                              | `true`      | Enable pointer/keyboard interaction         |
 
+Optional constructor fields set to `undefined` use their documented defaults; explicit `false` values are preserved.
+
 #### Methods
 
 | Method                              | Description                                       |

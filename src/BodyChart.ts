@@ -43,16 +43,16 @@ type ResolvedOptions = Required<BodyChartOptions>;
 
 function resolveOptions(options: BodyChartOptions): ResolvedOptions {
   return {
-    className: "",
-    ariaLabel: "",
-    showViewLabel: false,
-    enableTransitions: true,
-    showTooltip: true,
-    tooltipFormatter: (muscle) => muscle.name,
-    interactive: true,
-    onMuscleClick: () => {},
-    onMuscleHover: () => {},
     ...options,
+    className: options.className ?? "",
+    ariaLabel: options.ariaLabel ?? "",
+    showViewLabel: options.showViewLabel ?? false,
+    enableTransitions: options.enableTransitions ?? true,
+    showTooltip: options.showTooltip ?? true,
+    tooltipFormatter: options.tooltipFormatter ?? ((muscle) => muscle.name),
+    interactive: options.interactive ?? true,
+    onMuscleClick: options.onMuscleClick ?? (() => {}),
+    onMuscleHover: options.onMuscleHover ?? (() => {}),
   };
 }
 

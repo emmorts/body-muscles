@@ -90,6 +90,41 @@ await test("interactive chart is one tab stop of toggle-button regions", async (
   );
 });
 
+await test("undefined constructor options retain keyboard interaction and tooltips", async (page) => {
+  await mount(page);
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const state = {};
+    window.chart = new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT,
+      bodyState: state,
+      interactive: undefined,
+      showTooltip: undefined,
+      tooltipFormatter: undefined,
+      onMuscleHover: undefined,
+      className: undefined,
+      ariaLabel: undefined,
+      enableTransitions: undefined,
+      showViewLabel: undefined,
+      onMuscleClick: (id) => {
+        state[id] = { intensity: 0, selected: true };
+        window.chart.update({ bodyState: state });
+      },
+    });
+  });
+  await page.keyboard.press("Tab");
+  assert.equal(await page.locator(".body-chart-svg").getAttribute("role"), "group");
+  assert.equal(await page.locator(".body-chart-tooltip").isVisible(), true);
+  assert.equal(await page.locator(".body-chart-tooltip").textContent(), "Head");
+  await page.keyboard.press("Enter");
+  assert.equal(await page.locator(".body-chart-muscle").first().getAttribute("aria-pressed"), "true");
+  await page.locator('.body-chart-muscle[aria-label="Face"]').hover();
+  assert.equal(await page.locator(".body-chart-tooltip").textContent(), "Face");
+  assert.deepEqual(errors, [], "undefined optional handlers do not break pointer interaction");
+});
+
 await test("display-only chart exposes no focusable regions", async (page) => {
   await mount(page);
   const facts = await page.evaluate(() => {

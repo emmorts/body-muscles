@@ -335,7 +335,7 @@ Review findings are tracked individually; each correction is committed separatel
 - [x] R2 — Preserve focus when the final demo row is deselected.
 - [x] R3 — Restore bounded scrolling and spacing to the demo muscle list.
 - [x] R4 — Fix populated-state contrast and CDN prose-link styling.
-- [ ] R5 — Preserve constructor defaults for undefined options.
+- [x] R5 — Preserve constructor defaults for undefined options.
 - [ ] R6 — Reposition visible tooltips after content updates.
 - [ ] R7 — Restore tooltip visibility and description when enabled during focus.
 - [ ] R8 — Replace the vacuous tooltip-reference cleanup assertion.
@@ -429,3 +429,11 @@ For each completed item, append a record containing:
 - **Verification:** 15 browser tests pass. The new regression computes badge text contrast against its composited background (at least 4.5:1) and checked-marker contrast (at least 3:1) in both themes. Separate served-demo axe audits with a selected muscle and the CDN (ESM) panel visible report 0 violations, 1 incomplete, and 45 passing rules in each theme. The dark checkbox screenshot shows its dark marker; the CDN link's computed decoration is underline. The previously observed color-contrast and link-in-text-block failures are gone; landmark-one-main and region remain passing.
 - **Limit:** automated audits and these targeted measurements are not a full WCAG conformance assessment or a screen-reader check.
 - **Compatibility:** documentation-site only; no package API or changelog change.
+
+### R5 — Undefined constructor options
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix: preserve constructor defaults for undefined options`.
+- **Changes:** resolve every optional field after the supplied options, preserving explicit false values. README, site API reference, and Unreleased changelog document undefined constructor fields.
+- **Verification:** build and 16 browser tests pass. The new regression enters via Tab, activates a region, displays the default tooltip, and hovers Face with undefined optional fields. Separate built-bundle smoke with interactive/showTooltip/tooltipFormatter set to undefined yields role=group, one tab stop, and a visible Head tooltip. Existing display-only and option-off coverage continues to pass.
+- **Compatibility:** fixes optional-field default handling without changing signatures or runtime dependencies.

@@ -10,6 +10,8 @@
   ignored until the view changed.
 - `update()` ignores `undefined` values, so passing a spread object no longer clobbers options
   that were not meant to change.
+- Constructor defaults now apply when optional fields are explicitly `undefined`, including
+  `interactive`; explicit `false` options remain respected.
 - A visible tooltip now reflects explicit `bodyState` updates, including mutations to a reused
   state mapping, or a new `tooltipFormatter`, without waiting for pointer movement.
 - The chart no longer marks its interactive SVG `aria-hidden`, and the container no longer uses
