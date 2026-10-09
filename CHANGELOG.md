@@ -10,8 +10,8 @@
   ignored until the view changed.
 - `update()` ignores `undefined` values, so passing a spread object no longer clobbers options
   that were not meant to change.
-- A visible tooltip now reflects new `bodyState` or `tooltipFormatter` immediately, instead of
-  keeping stale text until the pointer moved again.
+- A visible tooltip now reflects explicit `bodyState` updates, including mutations to a reused
+  state mapping, or a new `tooltipFormatter`, without waiting for pointer movement.
 - The chart no longer marks its interactive SVG `aria-hidden`, and the container no longer uses
   `role="img"`, so muscle regions are reachable by assistive technology instead of being hidden
   focusable content nested inside an image. Regions are exposed as toggle buttons whose

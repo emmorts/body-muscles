@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 complete (A1–A5 done). Phase 2 not started.
+Status: Phase 1 review corrections in progress. Phase 2 not started.
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -327,6 +327,21 @@ These suggestions remain tracked, but are not part of the initial implementation
 - **Zoom and pan:** Reconsider after evaluating whether C1 solves small-region selection adequately. Define touch gestures, keyboard alternatives, focus behavior, and tooltip positioning before implementation.
 - **Additional anatomical models:** Reconsider on concrete consumer demand. Establish dataset provenance, accuracy expectations, identifier compatibility, and maintenance requirements before adding models.
 
+## Phase 1 review corrections
+
+Review findings are tracked individually; each correction is committed separately.
+
+- [x] R1 — Refresh visible tooltips for reused state objects.
+- [ ] R2 — Preserve focus when the final demo row is deselected.
+- [ ] R3 — Restore bounded scrolling and spacing to the demo muscle list.
+- [ ] R4 — Fix populated-state contrast and CDN prose-link styling.
+- [ ] R5 — Preserve constructor defaults for undefined options.
+- [ ] R6 — Reposition visible tooltips after content updates.
+- [ ] R7 — Restore tooltip visibility and description when enabled during focus.
+- [ ] R8 — Replace the vacuous tooltip-reference cleanup assertion.
+- [ ] R9 — Correct the browser tooling Node prerequisite.
+- [ ] R10 — Verify accessibility-tree behavior and record screen-reader verification limits.
+
 ## Completion record
 
 For each completed item, append a record containing:
@@ -381,3 +396,11 @@ For each completed item, append a record containing:
 - **Verification:** axe-core on the served docs page reports 0 violations and 1 "incomplete" (axe's manual-review bucket) in both the light and dark themes, down from 4 violations (73 contrast nodes plus landmark, region, and link-in-text-block findings). An independent in-page scan that resolves each element's effective background confirmed 0 elements below their required ratio in either theme. `npm run typecheck` passes and the 12-test browser suite still passes. Screenshots of both themes confirm the palette reads correctly, including the dark theme's light-blue accent with dark button text.
 - **Note:** section indentation inside `<main>` was intentionally left as-is rather than re-indenting ~590 lines, keeping the diff reviewable; the markup is valid either way.
 - **Compatibility:** documentation-site only; no package-facing API or artifact impact, so no changelog entry. No `[INFERENCE]` items outstanding.
+
+### R1 — Reused-state tooltip refresh
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix: refresh tooltips for reused state mappings` (see git history for the hash).
+- **Changes:** explicit non-undefined `bodyState` updates refresh an open tooltip regardless of object identity. Extended the existing browser regression to cover both replacement mappings and in-place mutation.
+- **Verification:** build and 12 browser tests pass. Separate keyboard-focus smoke on the built bundle changed Head intensity 1→7 using the same state object; both the region label and visible tooltip reflected 7, with focus retained.
+- **Compatibility:** no signature changes or runtime dependencies; Unreleased changelog clarified. Later review corrections remain pending.

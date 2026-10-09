@@ -156,9 +156,9 @@ export class BodyChart {
 
     this.refreshAllPaths();
 
-    // A tooltip that is already on screen must not go stale when its content
-    // source changes, even though the pointer has not moved.
-    if (next.bodyState !== previous.bodyState || next.tooltipFormatter !== previous.tooltipFormatter) {
+    // Consumers may mutate and reuse the state mapping; an explicit state
+    // update must refresh an open tooltip even when its reference is unchanged.
+    if (options.bodyState !== undefined || next.tooltipFormatter !== previous.tooltipFormatter) {
       this.refreshVisibleTooltip();
     }
   }

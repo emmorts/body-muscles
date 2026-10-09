@@ -294,8 +294,12 @@ await test("callbacks are replaced and a visible tooltip refreshes in place", as
     region.dispatchEvent(new PointerEvent("pointerenter", { bubbles: true, clientX: 40, clientY: 40 }));
     out.tooltipOnHover = document.querySelector(".body-chart-tooltip").textContent;
 
-    chart.update({ bodyState: { head: { intensity: 8, selected: true } } });
+    const state = { head: { intensity: 8, selected: true } };
+    chart.update({ bodyState: state });
     out.tooltipAfterState = document.querySelector(".body-chart-tooltip").textContent;
+    state.head.intensity = 3;
+    chart.update({ bodyState: state });
+    out.tooltipAfterMutation = document.querySelector(".body-chart-tooltip").textContent;
 
     chart.update({ tooltipFormatter: (muscle) => `${muscle.name}!` });
     out.tooltipAfterFormatter = document.querySelector(".body-chart-tooltip").textContent;
@@ -308,6 +312,7 @@ await test("callbacks are replaced and a visible tooltip refreshes in place", as
   assert.deepEqual(facts.hovers, ["b:head"], "the replacement hover handler is used");
   assert.equal(facts.tooltipOnHover, "Head @ 0");
   assert.equal(facts.tooltipAfterState, "Head @ 8", "state changes reach the open tooltip");
+  assert.equal(facts.tooltipAfterMutation, "Head @ 3", "reused state mappings reach the open tooltip");
   assert.equal(facts.tooltipAfterFormatter, "Head!", "formatter changes reach the open tooltip");
 });
 
