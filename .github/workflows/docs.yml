@@ -1,0 +1,69 @@
+# Publishing the documentation site to GitHub Pages.
+#
+# The site in `docs/` loads the library from `docs/lib/body-muscles.umd.js`, which is a build
+# artifact and therefore git-ignored. This workflow builds it from source and uploads `docs/` as
+# the Pages artifact, so the published site always matches the source in this repository.
+#
+# Pages must be configured with `build_type: workflow`:
+#   gh api -X PUT repos/emmorts/body-muscles/pages -f build_type=workflow
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - docs/**
+      - src/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - tsconfig*.json
+      - .github/workflows/docs.yml
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build the site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the library and copy the browser bundle into the site
+        run: npm run build && npm run docs:build
+
+      - uses: actions/configure-pages@v6
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write # deploy to Pages
+      id-token: write # verify the deployment came from this workflow
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
