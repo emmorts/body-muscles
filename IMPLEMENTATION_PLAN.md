@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 not started.
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1 complete).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -110,9 +110,16 @@ This document tracks every improvement proposed in the developer and user experi
 
 ## Phase 2 — Integration flexibility and discoverability
 
+**Resolved design decisions (2026-10-09, before implementing the affected public APIs):**
+
+- **B1** — CSS custom properties are prefixed `--bm-*`. Colour customization is a resolver function: the new `intensityColor` option, with an exported `createIntensityColorScale(colors)` helper and `INTENSITY_COLORS` (via `resolveIntensityColor`) as the default.
+- **B2** — `MuscleId` becomes a strict literal union derived from the canonical dataset, so misspelled literals fail compilation. This is a breaking change and requires a major release with migration notes.
+- **B3** — No patch API. Document that option merging is shallow while `bodyState` replaces the complete mapping, with examples that deliberately preserve or remove entries.
+- **B8** — The data-only entry point is the `@emmorts/body-muscles/data` subpath: a typed JSON-backed module (ESM + CJS + types) with a schema version field.
+
 ### B1 — Supported themes, sizing, color mapping, and visual states
 
-- [ ] Complete B1
+- [x] Complete B1
 
 **Problem:** The chart uses inline, mostly hard-coded colors, padding, shadows, tooltip styling, and size limits. Selection relies on a white outline and glow. There is no public palette or color-resolver option.
 
@@ -480,3 +487,12 @@ For each completed item, append a record containing:
 - **Missing prerequisite:** no screen-reader executable or desktop display session is available here. Accessibility-tree inspection is not speech-output or browse/focus-mode verification. A1 is deliberately unchecked pending a real screen-reader/browser check; README and the site explicitly state this limit. No full WCAG-conformance claim is made.
 - **Required manual check:** with a supported desktop screen reader and browser, verify chart/button names and pressed-state announcements, arrow-key behavior in browse and focus modes, Enter/Space selection announcements, tooltip description/dismissal, one-step Tab exit, and the single-image read-only presentation. Record the reader/browser versions and results before completing A1.
 - **Compatibility:** verification documentation only; no package API or changelog change. GitHub CI results have not been observed for these local commits.
+
+### B1 — Supported themes, sizing, color mapping, and visual states
+
+- **Completed:** 2026-10-09.
+- **Commit:** `feat(theme): expose CSS variables, color resolver, and reduced motion` (see git history for the hash).
+- **Changes:** `src/BodyChart.ts` now renders through `--bm-*` custom properties with the previous literals as fallbacks (wrapper padding, SVG height/width limits, SVG shadow, silhouette fill/opacity, region strokes and weights, selection glow, focus halo, tooltip chrome, view-label chrome, transition timing). Added the `intensityColor` option, `IntensityColorResolver` type, and `resolveIntensityColor` / `createIntensityColorScale` exports (with `getMuscleColor` taking an optional third resolver argument). The default `tooltipFormatter` appends the numeric intensity when the region has state. `prefers-reduced-motion: reduce` now disables chart, region, and tooltip transitions regardless of `enableTransitions`, with a `matchMedia` `change` listener that re-applies the preference. The demo's dark theme overrides `--bm-region-stroke` / `--bm-background-fill`. README, docs site, and CHANGELOG document the variables, resolver, and motion behavior.
+- **Design decision resolved:** `--bm-*` prefix; resolver function plus `createIntensityColorScale`, with `INTENSITY_COLORS` as the default scale.
+- **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build` (89 regions across both views, 11 intensity colours), and 25 browser tests pass (7 new: custom resolvers, CSS-variable defaults and overrides, constrained container, reduced motion, default tooltip intensity, selection/focus distinguishable from intensity, demo theme overrides). Real-browser inspection confirmed the light theme is visually unchanged, the dark theme now renders visible region outlines, and the focus halo and tooltip render correctly in both.
+- **Compatibility:** additive for the documentable API (`intensityColor`, new exports, all CSS variables default to the previous values). Two behaviour changes: the default tooltip now includes intensity when state exists, and reduced-motion users no longer get transitions. Both are recorded in the CHANGELOG.

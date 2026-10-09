@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Added
+
+- Public CSS custom properties (`--bm-*`) for layout limits and padding, region strokes, selection
+  and focus styling, tooltip appearance, and view labels. Every variable falls back to the existing
+  built-in value, so current output is unchanged until one is overridden. See the README section
+  "Styling and Theming".
+- The `intensityColor` option, plus the `resolveIntensityColor` and `createIntensityColorScale`
+  exports, so applications can supply their own intensity colour scale. `getMuscleColor()` accepts
+  an optional resolver as its third argument.
+
 ### Fixed
 
 - `BodyChart.update()` now applies every option it accepts. It previously refreshed only the
@@ -32,6 +42,10 @@
   labelled graphic with no focusable regions, tooltip, or callbacks.
 - In-place `update()` calls preserve focus; changing `view` or `interactive` rebuilds the chart
   and therefore drops focus.
+- The default tooltip now appends the numeric intensity (`Name - intensity N`) when the region has
+  state. Pass `tooltipFormatter` to customize the wording.
+- `prefers-reduced-motion: reduce` disables chart and tooltip transitions regardless of
+  `enableTransitions`; the preference is re-evaluated when it changes.
 
 ## 1.1.1 (2026-10-09)
 

@@ -40,6 +40,18 @@ export interface BodyPartState {
 export type BodyState = Partial<Record<MuscleId, BodyPartState>>;
 
 /**
+ * Resolve the fill colour for an intensity level.
+ *
+ * Must return a concrete CSS colour value (for example `#ef4444` or
+ * `hsl(0 84% 60%)`); `var()` references are not resolved where the resolver
+ * output is written to the SVG `fill` presentation attribute.
+ *
+ * @param intensity - Intensity value on the active scale (0-10 by default)
+ * @returns A CSS colour string
+ */
+export type IntensityColorResolver = (intensity: number) => string;
+
+/**
  * Intensity level type guard
  * @param value - Number to check
  * @returns true if value is a valid intensity (0-10)

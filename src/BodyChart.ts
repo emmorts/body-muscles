@@ -1,8 +1,23 @@
-import { filterMuscles, getMuscleColor } from "./utils";
+import { filterMuscles, getMuscleColor, resolveIntensityColor } from "./utils";
 import { ViewSide, MuscleId, BodyState, BodyPartState } from "./types";
+import type { IntensityColorResolver } from "./types";
 import type { MuscleDef } from "./data";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+
+/**
+ * Reference a chart CSS custom property (`--bm-*`), falling back to the
+ * built-in default so rendered output is unchanged until a consumer overrides
+ * the variable. See the README section "Styling and theming".
+ */
+function bmVar(name: string, fallback: string): string {
+  return `var(--bm-${name}, ${fallback})`;
+}
+
+/** Shared transition timing, overridable with `--bm-transition-duration`. */
+function transitionStyle(): string {
+  return `all ${bmVar("transition-duration", "200ms")} ease-out`;
+}
 
 /**
  * Configuration options for the BodyChart
@@ -29,6 +44,15 @@ export interface BodyChartOptions {
   /** Optional custom tooltip content formatter */
   tooltipFormatter?: (muscle: MuscleDef, state?: BodyPartState) => string;
   /**
+   * Resolve the fill colour for a region from its intensity (default: the
+   * exported `INTENSITY_COLORS` palette).
+   *
+   * Build a custom scale with `createIntensityColorScale`. The resolver must
+   * return a concrete CSS colour value; `var()` references are not resolved in
+   * the `fill` presentation attribute.
+   */
+  intensityColor?: IntensityColorResolver;
+  /**
    * Enable pointer and keyboard interaction (default: true).
    *
    * When `false` the chart is a static visualization exposed to assistive
@@ -49,7 +73,11 @@ function resolveOptions(options: BodyChartOptions): ResolvedOptions {
     showViewLabel: options.showViewLabel ?? false,
     enableTransitions: options.enableTransitions ?? true,
     showTooltip: options.showTooltip ?? true,
-    tooltipFormatter: options.tooltipFormatter ?? ((muscle) => muscle.name),
+    tooltipFormatter:
+      options.tooltipFormatter ??
+      ((muscle, state) =>
+        state ? `${muscle.name} - intensity ${state.intensity}` : muscle.name),
+    intensityColor: options.intensityColor ?? resolveIntensityColor,
     interactive: options.interactive ?? true,
     onMuscleClick: options.onMuscleClick ?? (() => {}),
     onMuscleHover: options.onMuscleHover ?? (() => {}),
@@ -118,6 +146,7 @@ export class BodyChart {
   private muscleData: MuscleDef[] = [];
   private tabbableMuscle: MuscleId | null = null;
   private eventCleanup: (() => void)[] = [];
+  private motionQuery: MediaQueryList | null = null;
 
   constructor(container: HTMLElement, options: BodyChartOptions) {
     this.container = container;
@@ -176,6 +205,7 @@ export class BodyChart {
     this.muscleData = [];
     this.tabbableMuscle = null;
     this.hoveredMuscle = null;
+    this.motionQuery = null;
     this.tooltipMuscleId = null;
     this.tooltipClientX = 0;
     this.tooltipClientY = 0;
@@ -257,13 +287,6 @@ export class BodyChart {
     }
   }
 
-  private applyTransitions(): void {
-    if (!this.svgEl) return;
-    (this.svgEl as unknown as HTMLElement).style.transition = this.options.enableTransitions
-      ? "all 200ms ease-out"
-      : "";
-  }
-
   /** Re-render an on-screen tooltip after its content source changed. */
   private refreshVisibleTooltip(): void {
     if (!this.tooltipEl || this.tooltipEl.style.visibility !== "visible") return;
@@ -274,10 +297,42 @@ export class BodyChart {
 
   // ── Build ────────────────────────────────────────────────
 
+  private watchReducedMotion(): void {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = () => this.applyTransitions();
+    query.addEventListener?.("change", onChange);
+    this.motionQuery = query;
+    this.eventCleanup.push(() => query.removeEventListener?.("change", onChange));
+  }
+
+  /**
+   * Transitions are enabled only when the consumer asks for them *and* the
+   * user has not requested reduced motion. The OS preference wins.
+   */
+  private transitionsEnabled(): boolean {
+    if (!this.options.enableTransitions) return false;
+    return !(this.motionQuery?.matches ?? false);
+  }
+
+  private applyTransitions(): void {
+    const transition = this.transitionsEnabled() ? transitionStyle() : "";
+    if (this.svgEl) this.svgEl.style.transition = transition;
+    if (this.tooltipEl) {
+      this.tooltipEl.style.transition = transition ? "opacity 120ms ease-out, transform 120ms ease-out" : "none";
+    }
+    for (const path of this.musclePaths.values()) {
+      path.style.transition = transition ? transitionStyle() : "none";
+    }
+  }
+
   private build(): void {
-    const { view, className, enableTransitions, interactive } = this.options;
+    const { view, className, interactive } = this.options;
     this.muscleData = filterMuscles(view);
     const isBoth = view === ViewSide.BOTH;
+
+    this.watchReducedMotion();
+
     const viewBox = isBoth
       ? "0 0 72 93"
       : view === ViewSide.FRONT
@@ -294,7 +349,7 @@ export class BodyChart {
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      padding: "1rem",
+      padding: bmVar("padding", "1rem"),
     });
 
     // SVG
@@ -309,10 +364,10 @@ export class BodyChart {
     setStyles(this.svgEl as unknown as HTMLElement, {
       height: "auto",
       width: "100%",
-      maxHeight: "70vh",
-      maxWidth: isBoth ? "760px" : "400px",
-      filter: "drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3))",
-      ...(enableTransitions ? { transition: "all 200ms ease-out" } : {}),
+      maxHeight: bmVar("max-height", "70vh"),
+      maxWidth: bmVar(isBoth ? "max-width-both" : "max-width", isBoth ? "760px" : "400px"),
+      filter: bmVar("svg-shadow", "drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3))"),
+      ...(this.transitionsEnabled() ? { transition: transitionStyle() } : {}),
     });
 
     // Defs (SVG filters)
@@ -322,13 +377,13 @@ export class BodyChart {
     const bgGroup = document.createElementNS(SVG_NS, "g");
     bgGroup.classList.add("body-chart-background");
     bgGroup.setAttribute("aria-hidden", "true");
-    (bgGroup as unknown as HTMLElement).style.opacity = "0.1";
+    (bgGroup as unknown as HTMLElement).style.opacity = bmVar("background-opacity", "0.1");
     (bgGroup as unknown as HTMLElement).style.pointerEvents = "none";
 
     for (const m of this.muscleData) {
       const p = document.createElementNS(SVG_NS, "path");
       p.setAttribute("d", m.path);
-      p.setAttribute("fill", "#cbd5e1");
+      p.style.fill = bmVar("background-fill", "#cbd5e1");
       bgGroup.appendChild(p);
     }
     this.svgEl.appendChild(bgGroup);
@@ -420,21 +475,25 @@ export class BodyChart {
       pointerEvents: "none",
       opacity: "0",
       visibility: "hidden",
-      transition: "opacity 120ms ease-out, transform 120ms ease-out",
+      transition: this.transitionsEnabled()
+        ? "opacity 120ms ease-out, transform 120ms ease-out"
+        : "none",
       zIndex: "50",
-      backgroundColor: "rgba(15, 23, 42, 0.92)",
-      color: "#f8fafc",
-      padding: "0.35rem 0.65rem",
-      borderRadius: "0.5rem",
-      fontSize: "0.75rem",
-      fontWeight: "500",
-      lineHeight: "1.2",
+      backgroundColor: bmVar("tooltip-bg", "rgba(15, 23, 42, 0.92)"),
+      color: bmVar("tooltip-color", "#f8fafc"),
+      padding: bmVar("tooltip-padding", "0.35rem 0.65rem"),
+      borderRadius: bmVar("tooltip-radius", "0.5rem"),
+      fontSize: bmVar("tooltip-font-size", "0.75rem"),
+      fontWeight: bmVar("tooltip-font-weight", "500"),
+      lineHeight: bmVar("tooltip-line-height", "1.2"),
       whiteSpace: "nowrap",
-      boxShadow:
+      boxShadow: bmVar(
+        "tooltip-shadow",
         "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25)",
-      border: "1px solid rgba(255, 255, 255, 0.15)",
-      backdropFilter: "blur(8px)",
-      WebkitBackdropFilter: "blur(8px)",
+      ),
+      border: bmVar("tooltip-border", "1px solid rgba(255, 255, 255, 0.15)"),
+      backdropFilter: bmVar("tooltip-backdrop-filter", "blur(8px)"),
+      WebkitBackdropFilter: bmVar("tooltip-backdrop-filter", "blur(8px)"),
       transform: "translate3d(0, 0, 0)",
     });
 
@@ -667,16 +726,24 @@ export class BodyChart {
         isFocused = path.matches(":focus");
       }
     }
-    const fill = getMuscleColor(state, isHovered);
-    const opacity = state.intensity === 0 && !isSelected ? 0.6 : 1;
+    const fill = getMuscleColor(state, isHovered, this.options.intensityColor);
+    const opacity =
+      state.intensity === 0 && !isSelected ? bmVar("region-inactive-opacity", "0.6") : "1";
     const muscle = this.muscleData.find((m) => m.id === muscleId);
 
+    // `fill` stays a presentation attribute so the resolved colour is
+    // introspectable; strokes are CSS properties so `--bm-*` variables resolve.
     path.setAttribute("fill", fill);
-    path.setAttribute(
-      "stroke",
-      isFocused ? "#1d4ed8" : isSelected ? "#ffffff" : "#1e293b",
-    );
-    path.setAttribute("stroke-width", isFocused ? "0.5" : isSelected ? "0.3" : "0.1");
+    path.style.stroke = isFocused
+      ? bmVar("region-stroke-focus", "#1d4ed8")
+      : isSelected
+        ? bmVar("region-stroke-selected", "#ffffff")
+        : bmVar("region-stroke", "#1e293b");
+    path.style.strokeWidth = isFocused
+      ? bmVar("region-stroke-width-focus", "0.5")
+      : isSelected
+        ? bmVar("region-stroke-width-selected", "0.3")
+        : bmVar("region-stroke-width", "0.1");
 
     if (this.options.interactive) {
       // Selection is exposed as a toggle-button state, not only as a colour or
@@ -688,16 +755,19 @@ export class BodyChart {
       );
     }
 
-    path.style.fillOpacity = String(opacity);
+    path.style.fillOpacity = opacity;
     // Focus is a dual-tone halo that stays visible against any background; it
     // replaces the selection/hover glow so the ring is never masked by it.
     path.style.filter = isFocused
-      ? "drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 2.5px rgba(15, 23, 42, 0.9))"
+      ? bmVar(
+          "region-focus-shadow",
+          "drop-shadow(0 0 1.5px rgba(255, 255, 255, 0.95)) drop-shadow(0 0 2.5px rgba(15, 23, 42, 0.9))",
+        )
       : isSelected || isHovered
-        ? "url(#glow)"
+        ? bmVar("region-active-shadow", "url(#glow)")
         : "none";
     path.style.cursor = this.options.interactive ? "pointer" : "default";
-    path.style.transition = this.options.enableTransitions ? "all 200ms ease-out" : "none";
+    path.style.transition = this.transitionsEnabled() ? transitionStyle() : "none";
     path.style.outline = "none";
   }
 
@@ -715,15 +785,15 @@ export class BodyChart {
       bottom: "1rem",
       left: `${horizontalCenter}%`,
       transform: "translateX(-50%)",
-      color: "#64748b",
-      fontSize: "0.875rem",
+      color: bmVar("view-label-color", "#64748b"),
+      fontSize: bmVar("view-label-font-size", "0.875rem"),
       fontFamily: "monospace",
       letterSpacing: "0.1em",
       textTransform: "uppercase",
       pointerEvents: "none",
-      backgroundColor: "rgba(15, 23, 42, 0.5)",
-      padding: "0.25rem 0.75rem",
-      borderRadius: "9999px",
+      backgroundColor: bmVar("view-label-bg", "rgba(15, 23, 42, 0.5)"),
+      padding: bmVar("view-label-padding", "0.25rem 0.75rem"),
+      borderRadius: bmVar("view-label-radius", "9999px"),
       backdropFilter: "blur(4px)",
       zIndex: "10",
     });

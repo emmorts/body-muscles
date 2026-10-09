@@ -10,4 +10,9 @@ export { MUSCLE_MAP, MUSCLE_GROUPS, INTENSITY_COLORS, FRONT_MUSCLES, BACK_MUSCLE
 export type { MuscleDef } from "./data";
 
 // Utility exports
-export { getMuscleColor, filterMuscles } from "./utils";
+export {
+  getMuscleColor,
+  filterMuscles,
+  resolveIntensityColor,
+  createIntensityColorScale,
+} from "./utils";

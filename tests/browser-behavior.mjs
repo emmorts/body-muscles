@@ -519,6 +519,212 @@ await test("multiple instances stay independent", async (page) => {
   assert.equal(facts.distinctTooltipIds, 2, "tooltip ids do not collide");
 });
 
+// ── Library: theming, colour mapping, motion ─────────────
+
+await test("custom intensity resolvers drive region fills", async (page) => {
+  await mount(page);
+  const facts = await page.evaluate(() => {
+    const { BodyChart, ViewSide, createIntensityColorScale, resolveIntensityColor } =
+      window.BodyMuscles;
+    const host = document.getElementById("host");
+    const fill = (label) =>
+      host.querySelector(`.body-chart-muscle[aria-label^="${label}"]`).getAttribute("fill");
+
+    const scaled = new BodyChart(host, {
+      view: ViewSide.FRONT,
+      bodyState: { head: { intensity: 4, selected: false }, face: { intensity: 12, selected: false } },
+      intensityColor: createIntensityColorScale({ 4: "rgb(1, 2, 3)", 10: "rgb(9, 9, 9)" }),
+    });
+    const out = {
+      inRange: fill("Head"),
+      clamped: fill("Face"),
+      paletteFallback: resolveIntensityColor(7),
+    };
+    scaled.destroy();
+
+    const inline = new BodyChart(host, {
+      view: ViewSide.FRONT,
+      bodyState: { head: { intensity: 4, selected: false } },
+      intensityColor: (intensity) => (intensity > 3 ? "rgb(4, 5, 6)" : "rgb(0, 0, 0)"),
+    });
+    out.inline = fill("Head");
+    inline.destroy();
+    return out;
+  });
+
+  assert.equal(facts.inRange, "rgb(1, 2, 3)", "a supplied level is used verbatim");
+  assert.equal(facts.clamped, "rgb(9, 9, 9)", "intensities above the scale clamp to its maximum");
+  assert.equal(facts.paletteFallback, "#ef4444", "levels missing from a scale fall back to the palette");
+  assert.equal(facts.inline, "rgb(4, 5, 6)", "a plain resolver function is accepted");
+});
+
+await test("regions, tooltip, and layout respond to chart CSS custom properties", async (page) => {
+  await mount(page);
+  const defaults = await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const chart = new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT,
+      bodyState: {},
+    });
+    const out = {
+      stroke: getComputedStyle(document.querySelector(".body-chart-muscle")).stroke,
+      tooltipBg: getComputedStyle(document.querySelector(".body-chart-tooltip")).backgroundColor,
+      maxWidth: getComputedStyle(document.querySelector(".body-chart-svg")).maxWidth,
+      padding: getComputedStyle(document.querySelector(".body-chart-container")).padding,
+    };
+    chart.destroy();
+    return out;
+  });
+  assert.equal(defaults.stroke, "rgb(30, 41, 59)", "the built-in outline is unchanged");
+  assert.equal(defaults.tooltipBg, "rgba(15, 23, 42, 0.92)", "the built-in tooltip is unchanged");
+  assert.equal(defaults.maxWidth, "400px", "the built-in width limit is unchanged");
+  assert.equal(defaults.padding, "16px", "the built-in padding is unchanged");
+
+  const overridden = await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const host = document.getElementById("host");
+    host.style.setProperty("--bm-region-stroke", "rgb(1, 2, 3)");
+    host.style.setProperty("--bm-region-inactive-opacity", "0.25");
+    host.style.setProperty("--bm-tooltip-bg", "rgb(4, 5, 6)");
+    host.style.setProperty("--bm-max-width", "222px");
+    host.style.setProperty("--bm-padding", "3px");
+    const chart = new BodyChart(host, { view: ViewSide.FRONT, bodyState: {} });
+    const region = document.querySelector(".body-chart-muscle");
+    const out = {
+      stroke: getComputedStyle(region).stroke,
+      inactiveOpacity: getComputedStyle(region).fillOpacity,
+      tooltipBg: getComputedStyle(document.querySelector(".body-chart-tooltip")).backgroundColor,
+      maxWidth: getComputedStyle(document.querySelector(".body-chart-svg")).maxWidth,
+      padding: getComputedStyle(document.querySelector(".body-chart-container")).padding,
+    };
+    chart.destroy();
+    return out;
+  });
+  assert.equal(overridden.stroke, "rgb(1, 2, 3)", "--bm-region-stroke applies");
+  assert.equal(overridden.inactiveOpacity, "0.25", "--bm-region-inactive-opacity applies");
+  assert.equal(overridden.tooltipBg, "rgb(4, 5, 6)", "--bm-tooltip-bg applies");
+  assert.equal(overridden.maxWidth, "222px", "--bm-max-width applies");
+  assert.equal(overridden.padding, "3px", "--bm-padding applies");
+});
+
+await test("the chart fits a constrained container when its limits are overridden", async (page) => {
+  await page.setContent(
+    '<!doctype html><html lang="en"><body><div id="host" style="width:150px;height:220px;--bm-max-height:100%"></div></body></html>',
+  );
+  await page.addScriptTag({ content: bundle });
+  const facts = await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const host = document.getElementById("host");
+    const chart = new BodyChart(host, { view: ViewSide.FRONT, bodyState: {} });
+    const svg = document.querySelector(".body-chart-svg").getBoundingClientRect();
+    const box = host.getBoundingClientRect();
+    const out = { svgWidth: svg.width, svgHeight: svg.height, hostWidth: box.width, hostHeight: box.height };
+    chart.destroy();
+    return out;
+  });
+  assert.ok(facts.svgWidth <= facts.hostWidth + 0.5, `svg width overflows: ${JSON.stringify(facts)}`);
+  assert.ok(facts.svgHeight <= facts.hostHeight + 0.5, `svg height overflows: ${JSON.stringify(facts)}`);
+});
+
+await test("reduced motion disables chart and tooltip transitions", async (page) => {
+  await mount(page);
+  const before = await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const chart = new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT,
+      bodyState: {},
+    });
+    const out = {
+      svg: document.querySelector(".body-chart-svg").style.transition,
+      tooltip: document.querySelector(".body-chart-tooltip").style.transition,
+      region: document.querySelector(".body-chart-muscle").style.transition,
+    };
+    chart.destroy();
+    return out;
+  });
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const after = await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const chart = new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT,
+      bodyState: {},
+    });
+    const out = {
+      svg: document.querySelector(".body-chart-svg").style.transition,
+      tooltip: document.querySelector(".body-chart-tooltip").style.transition,
+      region: document.querySelector(".body-chart-muscle").style.transition,
+    };
+    chart.update({ enableTransitions: true });
+    out.svgAfterUpdate = document.querySelector(".body-chart-svg").style.transition;
+    chart.destroy();
+    return out;
+  });
+  await page.emulateMedia({ reducedMotion: null });
+
+  assert.match(before.svg, /200ms/, "transitions are on by default");
+  assert.equal(after.svg, "", "reduced motion wins over the default");
+  assert.equal(after.svgAfterUpdate, "", "enableTransitions cannot override the OS preference");
+  assert.equal(after.region, "none");
+  assert.equal(after.tooltip, "none");
+});
+
+await test("the default tooltip exposes the numeric intensity when state exists", async (page) => {
+  await mount(page);
+  await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT,
+      bodyState: { head: { intensity: 6, selected: false } },
+    });
+  });
+
+  // Focus (rather than hover) the head: the face path overlaps its centre.
+  await page.keyboard.press("Tab");
+  assert.equal(await page.locator(".body-chart-tooltip").textContent(), "Head - intensity 6");
+
+  await page.locator('.body-chart-muscle[aria-label^="Face"]').hover();
+  assert.equal(
+    await page.locator(".body-chart-tooltip").textContent(),
+    "Face",
+    "regions without state keep the plain name",
+  );
+});
+
+await test("selection and keyboard focus stay distinguishable from intensity", async (page) => {
+  await mount(page);
+  await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT,
+      // Both regions carry intensity 5, so the fill cannot distinguish them.
+      bodyState: {
+        head: { intensity: 5, selected: true },
+        face: { intensity: 5, selected: false },
+      },
+    });
+  });
+
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("ArrowRight");
+  // Region styles transition for 200ms; read the settled values.
+  await page.waitForFunction(() => document.getAnimations().length === 0);
+  const facts = await page.evaluate(() => {
+    const read = (label) => {
+      const el = document.querySelector(`.body-chart-muscle[aria-label^="${label}"]`);
+      const style = getComputedStyle(el);
+      return { stroke: style.stroke, filter: style.filter, focused: document.activeElement === el };
+    };
+    return { selected: read("Head"), focused: read("Face"), plain: read("Right Neck") };
+  });
+
+  assert.equal(facts.focused.focused, true, "the arrow key moved focus onto the plain region");
+  assert.equal(facts.plain.filter, "none", "an untouched region carries no treatment");
+  assert.notEqual(facts.selected.stroke, facts.plain.stroke, "selection has its own outline");
+  assert.match(facts.focused.filter, /drop-shadow/, "focus draws a halo");
+  assert.notEqual(facts.focused.stroke, facts.selected.stroke, "focus is distinct from selection");
+});
+
 // ── Demo: the controls a visitor actually uses ───────────
 
 function startDocsServer() {
@@ -715,6 +921,25 @@ await test("populated demo badges and checked markers meet contrast in both them
     assert.ok(ratios.badge >= 4.5, `${theme} badge text contrast is ${ratios.badge}`);
     assert.ok(ratios.marker >= 3, `${theme} checkbox state contrast is ${ratios.marker}`);
   }
+});
+
+await test("the demo themes chart regions through CSS custom properties", async (page) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await openDemo(page);
+  const light = await page.evaluate(
+    () => getComputedStyle(document.querySelector(".body-chart-muscle")).stroke,
+  );
+
+  await page.locator("#themeToggle").click();
+  await page.waitForFunction(() => document.documentElement.getAttribute("data-theme") === "dark");
+  // Region styles transition between themes; read the settled values.
+  await page.waitForFunction(() => document.getAnimations().length === 0);
+  const dark = await page.evaluate(
+    () => getComputedStyle(document.querySelector(".body-chart-muscle")).stroke,
+  );
+
+  assert.equal(light, "rgb(30, 41, 59)", "the light theme uses the built-in outline");
+  assert.equal(dark, "rgb(203, 213, 225)", "the dark theme overrides it through --bm-region-stroke");
 });
 
 await browser.close();

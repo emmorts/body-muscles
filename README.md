@@ -105,9 +105,12 @@ Creates an interactive body map inside the given DOM element.
 | `enableTransitions` | `boolean`                              | `true`      | Smooth CSS transitions on state changes     |
 | `showTooltip`       | `boolean`                              | `true`      | Display custom instant floating tooltip     |
 | `tooltipFormatter`  | `(muscle, state) => string`            | default     | Custom tooltip content formatter callback   |
+| `intensityColor`    | `(intensity: number) => string`        | `INTENSITY_COLORS` | Fill-colour resolver for region intensity |
 | `interactive`       | `boolean`                              | `true`      | Enable pointer/keyboard interaction         |
 
 Optional constructor fields set to `undefined` use their documented defaults; explicit `false` values are preserved.
+
+The default `tooltipFormatter` renders the region name, plus `- intensity N` when the region has state. Supply your own to change that wording.
 
 #### Methods
 
@@ -133,6 +136,8 @@ interface BodyPartState {
 }
 
 type BodyState = Partial<Record<MuscleId, BodyPartState>>;
+
+type IntensityColorResolver = (intensity: number) => string;
 ```
 
 ### Data Exports
@@ -149,7 +154,9 @@ type BodyState = Partial<Record<MuscleId, BodyPartState>>;
 
 | Function                                     | Description                              |
 | -------------------------------------------- | ---------------------------------------- |
-| `getMuscleColor(state, isHovered)`           | Returns hex color for a `BodyPartState`   |
+| `getMuscleColor(state, isHovered, resolver?)` | Returns the fill colour for a `BodyPartState` |
+| `resolveIntensityColor(intensity)`           | Default intensity → colour resolver       |
+| `createIntensityColorScale(colors)`          | Build a resolver from a custom palette    |
 | `filterMuscles(view)`                        | Returns `MuscleDef[]` for the given view  |
 | `createBodyPartState(intensity?, selected?)` | Factory with validation                   |
 | `isValidIntensity(value)`                    | Type guard for 0-10 integer               |
@@ -178,6 +185,90 @@ never fire, and no tooltip is rendered. Use `ariaLabel` to name the chart in eit
 
 Verification covers keyboard interaction, Chromium's accessibility tree, and targeted automated audits.
 Screen-reader announcements and browse/focus-mode behavior remain unverified; these checks do not establish full WCAG conformance.
+
+## Styling and Theming
+
+The chart renders with inline styles that reference `--bm-*` CSS custom properties. Every variable
+falls back to the built-in default, so existing output is unchanged until you override one. Set them
+on the chart container or any ancestor:
+
+```css
+.my-chart {
+  --bm-padding: 0.5rem;
+  --bm-max-height: 55vh;
+  --bm-max-width: 320px;
+  --bm-region-stroke: #0f172a;
+  --bm-region-stroke-selected: #f8fafc;
+  --bm-region-inactive-opacity: 0.4;
+  --bm-tooltip-bg: rgba(15, 23, 42, 0.95);
+  --bm-tooltip-color: #f8fafc;
+}
+```
+
+| Variable                         | Applies to                             | Default                          |
+| -------------------------------- | -------------------------------------- | -------------------------------- |
+| `--bm-padding`                   | Wrapper padding                        | `1rem`                           |
+| `--bm-max-height`                | SVG height limit                       | `70vh`                           |
+| `--bm-max-width`                 | SVG width limit, single-view charts    | `400px`                          |
+| `--bm-max-width-both`            | SVG width limit, `BOTH` view           | `760px`                          |
+| `--bm-svg-shadow`                | SVG drop shadow                        | `drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3))` |
+| `--bm-transition-duration`       | Transition timing                      | `200ms`                          |
+| `--bm-region-stroke`             | Unselected region outline              | `#1e293b`                        |
+| `--bm-region-stroke-width`       | Unselected outline weight              | `0.1`                            |
+| `--bm-region-stroke-selected`    | Selected region outline                | `#ffffff`                        |
+| `--bm-region-stroke-width-selected` | Selected outline weight             | `0.3`                            |
+| `--bm-region-stroke-focus`       | Keyboard-focus outline                 | `#1d4ed8`                        |
+| `--bm-region-stroke-width-focus` | Keyboard-focus outline weight          | `0.5`                            |
+| `--bm-region-focus-shadow`       | Keyboard-focus halo filter             | dual `drop-shadow(...)` ring     |
+| `--bm-region-active-shadow`      | Selected / hovered filter              | `url(#glow)`                     |
+| `--bm-region-inactive-opacity`   | Fill opacity of an untouched region    | `0.6`                            |
+| `--bm-background-fill`           | Decorative silhouette fill             | `#cbd5e1`                        |
+| `--bm-background-opacity`        | Decorative silhouette opacity          | `0.1`                            |
+| `--bm-tooltip-bg`                | Tooltip background                     | `rgba(15, 23, 42, 0.92)`         |
+| `--bm-tooltip-color`             | Tooltip text                           | `#f8fafc`                        |
+| `--bm-tooltip-padding`           | Tooltip padding                        | `0.35rem 0.65rem`                |
+| `--bm-tooltip-radius`            | Tooltip corner radius                  | `0.5rem`                         |
+| `--bm-tooltip-font-size`         | Tooltip font size                      | `0.75rem`                        |
+| `--bm-tooltip-font-weight`       | Tooltip font weight                    | `500`                            |
+| `--bm-tooltip-line-height`       | Tooltip line height                    | `1.2`                            |
+| `--bm-tooltip-shadow`            | Tooltip shadow                         | two-layer `box-shadow`           |
+| `--bm-tooltip-border`            | Tooltip border                         | `1px solid rgba(255, 255, 255, 0.15)` |
+| `--bm-tooltip-backdrop-filter`   | Tooltip backdrop filter                | `blur(8px)`                      |
+| `--bm-view-label-color`          | View label text                        | `#64748b`                        |
+| `--bm-view-label-bg`             | View label background                  | `rgba(15, 23, 42, 0.5)`          |
+| `--bm-view-label-padding`        | View label padding                     | `0.25rem 0.75rem`                |
+| `--bm-view-label-radius`         | View label corner radius               | `9999px`                         |
+| `--bm-view-label-font-size`      | View label font size                   | `0.875rem`                       |
+
+Selection is drawn as its own outline and glow, and keyboard focus as a dual-tone halo, so both stay
+distinguishable from the intensity fill regardless of which palette you use.
+
+### Colour mapping
+
+Region fill comes from an intensity resolver. The default is the exported `INTENSITY_COLORS` palette
+(0-10, slate → yellow → orange → red): intensities are rounded and clamped into 0-10, and levels
+missing from a custom palette fall back to the default one. Pass `intensityColor`, either as a
+function or built from your own palette:
+
+```ts
+import { BodyChart, ViewSide, createIntensityColorScale } from "@emmorts/body-muscles";
+
+const chart = new BodyChart(container, {
+  view: ViewSide.FRONT,
+  bodyState: {},
+  intensityColor: createIntensityColorScale({ 0: "#e5e7eb", 5: "#f59e0b", 10: "#dc2626" }),
+});
+```
+
+The resolver must return a concrete CSS colour value; `var()` references are not resolved in the SVG
+`fill` attribute.
+
+### Reduced motion
+
+Transitions are on by default (`enableTransitions: true`). When the user's system requests reduced
+motion (`prefers-reduced-motion: reduce`), chart and tooltip transitions are disabled regardless of
+`enableTransitions` — the OS preference wins, and it is re-evaluated if the preference changes at
+runtime. Overriding `--bm-transition-duration` changes the timing but never re-enables motion.
 
 ## Framework Examples
 
