@@ -337,7 +337,7 @@ Review findings are tracked individually; each correction is committed separatel
 - [x] R4 — Fix populated-state contrast and CDN prose-link styling.
 - [x] R5 — Preserve constructor defaults for undefined options.
 - [x] R6 — Reposition visible tooltips after content updates.
-- [ ] R7 — Restore tooltip visibility and description when enabled during focus.
+- [x] R7 — Restore tooltip visibility and description when enabled during focus.
 - [ ] R8 — Replace the vacuous tooltip-reference cleanup assertion.
 - [ ] R9 — Correct the browser tooling Node prerequisite.
 - [ ] R10 — Verify accessibility-tree behavior and record screen-reader verification limits.
@@ -445,3 +445,11 @@ For each completed item, append a record containing:
 - **Changes:** retain the last tooltip anchor coordinates and reuse showTooltipAt for content refresh, including its collision handling. Anchors are cleared on destruction.
 - **Verification:** build and 17 browser tests pass. New coverage checks chart boundaries after a formatter changes tooltip width for both keyboard and pointer anchors. Separate built-bundle smoke changed Short to a 287px-wide tooltip; its horizontal margins were 64px and 81px instead of overflowing. Screenshot confirms visible content and retained keyboard focus.
 - **Compatibility:** no API changes; content wider than the chart remains outside this fix's scope. Unreleased changelog updated.
+
+### R7 — Enabling tooltips during keyboard focus
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix: restore tooltips when enabled during focus`.
+- **Changes:** reuse focused-tooltip rendering when creating a tooltip for an already focused region; attach the new description without moving focus.
+- **Verification:** build and 18 browser tests pass, including two enable/disable cycles while retaining region focus and updating intensity. Separate built-bundle smoke confirms the focused path describes the newly created tooltip, visibility is visible, and text is Head: 1 without refocusing.
+- **Compatibility:** no API changes; Unreleased changelog updated.

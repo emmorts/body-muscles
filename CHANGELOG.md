@@ -16,6 +16,8 @@
   state mapping, or a new `tooltipFormatter`, without waiting for pointer movement.
 - Tooltip content updates recompute positioning from the current anchor, keeping content
   that fits within the chart inside its boundaries.
+- Enabling tooltips while a region is focused immediately shows its tooltip and restores
+  `aria-describedby`, without requiring the user to leave and re-enter the region.
 - The chart no longer marks its interactive SVG `aria-hidden`, and the container no longer uses
   `role="img"`, so muscle regions are reachable by assistive technology instead of being hidden
   focusable content nested inside an image. Regions are exposed as toggle buttons whose

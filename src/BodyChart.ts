@@ -240,6 +240,9 @@ export class BodyChart {
     const wanted = this.options.showTooltip && this.options.interactive;
     if (wanted && !this.tooltipEl) {
       this.buildTooltip();
+      const focused = document.activeElement;
+      const muscle = this.muscleData.find((m) => this.musclePaths.get(m.id) === focused);
+      if (muscle) this.showFocusedTooltip(muscle, focused as SVGPathElement);
       return;
     }
     if (!wanted && this.tooltipEl) {
@@ -438,6 +441,13 @@ export class BodyChart {
     this.wrapperEl.appendChild(this.tooltipEl);
   }
 
+  private showFocusedTooltip(muscle: MuscleDef, path: SVGPathElement): void {
+    if (!this.tooltipEl) return;
+    path.setAttribute("aria-describedby", this.tooltipId);
+    const rect = path.getBoundingClientRect();
+    this.showTooltipAt(muscle, rect.left + rect.width / 2, rect.top);
+  }
+
   private showTooltipAt(
     muscle: MuscleDef,
     clientX: number,
@@ -536,13 +546,7 @@ export class BodyChart {
       this.hoveredMuscle = muscle.id;
       this.applyRovingTabIndex(muscle.id);
       this.refreshPath(muscle.id);
-      if (this.tooltipId) {
-        path.setAttribute("aria-describedby", this.tooltipId);
-      }
-      const rect = path.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const topY = rect.top;
-      this.showTooltipAt(muscle, centerX, topY);
+      this.showFocusedTooltip(muscle, path);
     };
 
     const onBlur = () => {

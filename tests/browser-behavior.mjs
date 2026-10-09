@@ -284,6 +284,37 @@ await test("updated tooltip content stays inside the chart for keyboard and poin
   }
 });
 
+await test("enabling tooltips describes an already focused region immediately", async (page) => {
+  await mount(page);
+  await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    window.chart = new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT, bodyState: {}, showTooltip: false,
+      tooltipFormatter: (muscle, state) => `${muscle.name} @ ${state?.intensity ?? 0}`,
+    });
+  });
+  await page.keyboard.press("Tab");
+  await page.evaluate(() => { window.focusedRegion = document.activeElement; });
+  for (const intensity of [2, 5]) {
+    await page.evaluate((value) => {
+      window.chart.update({ showTooltip: true, bodyState: { head: { intensity: value, selected: true } } });
+    }, intensity);
+    assert.equal(await page.locator(".body-chart-tooltip").isVisible(), true);
+    const description = await page.evaluate(() => {
+      const target = document.getElementById(document.activeElement.getAttribute("aria-describedby"));
+      return {
+        sameFocus: document.activeElement === window.focusedRegion,
+        ownsTooltip: target === document.querySelector(".body-chart-tooltip"),
+        text: target?.textContent,
+      };
+    });
+    assert.equal(description.sameFocus, true, "enabling does not require refocusing");
+    assert.equal(description.ownsTooltip, true, "the current tooltip is the region's description");
+    assert.equal(description.text, `Head @ ${intensity}`);
+    await page.evaluate(() => window.chart.update({ showTooltip: false }));
+  }
+});
+
 // ── Library: mutable options ─────────────────────────────
 
 await test("update applies every option without a view change", async (page) => {
