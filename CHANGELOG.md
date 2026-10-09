@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Documentation
+
+- Credited the original project and author, Ivan Vulović, in the README, the documentation site
+  footer, and package metadata, and recorded this fork's modifications in `NOTICE`.
+- Corrected stale README claims: 89 regions rather than "70+", actual bundle sizes, and removed
+  "automatic viewport switching", which the chart does not do. Refreshed the feature list, project
+  structure, and development commands.
+
 ## 2.1.0 (2026-10-09)
 
 ### Added

@@ -1,24 +1,33 @@
 # Body Muscles
 
-**Interactive SVG body map with 70+ muscles, intensity visualization, and zero dependencies.**
+**An interactive, accessible SVG body map: 89 anatomical regions, intensity and selection state, zero dependencies.**
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![npm](https://img.shields.io/npm/v/@emmorts%2Fbody-muscles)](https://www.npmjs.com/package/@emmorts/body-muscles)
+[![CI](https://github.com/emmorts/body-muscles/actions/workflows/ci.yml/badge.svg)](https://github.com/emmorts/body-muscles/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-**Documentation:** <https://emmorts.github.io/body-muscles/>
+**Documentation and live playground:** <https://emmorts.github.io/body-muscles/>
 
-Works with React, Vue, Svelte, Angular, or vanilla JavaScript. No framework required.
+You own the state — an intensity from 0 to 10 and a selected flag per region — and the chart draws
+it, handles pointer and keyboard interaction, and labels every region. It is plain DOM, so it works
+with React, Vue, Svelte, Angular, or no framework at all.
+
+`@emmorts/body-muscles` is a maintained fork of [vulovix/body-muscles](https://github.com/vulovix/body-muscles)
+by [Ivan Vulović](https://github.com/vulovix); see [Credits](#credits).
 
 ## Features
 
-- **70+ Anatomical Regions** — Granular muscle mapping, every region drawn as a smoothed bezier path
-- **Multiple Views** — Anterior (front), posterior (back), and side-by-side with automatic viewport switching
-- **Intensity Scale** — 0–10 gradient color mapping (yellow → orange → red)
-- **Instant Tooltips** — Region names follow hover and keyboard focus in an instant floating tooltip, with `tooltipFormatter` for custom content
-- **Interactive** — Hover effects, selection states, glow filters
-- **Zero Dependencies** — Pure TypeScript, ~40KB UMD / ~29KB minified
-- **Three Build Formats** — ESM, CommonJS, UMD (works with `file://` too)
-- **TypeScript First** — Full type safety with exported types and interfaces
+- **89 anatomical regions** — 40 anterior and 49 posterior, drawn as smoothed bezier paths, with
+  name, side, and group metadata for each
+- **Three views** — anterior, posterior, or both side by side
+- **Intensity scale** — 0–10 colour mapping, replaceable with your own resolver or palette
+- **Accessible by default** — one tab stop, arrow-key navigation, toggle-button semantics, tooltips
+  on hover and focus, and a static image mode
+- **Typed identifiers** — a misspelled region identifier is a compile error
+- **Selection helpers** — pure functions to select a whole group or both sides of a region
+- **Themeable and localizable** — `--bm-*` CSS custom properties and replaceable labels
+- **Data without a DOM** — `/data` and `/data.json` entry points for servers and custom renderers
+- **Zero dependencies** — ESM, CommonJS, and a browser global build (64 KB minified, about 23 KB gzipped)
 
 ## Installation
 
@@ -212,7 +221,7 @@ interface MuscleMetadata {
 
 | Export             | Description                                                                            |
 | ------------------ | -------------------------------------------------------------------------------------- |
-| `MUSCLE_MAP`       | All 70+ muscle definitions (front + back)                                              |
+| `MUSCLE_MAP`       | All 89 region definitions (front + back)                                               |
 | `MUSCLE_DEFS`      | The same definitions keyed by identifier, for direct typed access (`MUSCLE_DEFS["biceps-left"]`) |
 | `FRONT_MUSCLES`    | Anterior-view muscle definitions                                                       |
 | `BACK_MUSCLES`     | Posterior-view muscle definitions                                                      |
@@ -691,16 +700,16 @@ const name = getMuscleDef(raw)?.name ?? "unknown";
 ```
 body-muscles/
 ├── src/
-│   ├── BodyChart.ts          # Main class
-│   ├── types.ts              # TypeScript types & utilities
+│   ├── BodyChart.ts          # The chart class
+│   ├── types.ts              # Public types
 │   ├── index.ts              # Public exports
-│   ├── data/                 # SVG path data & muscle definitions
-│   └── utils/                # getMuscleColor, filterMuscles
-├── dist/
-│   ├── esm/                  # ESM build
-│   └── umd/                  # UMD build (browser/CDN)
-├── docs/                     # Documentation site
-├── scripts/                  # Build scripts
+│   ├── data/                 # Region geometry, metadata, groups, and pairs
+│   └── utils/                # Colour, lookup, validation, and selection helpers
+├── dist/                     # Build output: esm/, cjs/, umd/, data/ (git-ignored)
+├── docs/                     # Documentation site (HTML, css, js/)
+├── examples/                 # Runnable vanilla TypeScript and React projects
+├── tests/                    # Browser, selection, and consumer type tests
+├── scripts/                  # Build, verification, docs, and release scripts
 ├── package.json
 └── tsconfig.json
 ```
@@ -712,14 +721,20 @@ This tooling requirement is separate from the published library's unchanged Node
 
 ```bash
 npm install
+npm run typecheck
 npm run build          # ESM, CommonJS, UMD and dist/data/body-muscles-data.json
 npm run verify-build   # load the built artifacts and assert they are complete
-npm run test:browser   # run the built bundle in headless Chromium
-                       # (needs `npm run build` and `npx playwright install chromium` first)
-npm run typecheck
+npm run test:types     # compile a consumer against the built declarations
+npm run test:selection # selection helper behaviour (Node test runner)
+npm run test:package   # pack the package and import it from ESM and CommonJS consumers
+npm run test:browser   # chart, docs, and accessibility tests in headless Chromium
+                       # (needs `npx playwright install chromium` first)
 npm run smooth-paths   # redraw src/data/muscles.*.ts as bezier paths (idempotent)
 npm run docs           # assemble docs/lib (bundle, fonts) and serve the docs site on :3000
 ```
+
+Every command after `build` uses the built output. The [examples](./examples) install the library
+from this checkout, so build it before running them.
 
 The site is static HTML, one cascade-layered stylesheet whose colours and type live only in its
 `tokens` layer, and ES modules in `docs/js/`. It themes the chart solely through the public `--bm-*`
@@ -729,9 +744,22 @@ The site in [`docs/`](./docs) is published to <https://emmorts.github.io/body-mu
 [`.github/workflows/docs.yml`](./.github/workflows/docs.yml), which builds the library and uploads
 the `docs` directory as the Pages artifact on every push to `main` that touches it.
 
+## Credits
+
+Body Muscles was created by [Ivan Vulović](https://github.com/vulovix) as
+[vulovix/body-muscles](https://github.com/vulovix/body-muscles). The anatomical artwork, the region
+dataset, and the chart's original design and API are his work.
+
+This fork is maintained by [Tomas Stropus](https://github.com/emmorts) and published as
+[`@emmorts/body-muscles`](https://www.npmjs.com/package/@emmorts/body-muscles). Since forking, it has
+added keyboard and screen-reader semantics, typed identifiers and metadata, input validation,
+theming and localization hooks, selection helpers, a data-only entry point, browser tests, and
+runnable examples. [CHANGELOG.md](CHANGELOG.md) lists every change.
+
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+Apache 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). The original copyright notice is kept in
+`NOTICE`, as the license requires.
 
 ## Releasing
 
