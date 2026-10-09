@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B4 complete).
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B5 complete).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -189,7 +189,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### B5 — Localization and shared label resolution
 
-- [ ] Complete B5
+- [x] Complete B5
 
 **Problem:** Tooltip formatting is customizable, but view labels and accessible labels remain English.
 
@@ -523,3 +523,12 @@ For each completed item, append a record containing:
 - **Policy chosen:** one validity rule (finite integers 0–10) enforced at the API boundary, with tolerant rendering; the review's recommendation was adopted.
 - **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build`, `npm run test:types`, and 28 browser tests pass. The new browser regression covers `0` and `10` as accepted boundaries, the guard's verdicts for `0, 10, 5.5, -1, 11, NaN, Infinity`, factory messages for each rejection, a rejected construction mounting nothing, a rejected `update()` leaving the fill and `aria-pressed` unchanged, and a subsequent valid update still applying. The earlier resolver regression was rewritten so the clamping assertion targets the colour scale itself rather than a chart accepted out-of-range input.
 - **Compatibility:** breaking for consumers who passed fractional or out-of-range intensities and relied on silent rounding or clamping; recorded as **BREAKING** in the CHANGELOG with the migration (validate or clamp before calling `update()`).
+
+### B5 — Localization and shared label resolution
+
+- **Completed:** 2026-10-09.
+- **Commit:** `feat(i18n): add shared label resolution` (see git history for the hash).
+- **Changes:** new `ChartLabels` option (`labels`) with `chart`, `regionName`, `region`, `intensity`, `tooltip`, and `viewLabel` members, resolved through private `chartName`/`regionName`/`intensityPhrase`/`regionLabel`/`tooltipText`/`viewLabelText` helpers so one mechanism feeds the visual overlay, the tooltip, the accessible names, and the `onMuscleClick` name argument. `tooltipFormatter` is now stored unresolved so the documented precedence (`tooltipFormatter` → `labels.tooltip` → default, and `ariaLabel` → `labels.chart` → default) can be applied at render time. `update()` re-applies the chart label, view labels, every region name, and an open tooltip when `labels` changes, in place and without dropping focus.
+- **Precedence and ownership:** documented in the option JSDoc, README, and site reference. `labels` follows the same whole-object replacement rule as `bodyState` (spread to change one member), which keeps the two consistent rather than introducing a second merge rule. Selection needs no wording: it is exposed as `aria-pressed`, so no label member was invented for it.
+- **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build`, `npm run test:types`, and 30 browser tests pass. The localization regression renders a German configuration and asserts the chart name, region accessible names (with and without intensity), the overlay label, the `labels.tooltip` content, precedence for both `tooltipFormatter` and `ariaLabel`, a runtime member change applied without a rebuild while focus is retained, the localized name reaching `onMuscleClick`, and the localized name appearing in Playwright's accessibility-tree snapshot. A second regression pins the English defaults, including the two `BOTH`-view labels. The type fixture adds a `ChartLabels` usage plus a rejected non-string `regionName`.
+- **Compatibility:** additive; defaults are byte-identical to the previous English wording, verified by the defaults regression.

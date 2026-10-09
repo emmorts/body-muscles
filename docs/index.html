@@ -447,6 +447,12 @@ chart.destroy();</code></pre>
                 <td>Fill-colour resolver for region intensity</td>
               </tr>
               <tr>
+                <td><code>labels</code></td>
+                <td><code>ChartLabels</code></td>
+                <td><code>{}</code></td>
+                <td>Localize the chart name, region names, tooltips, intensity wording, and view labels</td>
+              </tr>
+              <tr>
                 <td><code>interactive</code></td>
                 <td><code>boolean</code></td>
                 <td><code>true</code></td>
@@ -528,6 +534,43 @@ isValidIntensity(9.5); // false
 
 // Invalid bodyState entry for "biceps-left": intensity 12. Expected an integer from 0 to 10.
 chart.update({ bodyState: { "biceps-left": { intensity: 12, selected: true } } });</code></pre>
+
+        <h3>Localization</h3>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          Every rendered string comes from the <code>labels</code> option; each member is optional and falls
+          back to English. The dedicated option wins over the matching member, which wins over the default:
+          <code>ariaLabel</code> beats <code>labels.chart</code>, and <code>tooltipFormatter</code> beats
+          <code>labels.tooltip</code>. Like <code>bodyState</code>, <code>labels</code> is replaced as a whole
+          by <code>update()</code> — spread the current set to change one member — and label updates apply in
+          place without rebuilding the chart or dropping focus.
+        </p>
+        <div style="overflow-x: auto">
+          <table class="api-table">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Renders</th>
+                <th>Default</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>chart(view)</code></td><td>Accessible name of the chart</td><td>Anterior / Posterior body map view</td></tr>
+              <tr><td><code>regionName(muscle)</code></td><td>Base region name, used by the accessible name, tooltip, and <code>onMuscleClick</code></td><td><code>muscle.name</code></td></tr>
+              <tr><td><code>region(muscle, state)</code></td><td>Complete accessible name of a region</td><td>name, plus <code>- intensity N</code> when intensity &gt; 0</td></tr>
+              <tr><td><code>intensity(value)</code></td><td>How a numeric intensity is written</td><td><code>intensity 7</code></td></tr>
+              <tr><td><code>tooltip(muscle, state)</code></td><td>Tooltip content</td><td>name, plus <code>- intensity N</code> when state exists</td></tr>
+              <tr><td><code>viewLabel(view)</code></td><td>Overlay label for one side</td><td><code>Anterior View</code> / <code>Posterior View</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-typescript">const labels: ChartLabels = {
+  chart: () => "Körperkarte",
+  regionName: (muscle) => GERMAN_NAMES[muscle.id] ?? muscle.name,
+  intensity: (value) => `Intensität ${value}`,
+  viewLabel: (view) => (view === ViewSide.FRONT ? "Vorderansicht" : "Rückansicht"),
+};
+
+chart.update({ labels: { ...labels, intensity: (value) => `${value} von 10` } });</code></pre>
 
         <h3>Types</h3>
         <pre><code class="language-typescript">enum ViewSide {

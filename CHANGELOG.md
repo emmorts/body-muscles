@@ -14,6 +14,10 @@
 - `MUSCLE_DEFS` (definitions keyed by identifier), `getMuscleDef(id)` (string lookup returning
   `undefined` when unknown), and `isMuscleId(value)` (type guard), plus the `FrontMuscleId`,
   `BackMuscleId`, `MuscleSpec`, and `MuscleEntry` types.
+- The `labels` option (`ChartLabels`) and its `regionName`, `region`, `intensity`, `tooltip`,
+  `viewLabel`, and `chart` members, so every rendered string — chart name, region names, accessible
+  names, tooltips, intensity wording, and view labels — can be localized. Defaults remain English,
+  `ariaLabel` still beats `labels.chart`, and `tooltipFormatter` still beats `labels.tooltip`.
 
 ### Fixed
 

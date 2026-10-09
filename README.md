@@ -106,6 +106,7 @@ Creates an interactive body map inside the given DOM element.
 | `showTooltip`       | `boolean`                              | `true`      | Display custom instant floating tooltip     |
 | `tooltipFormatter`  | `(muscle, state) => string`            | default     | Custom tooltip content formatter callback   |
 | `intensityColor`    | `(intensity: number) => string`        | `INTENSITY_COLORS` | Fill-colour resolver for region intensity |
+| `labels`            | `ChartLabels`                          | `{}`        | Localize the chart name, region names, tooltips, intensity wording, and view labels |
 | `interactive`       | `boolean`                              | `true`      | Enable pointer/keyboard interaction         |
 
 Optional constructor fields set to `undefined` use their documented defaults; explicit `false` values are preserved.
@@ -320,6 +321,38 @@ Transitions are on by default (`enableTransitions: true`). When the user's syste
 motion (`prefers-reduced-motion: reduce`), chart and tooltip transitions are disabled regardless of
 `enableTransitions` — the OS preference wins, and it is re-evaluated if the preference changes at
 runtime. Overriding `--bm-transition-duration` changes the timing but never re-enables motion.
+
+## Localization
+
+Every string the chart renders comes from the `labels` option, so the interface can be translated
+without patching the library. Each member is optional and falls back to the English default.
+
+| Member                  | Renders                                                     | Default                                            |
+| ----------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
+| `chart(view)`           | Accessible name of the chart                                 | `"Anterior body map view"`, `"Posterior body map view"`, `"Anterior and posterior body map views"` |
+| `regionName(muscle)`    | Base region name, used by the accessible name, tooltip, and `onMuscleClick` | `muscle.name`                        |
+| `region(muscle, state)` | Complete accessible name of a region                          | region name, plus `- intensity N` when intensity > 0 |
+| `intensity(value)`      | How a numeric intensity is written                            | `intensity 7`                                       |
+| `tooltip(muscle, state)`| Tooltip content                                              | region name, plus `- intensity N` when the region has state |
+| `viewLabel(view)`       | Overlay label for one side                                    | `Anterior View` / `Posterior View`                  |
+
+Precedence: the dedicated option wins over the matching `labels` member, which wins over the
+default — `ariaLabel` beats `labels.chart`, and `tooltipFormatter` beats `labels.tooltip`.
+
+```ts
+const labels: ChartLabels = {
+  chart: () => "Körperkarte",
+  regionName: (muscle) => GERMAN_NAMES[muscle.id] ?? muscle.name,
+  intensity: (value) => `Intensität ${value}`,
+  viewLabel: (view) => (view === ViewSide.FRONT ? "Vorderansicht" : "Rückansicht"),
+};
+
+chart.update({ labels: { ...labels, intensity: (value) => `${value} von 10` } });
+```
+
+`labels` is replaced as a whole by `update()`, like `bodyState`, so spread the current set to change
+one member. Label updates apply in place: the overlay, the tooltip, and the accessible names all
+change without rebuilding the chart or dropping focus.
 
 ## Framework Examples
 

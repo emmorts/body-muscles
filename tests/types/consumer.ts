@@ -14,7 +14,7 @@ import {
   getMuscleDef,
   isMuscleId,
 } from "../../dist/index";
-import type { BodyState, MuscleId } from "../../dist/index";
+import type { BodyState, ChartLabels, MuscleId } from "../../dist/index";
 
 const host = document.getElementById("host") ?? document.body;
 
@@ -57,6 +57,18 @@ const dynamic: BodyState = isMuscleId(raw) ? { [raw]: createBodyPartState(5) } :
 const maybeDef = getMuscleDef(raw);
 const resolvedName: string = maybeDef?.name ?? "unknown";
 
-chart.update({ bodyState: dynamic });
+// Labels localize every rendered string; each member is optional.
+const labels: ChartLabels = {
+  chart: () => "Mapa corporal",
+  regionName: (muscle) => muscle.id,
+  intensity: (value) => `${value}/10`,
+  tooltip: (muscle, state) => `${muscle.id}:${state?.intensity ?? 0}`,
+  viewLabel: (view) => (view === ViewSide.BACK ? "Vista posterior" : "Vista anterior"),
+};
 
-export { typo, badId, missingDef, bicepsName, resolvedName };
+// @ts-expect-error - regionName must return a string
+const badLabels: ChartLabels = { regionName: () => 1 };
+
+chart.update({ bodyState: dynamic, labels });
+
+export { typo, badId, missingDef, bicepsName, resolvedName, badLabels, labels };

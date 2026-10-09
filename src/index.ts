@@ -1,6 +1,6 @@
 // Main class export
 export { BodyChart } from "./BodyChart";
-export type { BodyChartOptions } from "./BodyChart";
+export type { BodyChartOptions, ChartLabels } from "./BodyChart";
 
 // Type exports
 export * from "./types";

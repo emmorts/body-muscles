@@ -865,6 +865,107 @@ await test("intensities are validated at the chart boundary", async (page) => {
   assert.equal(facts.afterValid.pressed, "false");
 });
 
+await test("labels localize rendered strings, respect precedence, and update at runtime", async (page) => {
+  await mount(page);
+  const initial = await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const host = document.getElementById("host");
+    window.clicks = [];
+    window.labels = {
+      chart: () => "Körperkarte",
+      regionName: (muscle) => ({ head: "Kopf", face: "Gesicht" })[muscle.id] ?? muscle.name,
+      intensity: (value) => `Intensität ${value}`,
+      tooltip: (muscle, state) => (state ? `${muscle.name}: ${state.intensity}` : muscle.name),
+      viewLabel: (view) => (view === ViewSide.FRONT ? "Vorderansicht" : "Rückansicht"),
+    };
+    window.chart = new BodyChart(host, {
+      view: ViewSide.FRONT,
+      bodyState: { head: { intensity: 7, selected: true } },
+      showViewLabel: true,
+      labels: window.labels,
+      onMuscleClick: (id, name) => window.clicks.push(`${id}:${name}`),
+    });
+    return {
+      chartName: document.querySelector(".body-chart-svg").getAttribute("aria-label"),
+      headLabel: host.querySelector('.body-chart-muscle[aria-label^="Kopf"]').getAttribute("aria-label"),
+      faceLabel: host.querySelector('.body-chart-muscle[aria-label^="Gesicht"]').getAttribute("aria-label"),
+      viewLabel: document.querySelector(".body-chart-view-label").textContent,
+    };
+  });
+
+  assert.equal(initial.chartName, "Körperkarte", "labels.chart names the chart");
+  assert.equal(initial.headLabel, "Kopf - Intensität 7", "the accessible name is localized");
+  assert.equal(initial.faceLabel, "Gesicht", "a region without intensity keeps the plain name");
+  assert.equal(initial.viewLabel, "Vorderansicht", "the overlay label is localized");
+
+  await page.keyboard.press("Tab");
+  assert.equal(
+    await page.locator(".body-chart-tooltip").textContent(),
+    "Head: 7",
+    "labels.tooltip provides the tooltip content",
+  );
+
+  const precedence = await page.evaluate(() => {
+    window.chart.update({ tooltipFormatter: (muscle) => `tooltip:${muscle.name}` });
+    const tooltip = document.querySelector(".body-chart-tooltip").textContent;
+    window.chart.update({ ariaLabel: "Muscle heat map" });
+    return { tooltip, chartName: document.querySelector(".body-chart-svg").getAttribute("aria-label") };
+  });
+  assert.equal(precedence.tooltip, "tooltip:Head", "tooltipFormatter takes precedence");
+  assert.equal(precedence.chartName, "Muscle heat map", "ariaLabel takes precedence");
+
+  // `labels` is replaced as a whole, so runtime changes spread the current set.
+  const runtime = await page.evaluate(() => {
+    const host = document.getElementById("host");
+    const before = document.querySelectorAll(".body-chart-container").length;
+    window.chart.update({ labels: { ...window.labels, intensity: (value) => `${value} von 10` } });
+    return {
+      headLabel: host.querySelector('.body-chart-muscle[aria-label^="Kopf"]').getAttribute("aria-label"),
+      containers: document.querySelectorAll(".body-chart-container").length,
+      before,
+      focusKept: document.activeElement === host.querySelector('.body-chart-muscle[aria-label^="Kopf"]'),
+    };
+  });
+  assert.equal(runtime.headLabel, "Kopf - 7 von 10", "runtime label changes reach the region name");
+  assert.equal(runtime.containers, runtime.before, "a label update does not rebuild the chart");
+  assert.equal(runtime.focusKept, true, "focus survives a label update");
+
+  const clicks = await page.evaluate(() => {
+    document
+      .querySelector('.body-chart-muscle[aria-label^="Kopf"]')
+      .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    return window.clicks;
+  });
+  assert.deepEqual(clicks, ["head:Kopf"], "callbacks receive the localized name");
+
+  const snapshot = await page.locator(".body-chart-svg").ariaSnapshot();
+  assert.match(snapshot, /Kopf - 7 von 10/, "the accessibility tree carries the localized name");
+});
+
+await test("default labels stay English", async (page) => {
+  await mount(page);
+  const facts = await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const host = document.getElementById("host");
+    const chart = new BodyChart(host, {
+      view: ViewSide.BOTH,
+      bodyState: { head: { intensity: 7, selected: false } },
+      showViewLabel: true,
+    });
+    const out = {
+      chartName: document.querySelector(".body-chart-svg").getAttribute("aria-label"),
+      headLabel: host.querySelector('.body-chart-muscle[aria-label^="Head"]').getAttribute("aria-label"),
+      viewLabels: [...document.querySelectorAll(".body-chart-view-label")].map((el) => el.textContent),
+    };
+    chart.destroy();
+    return out;
+  });
+
+  assert.equal(facts.chartName, "Anterior and posterior body map views");
+  assert.equal(facts.headLabel, "Head - intensity 7");
+  assert.deepEqual(facts.viewLabels, ["Anterior View", "Posterior View"]);
+});
+
 // ── Demo: the controls a visitor actually uses ───────────
 
 function startDocsServer() {

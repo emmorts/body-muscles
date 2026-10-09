@@ -20,6 +20,51 @@ function transitionStyle(): string {
 }
 
 /**
+ * Shared label resolution for everything the chart renders as text.
+ *
+ * Every member is optional and falls back to the built-in English wording, so
+ * a configuration only has to override what it needs. Resolution order is:
+ * the dedicated option (`ariaLabel`, `tooltipFormatter`) first, then the
+ * matching `labels` member, then the default.
+ *
+ * ```ts
+ * new BodyChart(el, {
+ *   view: ViewSide.FRONT,
+ *   bodyState: {},
+ *   labels: {
+ *     chart: () => "Körperkarte",
+ *     regionName: (muscle) => GERMAN_NAMES[muscle.id] ?? muscle.name,
+ *     intensity: (value) => `Intensität ${value}`,
+ *     viewLabel: (view) => (view === ViewSide.FRONT ? "Vorderansicht" : "Rückansicht"),
+ *   },
+ * });
+ * ```
+ */
+export interface ChartLabels {
+  /** Accessible name of the whole chart. `ariaLabel` takes precedence when set. */
+  chart?: (view: ViewSide) => string;
+  /** Base display name of a region; defaults to `muscle.name`. */
+  regionName?: (muscle: MuscleDef) => string;
+  /**
+   * Complete accessible name of a region. Defaults to the region name plus the
+   * intensity phrase when the region has an intensity above 0.
+   */
+  region?: (muscle: MuscleDef, state: BodyPartState | undefined) => string;
+  /** How a numeric intensity is written; defaults to `intensity 7`. */
+  intensity?: (value: number) => string;
+  /**
+   * Tooltip content. `tooltipFormatter` takes precedence when both are set.
+   * Defaults to the region name plus the intensity phrase when state exists.
+   */
+  tooltip?: (muscle: MuscleDef, state: BodyPartState | undefined) => string;
+  /**
+   * Overlay label for one side; defaults to `Anterior View` / `Posterior View`.
+   * Called once per side, so the `BOTH` view labels each half separately.
+   */
+  viewLabel?: (view: ViewSide) => string;
+}
+
+/**
  * Configuration options for the BodyChart
  */
 export interface BodyChartOptions {
@@ -60,6 +105,15 @@ export interface BodyChartOptions {
    */
   intensityColor?: IntensityColorResolver;
   /**
+   * Localize every string the chart renders: the chart name, region names,
+   * accessible region names, tooltips, intensity wording, and view labels.
+   * Defaults to English.
+   *
+   * Like `bodyState`, the object is replaced as a whole by `update()`; spread
+   * the current set to change a single member.
+   */
+  labels?: ChartLabels;
+  /**
    * Enable pointer and keyboard interaction (default: true).
    *
    * When `false` the chart is a static visualization exposed to assistive
@@ -70,7 +124,11 @@ export interface BodyChartOptions {
   interactive?: boolean;
 }
 
-type ResolvedOptions = Required<BodyChartOptions>;
+type ResolvedOptions = Omit<Required<BodyChartOptions>, "labels" | "tooltipFormatter"> & {
+  /** `undefined` when the consumer did not supply a tooltip formatter. */
+  tooltipFormatter?: (muscle: MuscleDef, state?: BodyPartState) => string;
+  labels: ChartLabels;
+};
 
 function resolveOptions(options: BodyChartOptions): ResolvedOptions {
   return {
@@ -80,10 +138,8 @@ function resolveOptions(options: BodyChartOptions): ResolvedOptions {
     showViewLabel: options.showViewLabel ?? false,
     enableTransitions: options.enableTransitions ?? true,
     showTooltip: options.showTooltip ?? true,
-    tooltipFormatter:
-      options.tooltipFormatter ??
-      ((muscle, state) =>
-        state ? `${muscle.name} - intensity ${state.intensity}` : muscle.name),
+    tooltipFormatter: options.tooltipFormatter,
+    labels: options.labels ?? {},
     intensityColor: options.intensityColor ?? resolveIntensityColor,
     interactive: options.interactive ?? true,
     onMuscleClick: options.onMuscleClick ?? (() => {}),
@@ -211,9 +267,11 @@ export class BodyChart {
       return;
     }
 
+    const labelsChanged = next.labels !== previous.labels;
+
     if (next.className !== previous.className) this.applyClassName();
-    if (next.ariaLabel !== previous.ariaLabel) this.applyChartLabel();
-    if (next.showViewLabel !== previous.showViewLabel) this.applyViewLabels();
+    if (next.ariaLabel !== previous.ariaLabel || labelsChanged) this.applyChartLabel();
+    if (next.showViewLabel !== previous.showViewLabel || labelsChanged) this.applyViewLabels();
     if (next.showTooltip !== previous.showTooltip) this.applyTooltipPresence();
     if (next.enableTransitions !== previous.enableTransitions) this.applyTransitions();
 
@@ -221,7 +279,11 @@ export class BodyChart {
 
     // Consumers may mutate and reuse the state mapping; an explicit state
     // update must refresh an open tooltip even when its reference is unchanged.
-    if (options.bodyState !== undefined || next.tooltipFormatter !== previous.tooltipFormatter) {
+    if (
+      options.bodyState !== undefined ||
+      next.tooltipFormatter !== previous.tooltipFormatter ||
+      labelsChanged
+    ) {
       this.refreshVisibleTooltip();
     }
   }
@@ -264,12 +326,61 @@ export class BodyChart {
 
   private applyChartLabel(): void {
     if (!this.svgEl) return;
-    const { view, ariaLabel } = this.options;
-    const fallback =
-      view === ViewSide.BOTH
-        ? "Anterior and posterior body map views"
-        : `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} body map view`;
-    this.svgEl.setAttribute("aria-label", ariaLabel || fallback);
+    this.svgEl.setAttribute("aria-label", this.chartName());
+  }
+
+  /**
+   * Accessible name of the chart: `ariaLabel` wins, then `labels.chart`, then
+   * the built-in English default.
+   */
+  private chartName(): string {
+    const { view, ariaLabel, labels } = this.options;
+    if (ariaLabel) return ariaLabel;
+    if (labels.chart) return labels.chart(view);
+    return view === ViewSide.BOTH
+      ? "Anterior and posterior body map views"
+      : `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} body map view`;
+  }
+
+  /** Base display name of a region. */
+  private regionName(muscle: MuscleDef): string {
+    return this.options.labels.regionName?.(muscle) ?? muscle.name;
+  }
+
+  /** How an intensity value is written. */
+  private intensityPhrase(value: number): string {
+    return this.options.labels.intensity?.(value) ?? `intensity ${value}`;
+  }
+
+  /**
+   * Accessible name of a region: `labels.region` when provided, otherwise the
+   * region name plus the intensity phrase when the region has an intensity.
+   */
+  private regionLabel(muscle: MuscleDef, state: BodyPartState | undefined): string {
+    if (this.options.labels.region) return this.options.labels.region(muscle, state);
+    const name = this.regionName(muscle);
+    return state && state.intensity > 0
+      ? `${name} - ${this.intensityPhrase(state.intensity)}`
+      : name;
+  }
+
+  /**
+   * Tooltip content: `tooltipFormatter` wins, then `labels.tooltip`, then the
+   * default region name plus intensity phrase.
+   */
+  private tooltipText(muscle: MuscleDef, state: BodyPartState | undefined): string {
+    if (this.options.tooltipFormatter) return this.options.tooltipFormatter(muscle, state);
+    if (this.options.labels.tooltip) return this.options.labels.tooltip(muscle, state);
+    const name = this.regionName(muscle);
+    return state ? `${name} - ${this.intensityPhrase(state.intensity)}` : name;
+  }
+
+  /** Overlay text for one side of the chart. */
+  private viewLabelText(view: ViewSide): string {
+    return (
+      this.options.labels.viewLabel?.(view) ??
+      (view === ViewSide.FRONT ? "Anterior View" : "Posterior View")
+    );
   }
 
   /** Replace the view overlay labels to match the current view and option. */
@@ -281,14 +392,11 @@ export class BodyChart {
     if (!this.options.showViewLabel) return;
 
     if (this.options.view === ViewSide.BOTH) {
-      this.labelEl = this.buildViewLabel("Anterior View", 25);
+      this.labelEl = this.buildViewLabel(this.viewLabelText(ViewSide.FRONT), 25);
       this.wrapperEl.appendChild(this.labelEl);
-      this.wrapperEl.appendChild(this.buildViewLabel("Posterior View", 75));
+      this.wrapperEl.appendChild(this.buildViewLabel(this.viewLabelText(ViewSide.BACK), 75));
     } else {
-      this.labelEl = this.buildViewLabel(
-        `${this.options.view === ViewSide.FRONT ? "Anterior" : "Posterior"} View`,
-        50,
-      );
+      this.labelEl = this.buildViewLabel(this.viewLabelText(this.options.view), 50);
       this.wrapperEl.appendChild(this.labelEl);
     }
   }
@@ -550,10 +658,7 @@ export class BodyChart {
     this.tooltipMuscleId = muscle.id;
     this.tooltipClientX = clientX;
     this.tooltipClientY = clientY;
-    this.tooltipEl.textContent = this.options.tooltipFormatter(
-      muscle,
-      this.options.bodyState[muscle.id],
-    );
+    this.tooltipEl.textContent = this.tooltipText(muscle, this.options.bodyState[muscle.id]);
     this.tooltipEl.style.visibility = "visible";
     this.tooltipEl.style.opacity = "1";
     this.tooltipEl.setAttribute("aria-hidden", "false");
@@ -649,7 +754,7 @@ export class BodyChart {
     };
 
     const onClick = () => {
-      this.options.onMuscleClick(muscle.id, muscle.name);
+      this.options.onMuscleClick(muscle.id, this.regionName(muscle));
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -657,7 +762,7 @@ export class BodyChart {
         case "Enter":
         case " ":
           e.preventDefault();
-          this.options.onMuscleClick(muscle.id, muscle.name);
+          this.options.onMuscleClick(muscle.id, this.regionName(muscle));
           break;
         case "Escape":
           this.hideTooltip();
@@ -781,10 +886,7 @@ export class BodyChart {
       // Selection is exposed as a toggle-button state, not only as a colour or
       // label suffix, so assistive technology announces it reliably.
       path.setAttribute("aria-pressed", isSelected ? "true" : "false");
-      path.setAttribute(
-        "aria-label",
-        `${muscle?.name || muscleId}${state.intensity > 0 ? ` - intensity ${state.intensity}` : ""}`,
-      );
+      path.setAttribute("aria-label", muscle ? this.regionLabel(muscle, state) : muscleId);
     }
 
     path.style.fillOpacity = opacity;
