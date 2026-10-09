@@ -26,6 +26,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json && tsc -p tsconfig.build.json --module esnext --outDir dist/esm && node scripts/fix-esm-imports.js && node scripts/build-umd.js && node scripts/export-data.js",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "verify-build": "node scripts/verify-build.mjs",
+    "test:browser": "node tests/browser-behavior.mjs",
     "smooth-paths": "node scripts/smooth-raw-paths.ts",
     "export-data": "node scripts/export-data.js",
     "docs": "rm -rf docs/lib && mkdir -p docs/lib && cp dist/umd/body-muscles.umd.js docs/lib/body-muscles.umd.js && npx serve docs",
@@ -61,6 +62,7 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.0",
+    "playwright": "^1.64.0",
     "typescript": "^5.0.0"
   },
   "repository": {

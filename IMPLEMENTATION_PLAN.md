@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 in progress (A1–A3 complete; A4–A5 not started).
+Status: Phase 1 in progress (A1–A4 complete; A5 not started).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -73,7 +73,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### A4 — Browser behavior coverage in continuous integration
 
-- [ ] Complete A4
+- [x] Complete A4
 
 **Problem:** Existing CI checks types and built artifacts, but does not exercise chart DOM behavior or user interaction.
 
@@ -362,3 +362,12 @@ For each completed item, append a record containing:
 - **Changes:** the selected-muscle card is now built once with persistent `#selectedEmpty`/`#selectedDetail` blocks and updated in place, so the slider is never replaced mid-interaction; the row toggle is a native `<input type="checkbox">` (styled with `appearance: none`) instead of a clickable `div`; group chips are created once as `aria-pressed` toggle buttons and only have their state class updated; muscle rows are keyed by id in `muscleRows` and reconciled through `syncMuscleRows`-style logic inside `renderGroupMuscles`, so a row is created once and removed only when deselected, with focus handed to the neighbouring control when the focused row disappears; every slider carries `aria-label`/`aria-valuetext` naming its region, and the selected-card slider is labelled through `#intensitySliderLabel`; display names come from `MUSCLE_MAP` via a `MUSCLE_NAMES` record instead of title-casing identifiers.
 - **Verification:** `node --check docs/app.js` passes. Browser smoke test on the served demo confirmed: the selected card shows "Left Biceps"/`biceps-left` for `aria-label^="Left Biceps"` rather than "Biceps Left"; three `ArrowRight` presses on the selected-card slider produced 1→2→3 with `document.activeElement` still the slider and the card text following; the Chest chip selected 5 muscles with `aria-pressed="true"`, rows rendered native `input/checkbox` toggles and labelled range sliders, and three `ArrowRight` presses on a row slider produced 1→2→3 with focus retained and the value label updating; `Space` on a focused row checkbox deselected it, removed the row, and moved focus to the next row's checkbox (never `document.body`) while the chip returned to `aria-pressed="false"` and the stats updated; no console errors after the interactions. axe-core no longer reports the `label` violations (the two unlabelled sliders); the remaining `color-contrast`, `landmark-one-main`, `link-in-text-block`, and `region` findings are page-level and are tracked as A5.
 - **Compatibility:** demo-only change; no package-facing API or artifact impact, so no changelog entry. No `[INFERENCE]` items outstanding.
+
+### A4 — Browser behaviour coverage in continuous integration
+
+- **Completed:** 2026-10-09.
+- **Commit:** `test: cover chart behaviour in a real browser` (see git history for the hash).
+- **Files:** `tests/browser-behavior.mjs`, `package.json`, `package-lock.json`, `.github/workflows/ci.yml`, `README.md`.
+- **Changes:** added Playwright 1.64.0 as a devDependency and `npm run test:browser`. The suite runs the built UMD bundle in headless Chromium: the library tests inject `dist/umd/body-muscles.umd.js` into a blank page, and the demo tests serve `docs/` from an in-process HTTP server that maps the git-ignored `docs/lib/body-muscles.umd.js` to the freshly built bundle, so no artifact is written into the working tree and external CDN requests are blocked. Each test uses a fresh page. Covered: single-tab-stop and toggle-button semantics, display-only mode, keyboard navigation and activation, focus preservation across in-place updates, tooltip show/refresh/hide and stale `aria-describedby`, every mutable option, callback replacement, view transitions, destruction, multiple instances, and three demo-control behaviours (slider increments, labelled native controls, focus hand-off when a row is deselected).
+- **Verification:** `npm run test:browser` — 12 passed, 0 failed, in ~2.5 s. To prove the suite is a real regression guard rather than a tautology, `src/BodyChart.ts` was reverted to `0a6b1a2` (pre-A2) and `docs/{app.js,index.html,style.css}` to `5ceb9a2` (pre-A3), the bundle rebuilt, and the suite re-run: 6 tests failed — the option-update, tooltip-refresh, focus/tooltip, and all three demo-control tests — confirming they exercise the fixed behaviour. The fixes were then restored and the suite returned to 12 passed. CI wiring (`npx playwright install --with-deps chromium` then `npm run test:browser`) is added but has not yet run on GitHub; that result is still pending.
+- **Compatibility:** development-only; `playwright` is a devDependency, the published `files` list is unchanged, so the runtime dependency footprint stays zero. The browser tests require Node 18+ and a downloaded Chromium; `engines.node` (the consumer contract) was deliberately left at `>=16`. No changelog entry. No `[INFERENCE]` items outstanding.

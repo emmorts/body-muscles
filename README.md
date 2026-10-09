@@ -329,6 +329,8 @@ body-muscles/
 npm install
 npm run build          # ESM, CommonJS, UMD and dist/data/body-muscles-data.json
 npm run verify-build   # load the built artifacts and assert they are complete
+npm run test:browser   # run the built bundle in headless Chromium
+                       # (needs `npm run build` and `npx playwright install chromium` first)
 npm run typecheck
 npm run smooth-paths   # redraw src/data/muscles.*.ts as bezier paths (idempotent)
 npm run docs           # build the browser bundle and serve the docs site on :3000
