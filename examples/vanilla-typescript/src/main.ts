@@ -15,7 +15,7 @@ const bodyState: BodyState = {
 };
 
 let view: ViewSide = ViewSide.FRONT;
-let clickSuffix = "";
+let onMuscleClick = handleMuscleClick;
 
 const log = requireElement("log");
 const container = requireElement("chart");
@@ -33,7 +33,7 @@ function createChart(): BodyChart {
   const instance = new BodyChart(container, {
     view,
     bodyState,
-    onMuscleClick: handleMuscleClick,
+    onMuscleClick,
     onMuscleHover: (id) => {
       if (id) log.textContent = `Hovering ${id}`;
     },
@@ -54,7 +54,7 @@ function handleMuscleClick(id: MuscleId, name: string): void {
   bodyState[id] = { intensity: current.intensity, selected: !current.selected };
   // `bodyState` replaces the whole mapping, so pass the mapping we just edited.
   chart.update({ bodyState });
-  log.textContent = `${name}${clickSuffix} is now ${bodyState[id].selected ? "selected" : "unselected"}`;
+  log.textContent = `${name} is now ${bodyState[id].selected ? "selected" : "unselected"}`;
 }
 
 function setView(next: ViewSide): void {
@@ -82,9 +82,12 @@ requireElement("view-both").addEventListener("click", () => setView(ViewSide.BOT
 
 // Callbacks can be swapped at runtime, exactly like any other option.
 requireElement("replace-callbacks").addEventListener("click", () => {
-  clickSuffix = clickSuffix === "" ? " (new callback)" : "";
-  chart.update({ onMuscleClick: handleMuscleClick });
-  log.textContent = `Callbacks replaced${clickSuffix ? " with the decorated handler" : ""}`;
+  const decorate = onMuscleClick === handleMuscleClick;
+  onMuscleClick = decorate
+    ? (id, name) => handleMuscleClick(id, `${name} (new callback)`)
+    : handleMuscleClick;
+  chart.update({ onMuscleClick });
+  log.textContent = `Callbacks replaced${decorate ? " with the decorated handler" : ""}`;
 });
 
 requireElement("rebuild").addEventListener("click", rebuildChart);

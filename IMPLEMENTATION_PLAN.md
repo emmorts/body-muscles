@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 complete (B1–B9).
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 complete (B1–B9), including review corrections P2-R1–P2-R11.
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -580,4 +580,6 @@ Review baseline: `051005a`. Corrections are implemented and committed separately
 - [x] **P2-R8 — Document TypeScript 5 consumer minimum.** Documented TypeScript 5.0+ in installation/migration guidance, site types, examples prerequisites, and breaking changelog notes; JavaScript requirements remain unchanged. Verification: TypeScript 5.0.4 compiled the representative declaration consumer fixture, including expected invalid-ID errors. The prior TypeScript 4.9 syntax failure establishes the migration need. Commit: `docs: declare TypeScript 5 consumer requirement`.
 - [x] **P2-R9 — Qualify rejected-update guarantees for aliased state.** Corrected README/site, validation JSDoc/comments, changelog, and plan wording: rejected submissions apply nothing, but prior consumer mutations are not rolled back. Recommended validation before mutation or replacement mappings with new changed entries. Verification: Chromium rejected a separate intensity-11 candidate and label change; accepted state/hover remained intensity 6 with the original chart name. Commit: `docs: clarify validation with consumer-owned state`.
 - [x] **P2-R10 — Correct CSS-variable resolver documentation.** Removed the false `var()` restriction from resolver JSDoc/README, clarified inherited-variable resolution and attribute vs computed colour in both references, and added a live-theme/fallback regression. Verification: Chromium fill changed red → blue without `update()`, then used the declared fallback when the variable was removed. Commit: `docs: support CSS variables in intensity resolvers`.
-- [ ] **P2-R11 — Genuine vanilla callback replacement.**
+- [x] **P2-R11 — Genuine vanilla callback replacement.** Replaced closure-suffix mutation with distinct baseline/decorated functions passed through `update()`; rebuilds retain the chosen handler. Verification: built example; Chromium produced baseline → decorated → decorated after rebuild → baseline output, toggling once each time with one container/tooltip. Commit: `fix(examples): demonstrate genuine callback replacement`.
+
+Final correction verification: `typecheck`, `build`, `verify-build`, `test:types`, `test:package`, `test:browser` (38 passed, 0 failed), `docs:build`, and both example builds/type-checks passed. TypeScript 5.0.4 compiled the consumer fixture. Manual browser checks cover cached navigation, the copied CDN snippet, catalog submission/filter/current-row transitions, reused localization objects, optional label state, live CSS-variable colours, and callback replacement/rebuild. Screen-reader verification and remote CI remain unobserved.

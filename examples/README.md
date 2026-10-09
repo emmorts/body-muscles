@@ -24,6 +24,8 @@ npm start                 # builds, then serves http://127.0.0.1:5173
 `npm run build` bundles and type-checks without serving. The page has buttons for each view, a
 callback-replacement button, and a rebuild button that calls `destroy()` before constructing a new
 chart.
+The callback button swaps between distinct baseline and decorated functions through `update()`;
+rebuilding preserves the currently chosen handler.
 
 ## React
 
