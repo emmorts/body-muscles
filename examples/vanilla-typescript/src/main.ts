@@ -2,6 +2,8 @@ import {
   BodyChart,
   ViewSide,
   createBodyPartState,
+  setGroupSelection,
+  setBilateralSelection,
   type BodyState,
   type MuscleId,
 } from "@emmorts/body-muscles";
@@ -9,7 +11,7 @@ import {
 // ── Application state ──────────────────────────────────
 // The consumer owns the state. The chart renders whatever it is given and never
 // keeps a second copy, so there is no synchronisation to get wrong.
-const bodyState: BodyState = {
+let bodyState: BodyState = {
   "biceps-left": createBodyPartState(7, true),
   "chest-upper-left": createBodyPartState(4, false),
 };
@@ -79,6 +81,18 @@ function syncViewButtons(): void {
 requireElement("view-front").addEventListener("click", () => setView(ViewSide.FRONT));
 requireElement("view-back").addEventListener("click", () => setView(ViewSide.BACK));
 requireElement("view-both").addEventListener("click", () => setView(ViewSide.BOTH));
+
+requireElement("toggle-arms").addEventListener("click", () => {
+  bodyState = setGroupSelection(bodyState, "Arms", "toggle");
+  chart.update({ bodyState });
+  log.textContent = "Arms selection toggled; existing intensities preserved";
+});
+
+requireElement("toggle-biceps").addEventListener("click", () => {
+  bodyState = setBilateralSelection(bodyState, "biceps-left", "toggle");
+  chart.update({ bodyState });
+  log.textContent = "Bilateral biceps selection toggled; existing intensities preserved";
+});
 
 // Callbacks can be swapped at runtime, exactly like any other option.
 requireElement("replace-callbacks").addEventListener("click", () => {

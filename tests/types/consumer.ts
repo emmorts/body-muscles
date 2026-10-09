@@ -15,6 +15,8 @@ import {
   createBodyPartState,
   getMuscleDef,
   isMuscleId,
+  setGroupSelection,
+  setBilateralSelection,
 } from "../../dist/index";
 import type { BodyState, ChartLabels, MuscleGroup, MuscleId, MuscleSide } from "../../dist/index";
 
@@ -83,6 +85,15 @@ const missingMetadata = MUSCLE_METADATA["bicepz-left"];
 const wrongGroup: MuscleGroup = "Wings";
 
 chart.update({ bodyState: dynamic, labels });
+
+chart.update({ bodyState: setGroupSelection(state, "Arms", "toggle") });
+chart.update({ bodyState: setBilateralSelection(state, "biceps-right", "select") });
+// @ts-expect-error - group names are canonical, not identifier prefixes
+setGroupSelection(state, "biceps", "select");
+// @ts-expect-error - bilateral selection requires a known region identifier
+setBilateralSelection(state, "bicepz-left", "toggle");
+// @ts-expect-error - selection actions are explicit and checked
+setGroupSelection(state, "Arms", "invert");
 
 export {
   typo,

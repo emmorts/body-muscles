@@ -625,6 +625,7 @@ type IntensityColorResolver = (intensity: number) =&gt; string;
 
 type MuscleSide = "left" | "right" | "central";
 type MuscleGroup = keyof typeof MUSCLE_GROUPS;
+type SelectionAction = "select" | "deselect" | "toggle";
 
 interface MuscleMetadata {
   id: MuscleId;
@@ -670,6 +671,10 @@ interface MuscleMetadata {
               <tr>
                 <td><code>MUSCLE_GROUPS</code></td>
                 <td>Named groups: Head & Neck, Shoulders, Arms, Chest, Back, Abdominals, Legs, Hands & Feet</td>
+              </tr>
+              <tr>
+                <td><code>MUSCLE_PAIRS</code></td>
+                <td>Readonly canonical left/right counterparts in the same anatomical view</td>
               </tr>
               <tr>
                 <td><code>MUSCLE_METADATA</code></td>
@@ -726,6 +731,14 @@ const { MUSCLE_MAP } = require("@emmorts/body-muscles/data"); // CommonJS</code>
                 <td>Build a resolver from a custom intensity palette</td>
               </tr>
               <tr>
+                <td><code>setGroupSelection(state, group, action)</code></td>
+                <td>Pure selection operation on a canonical group across both views</td>
+              </tr>
+              <tr>
+                <td><code>setBilateralSelection(state, id, action)</code></td>
+                <td>Pure selection operation on a region and its canonical counterpart</td>
+              </tr>
+              <tr>
                 <td><code>filterMuscles(view)</code></td>
                 <td>Returns <code>MuscleDef[]</code> for the given view</td>
               </tr>
@@ -768,6 +781,19 @@ const { MUSCLE_MAP } = require("@emmorts/body-muscles/data"); // CommonJS</code>
             </tbody>
           </table>
         </div>
+
+        <h3>Group and bilateral selection</h3>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          Actions are explicit: <code>"select"</code>, <code>"deselect"</code>, or <code>"toggle"</code>.
+          Toggle deselects an entirely selected target set and selects a mixed set. Groups span both views;
+          bilateral selection uses canonical <code>MUSCLE_PAIRS</code>, with central/unpaired regions acting
+          alone. Neither helper mutates input or changes existing intensities or unrelated state.
+          Missing selected entries start at intensity 0; missing deselected entries stay absent.
+          No-ops return the original mapping and unchanged entries are shared, not deep-copied.
+        </p>
+        <pre><code class="language-typescript">state = setGroupSelection(state, "Arms", "toggle");
+state = setBilateralSelection(state, "biceps-right", "deselect");
+chart.update({ bodyState: state }); // Complete replacement, not a per-region patch.</code></pre>
 
         <h3>Styling &amp; Theming</h3>
         <p style="color: var(--fg-muted); font-size: 0.9rem">

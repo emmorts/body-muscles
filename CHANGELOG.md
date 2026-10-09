@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `setGroupSelection(state, group, action)` and `setBilateralSelection(state, id, action)`, with
+  explicit `"select"`, `"deselect"`, and `"toggle"` actions. Toggle selects a mixed target set and
+  deselects a fully selected one. Helpers preserve intensity and unrelated state without mutating
+  inputs; central/unpaired regions act alone. No-op results and unchanged entries are shared.
+- Canonical readonly `MUSCLE_PAIRS` tuples, available from both the root and `./data` entry points.
+  Relationships are explicit and stay within the same region/view; no identifier substitution is used.
+- Vanilla TypeScript group/bilateral controls and demo group selection composed through the helpers.
+  Six deterministic selection regressions and consumer type checks run in CI.
+
 ## 2.0.0 (2026-10-09)
 
 ### Added

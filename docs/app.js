@@ -1,4 +1,4 @@
-const { BodyChart, ViewSide, MUSCLE_GROUPS, MUSCLE_MAP, INTENSITY_COLORS } = window.BodyMuscles;
+const { BodyChart, ViewSide, MUSCLE_GROUPS, MUSCLE_MAP, INTENSITY_COLORS, setGroupSelection } = window.BodyMuscles;
 
 // Display names come from the library's anatomy data rather than being derived
 // from the identifier, which would read "Hand Left" instead of "Left Hand".
@@ -167,9 +167,7 @@ for (const [group, muscles] of Object.entries(MUSCLE_GROUPS)) {
   chip.setAttribute("aria-pressed", "false");
   chip.addEventListener("click", () => {
     const allSel = muscles.every((id) => bodyState[id]?.selected);
-    muscles.forEach((id) => {
-      bodyState[id] = { intensity: bodyState[id]?.intensity ?? 0, selected: !allSel };
-    });
+    bodyState = setGroupSelection(bodyState, group, "toggle");
     chart.update({ bodyState });
     activeGroup = !allSel ? group : activeGroup === group ? null : activeGroup;
     renderGroupChips();

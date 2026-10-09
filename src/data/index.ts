@@ -7,6 +7,7 @@ import { FRONT_MUSCLES } from "./muscles.front";
 import { BACK_MUSCLES } from "./muscles.back";
 
 export { MUSCLE_GROUPS };
+export { MUSCLE_PAIRS } from "./muscle-pairs";
 export type { MuscleGroup } from "./muscle-groups";
 export type { MuscleDef, MuscleMetadata } from "./types";
 export type { MuscleSpec, MuscleEntry } from "./muscle-spec";

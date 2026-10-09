@@ -36,6 +36,9 @@ jobs:
       - name: Consumer type tests
         run: npm run test:types
 
+      - name: Selection behaviour tests
+        run: npm run test:selection
+
       - name: Packaged entry points
         run: npm run test:package
 

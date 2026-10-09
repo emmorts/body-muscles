@@ -10,6 +10,7 @@ export {
   MUSCLE_MAP,
   MUSCLE_DEFS,
   MUSCLE_GROUPS,
+  MUSCLE_PAIRS,
   INTENSITY_COLORS,
   FRONT_MUSCLES,
   BACK_MUSCLES,
@@ -34,4 +35,7 @@ export {
   filterMuscles,
   resolveIntensityColor,
   createIntensityColorScale,
+  setGroupSelection,
+  setBilateralSelection,
 } from "./utils";
+export type { SelectionAction } from "./utils";

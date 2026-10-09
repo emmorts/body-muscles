@@ -296,7 +296,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### C2 — Pure group and bilateral selection helpers
 
-- [ ] Complete C2
+- [x] Complete C2
 
 **Problem:** Consumers repeat selection logic for anatomical groups and paired left/right regions.
 
@@ -311,6 +311,16 @@ This document tracks every improvement proposed in the developer and user experi
 **Verification:** Exercise mixed group selections, paired and unpaired regions, input immutability, and preservation of unrelated state and intensity.
 
 **Dependencies:** B3 and B6.
+
+**Completion:** `setGroupSelection` and `setBilateralSelection` accept explicit select/deselect/toggle
+actions. Toggle selects a mixed set and deselects a fully selected one. Canonical `MUSCLE_PAIRS`
+contains explicit same-view counterparts; central/unpaired IDs act alone. Helpers preserve
+intensities/unrelated state, clone only changed entries, retain sparse deselection, and return
+the original mapping for no-ops. Demo group controls and runnable vanilla controls use these APIs.
+Verification: all root build/type/package gates, six selection cases, 38 browser cases, documentation
+build, and both example builds/type-checks passed. Actual Chromium selected/deselected bilateral
+biceps, retained the left intensity 7, and selected all 14 Arms regions across both views without
+browser errors. Commit: `feat(selection): add pure group and bilateral helpers`.
 
 ### C3 — Reduce unnecessary path-refresh work
 

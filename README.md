@@ -217,6 +217,7 @@ interface MuscleMetadata {
 | `FRONT_MUSCLES`    | Anterior-view muscle definitions                                                       |
 | `BACK_MUSCLES`     | Posterior-view muscle definitions                                                      |
 | `MUSCLE_GROUPS`    | Named groups: Head & Neck, Shoulders, Arms, Chest, Back, Abdominals, Legs, Hands & Feet |
+| `MUSCLE_PAIRS`     | Readonly canonical `[left, right]` counterparts for the same region and anatomical view |
 | `MUSCLE_METADATA`  | Canonical side, group, view, and name for every region, keyed by identifier             |
 | `INTENSITY_COLORS` | Color map (0-10) from slate → yellow → orange → red                                    |
 
@@ -235,8 +236,31 @@ interface MuscleMetadata {
 | `extractMuscleGroup(id)`                     | Identifier prefix only — not the display group |
 | `createBodyPartState(intensity?, selected?)` | Factory with validation                   |
 | `isValidIntensity(value)`                    | Type guard for a finite integer intensity (0-10) |
+| `setGroupSelection(state, group, action)`    | Pure selection operation on a canonical group |
+| `setBilateralSelection(state, id, action)`   | Pure selection operation on a region and its counterpart |
 | `extractMuscleSide(id)`                      | Returns `"left" \| "right" \| "central"`  |
 | `extractMuscleGroup(id)`                     | Returns base group string                 |
+
+### Group and bilateral selection
+
+Both helpers accept an explicit `SelectionAction`: `"select"`, `"deselect"`, or `"toggle"`.
+Toggle deselects the target set when **all** members are selected; otherwise it selects them all.
+Groups include their regions in both views. Bilateral selection uses `MUSCLE_PAIRS`, not identifier
+substitution: either side addresses the same pair; central or unpaired regions act alone.
+
+```ts
+import { setGroupSelection, setBilateralSelection, type BodyState } from "@emmorts/body-muscles";
+
+let state: BodyState = { "biceps-left": { intensity: 7, selected: true } };
+state = setGroupSelection(state, "Arms", "toggle");
+state = setBilateralSelection(state, "biceps-right", "deselect");
+chart.update({ bodyState: state }); // Replace the complete mapping; no per-region patch.
+```
+
+Neither helper mutates the mapping or its entries. Existing intensities and unrelated entries are
+preserved. Selecting a missing entry creates `{ intensity: 0, selected: true }`; deselecting a
+missing entry leaves it absent. No-op operations return the original mapping, and unchanged entries
+are shared, so these are not deep-copy/snapshot APIs. Use `isMuscleId` to narrow dynamic region IDs.
 
 ## Accessibility
 
@@ -429,7 +453,7 @@ const { MUSCLE_MAP } = require("@emmorts/body-muscles/data");
 ```
 
 `@emmorts/body-muscles/data` exports the canonical values without the chart: `MUSCLE_MAP`,
-`MUSCLE_DEFS`, `MUSCLE_METADATA`, `MUSCLE_GROUPS`, `FRONT_MUSCLES`, `BACK_MUSCLES`,
+`MUSCLE_DEFS`, `MUSCLE_METADATA`, `MUSCLE_GROUPS`, `MUSCLE_PAIRS`, `FRONT_MUSCLES`, `BACK_MUSCLES`,
 `INTENSITY_COLORS`, and the `getMuscleDef` / `getMuscleMetadata` / `isMuscleId` lookups.
 
 ### JSON artifact

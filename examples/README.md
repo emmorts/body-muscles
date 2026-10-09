@@ -10,7 +10,7 @@ npm install && npm run build   # from the repository root
 
 | Example | Shows |
 | --- | --- |
-| [`vanilla-typescript`](vanilla-typescript) | DOM null checks, application-owned state, view switching, replacing callbacks, and destroying/rebuilding the chart |
+| [`vanilla-typescript`](vanilla-typescript) | DOM null checks, application-owned state, group/bilateral selection, view switching, replacing callbacks, and destroying/rebuilding the chart |
 | [`react`](react) | Construction in an effect, prop and callback updates, cleanup on unmount, remounts, and server rendering with hydration |
 
 ## Vanilla TypeScript
@@ -26,6 +26,8 @@ callback-replacement button, and a rebuild button that calls `destroy()` before 
 chart.
 The callback button swaps between distinct baseline and decorated functions through `update()`;
 rebuilding preserves the currently chosen handler.
+The Arms and bilateral-biceps buttons compose pure selection helpers with `chart.update()`, replacing
+the complete application-owned mapping while preserving each region's intensity.
 
 ## React
 
