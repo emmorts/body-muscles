@@ -673,6 +673,26 @@ interface MuscleMetadata {
           </table>
         </div>
 
+        <h3>Data-Only Entry Points</h3>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          Rendering the map without a DOM needs the anatomy data, not the chart. Import it from the dedicated
+          subpath so the chart code and browser globals are never pulled in:
+          <code>@emmorts/body-muscles/data</code> exports the same canonical values listed above, and
+          <code>@emmorts/body-muscles/data.json</code> is the JSON document below for consumers that cannot run
+          JavaScript at all.
+        </p>
+        <pre><code class="language-typescript">import { MUSCLE_MAP, MUSCLE_METADATA, INTENSITY_COLORS } from "@emmorts/body-muscles/data";
+
+const { MUSCLE_MAP } = require("@emmorts/body-muscles/data"); // CommonJS</code></pre>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          The JSON artifact carries a versioned schema — <code>schemaVersion</code>, plus
+          <code>intensityColors</code> (11 CSS colours, index 0-10), <code>frontMuscles</code>, and
+          <code>backMuscles</code> whose <code>id</code>, <code>name</code>, <code>path</code>, and
+          <code>view</code> match <code>MuscleDef</code>. Additions keep the version; only a breaking shape change
+          bumps it. Import attributes need Node 20.10+; the module subpaths work in Node 16+ and any modern
+          bundler.
+        </p>
+
         <h3>Utility Functions</h3>
         <div style="overflow-x: auto">
           <table class="api-table">

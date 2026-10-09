@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B7 complete).
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B8 complete).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -240,7 +240,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### B8 — Supported data-only package entry point
 
-- [ ] Complete B8
+- [x] Complete B8
 
 **Problem:** Geometry is already exported as JSON, but the package exports map exposes only the root module.
 
@@ -548,3 +548,12 @@ For each completed item, append a record containing:
 - **Changes:** new "Anatomy Catalog" section on the documentation site (`docs/index.html`, `docs/style.css`, `docs/app.js`), reachable from the header nav. It renders one row per region — identifier, display name, group, side, and view — built from `MUSCLE_MAP` + `MUSCLE_METADATA`, with the group filter options taken from `MUSCLE_GROUPS`, so it is generated from the exported data rather than a second manual list. Controls are a labelled search input plus labelled native group/side/view selects inside a `role="search"` form; results are buttons in a list, with a `role="status"` result count, and the preview follows keyboard focus and marks the active row with `aria-current`. The preview draws both views from the canonical geometry (40 anterior paths, 49 posterior paths) and highlights the active region, with the SVG marked `aria-hidden` so the text caption carries the description. Layout stacks to a single column below 768px.
 - **Verification:** 35 browser tests pass (4 new: canonical coverage and order, text/group/side/view filtering including the empty state, preview-follows-focus with exactly one `aria-current` and one highlighted path in the correct view, and a 390px check that controls and rows fit the viewport, stay tappable, and stack). Manual browser inspection confirmed 89 rows, correct filtering, keyboard preview updates, and responsive stacking; axe-core 4.13.0 on the served page reports 0 violations, 1 incomplete, and 50 passes in both themes (up from 45 passes with no new violations). The pre-existing narrow-screen overflow in the site header and install tabs is unrelated to the catalog and unchanged.
 - **Compatibility:** documentation site only; no package API, changelog, or behaviour change. The README now links to the catalog from the anatomy-data section.
+
+### B8 — Supported data-only package entry point
+
+- **Completed:** 2026-10-09.
+- **Commit:** `feat(package): publish data-only entry points` (see git history for the hash).
+- **Changes:** `package.json` `exports` now publishes `./data` (the compiled `src/data` module: ESM, CommonJS, and types) and `./data.json` (the JSON artifact), plus `./package.json` for tooling. `scripts/export-data.js` writes `schemaVersion: 1` into the JSON and documents the versioning policy (additions keep the version; only an incompatible shape change bumps it). New `scripts/verify-package.mjs` (`npm run test:package`, wired into CI) packs the tarball, unpacks it into an isolated consumer directory, checks that every documented entry point is inside the tarball, and runs ESM and CommonJS consumers that import the module subpath, import the JSON with an attribute / require it, and assert the canonical counts, colours, metadata, and schema version — with no browser globals defined. `scripts/verify-build.mjs` additionally asserts the schema version in dist. README and site document the subpaths, the JSON schema, and the runtime requirements.
+- **Design decision resolved:** `./data` as the documented subpath with a typed JSON-backed artifact, ESM + CommonJS + types, schema-versioned.
+- **Verification:** `npm run build`, `npm run verify-build` (89 regions, 11 intensity colours, schema version checked), `npm run test:package` (`verified package: emmorts-body-muscles-1.1.1.tgz serves ./data and ./data.json to ESM and CommonJS`), `npm run test:types`, and 35 browser tests pass. The ESM consumer also imports the root entry in Node, proving no browser global is touched at import time.
+- **Compatibility:** additive. The `exports` map already restricted undeclared subpaths, and only new subpaths were added, so existing imports are unaffected. `schemaVersion`, `./data`, and `./data.json` are recorded in the CHANGELOG.

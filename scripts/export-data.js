@@ -3,9 +3,14 @@
 // into an image) can use exactly the same data as the runtime library.
 //
 // Written to dist/data/body-muscles-data.json and shipped with the package; `build` runs it.
+//
+// The schema is versioned: `schemaVersion` is an integer that is bumped whenever the shape of
+// this document changes in a way that breaks existing readers. Additions keep the version.
 const fs = require("fs");
 const path = require("path");
 const esbuild = require("esbuild");
+
+const DATA_SCHEMA_VERSION = 1;
 
 const tempDir = path.resolve(__dirname, "../.tmp");
 const tempFile = path.join(tempDir, "data-export.cjs");
@@ -36,7 +41,12 @@ async function main() {
   fs.writeFileSync(
     outPath,
     JSON.stringify(
-      { intensityColors, frontMuscles: FRONT_MUSCLES, backMuscles: BACK_MUSCLES },
+      {
+        schemaVersion: DATA_SCHEMA_VERSION,
+        intensityColors,
+        frontMuscles: FRONT_MUSCLES,
+        backMuscles: BACK_MUSCLES,
+      },
       null,
       2,
     ),

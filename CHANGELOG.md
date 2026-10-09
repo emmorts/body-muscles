@@ -23,6 +23,10 @@
   consumers no longer have to parse identifiers. `MUSCLE_GROUPS` is now declared as a readonly
   literal table whose identifiers are checked against the dataset at compile time, and the release
   gate verifies that every region belongs to exactly one group.
+- Data-only entry points for consumers that never render the chart:
+  `@emmorts/body-muscles/data` (the canonical anatomy exports, ESM and CommonJS with types) and
+  `@emmorts/body-muscles/data.json` (the same geometry and intensity scale as one JSON document,
+  now carrying a `schemaVersion` field). Both work in Node and in bundlers without browser globals.
 
 ### Fixed
 

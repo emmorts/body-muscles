@@ -401,6 +401,46 @@ catalog of every region — identifier, display name, group, side, and view, wit
 drawn from the same geometry as the chart. It is generated from these exports, so it matches the
 installed version.
 
+## Data-Only Usage
+
+Rendering the map without a DOM — a backend that rasterises an SVG, a CLI that validates a saved
+session, or a build script — needs the anatomy data, not the chart. It ships through a dedicated
+subpath, so importing it never pulls in the chart code or touches browser globals:
+
+```ts
+// ESM, bundlers, and TypeScript
+import { MUSCLE_MAP, MUSCLE_METADATA, INTENSITY_COLORS } from "@emmorts/body-muscles/data";
+
+// CommonJS
+const { MUSCLE_MAP } = require("@emmorts/body-muscles/data");
+```
+
+`@emmorts/body-muscles/data` exports the canonical values without the chart: `MUSCLE_MAP`,
+`MUSCLE_DEFS`, `MUSCLE_METADATA`, `MUSCLE_GROUPS`, `FRONT_MUSCLES`, `BACK_MUSCLES`,
+`INTENSITY_COLORS`, and the `getMuscleDef` / `getMuscleMetadata` / `isMuscleId` lookups.
+
+### JSON artifact
+
+For consumers that cannot run JavaScript at all, the geometry and colour scale also ship as one JSON
+document at `@emmorts/body-muscles/data.json` (on disk: `dist/data/body-muscles-data.json`):
+
+```jsonc
+{
+  "schemaVersion": 1, // integer; bumped only when the shape changes incompatibly
+  "intensityColors": ["#94a3b8", "…"], // 11 CSS colours, index 0-10
+  "frontMuscles": [{ "id": "head", "name": "Head", "view": "FRONT", "path": "M 11.639,…" }],
+  "backMuscles": [{ "id": "head-back", "name": "Head (Posterior)", "view": "BACK", "path": "M …" }]
+}
+```
+
+`id`, `name`, `path`, and `view` match `MuscleDef`, and `view` is the string `"FRONT"` or
+`"BACK"`. Load it with `import data from "@emmorts/body-muscles/data.json" with { type: "json" }`
+(Node 20.10+), `require("@emmorts/body-muscles/data.json")`, or by reading the file in any language.
+Additions keep `schemaVersion`; only a breaking shape change bumps it.
+
+Runtime requirements: the subpaths work in Node 16+ (the package's `engines` floor) through
+CommonJS and in any modern bundler; JSON import attributes need Node 20.10 or later.
+
 ## Framework Examples
 
 ### Vanilla JavaScript

@@ -63,6 +63,7 @@ for (const file of readdirSync(path.join(dist, "esm"), { recursive: true })) {
 // The JSON artifact a non-browser consumer renders from.
 const data = JSON.parse(readFileSync(path.join(dist, "data", "body-muscles-data.json"), "utf8"));
 const expectedColors = Array.from({ length: 11 }, (_, i) => INTENSITY_COLORS[i]);
+assert.equal(data.schemaVersion, 1, "the JSON artifact must declare its schema version");
 assert.deepEqual(data.intensityColors, expectedColors);
 assert.deepEqual(
   data.frontMuscles.map((muscle) => muscle.id),
