@@ -27,6 +27,7 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
     "verify-build": "node scripts/verify-build.mjs",
     "test:browser": "node tests/browser-behavior.mjs",
+    "test:types": "tsc -p tests/types/tsconfig.json",
     "smooth-paths": "node scripts/smooth-raw-paths.ts",
     "export-data": "node scripts/export-data.js",
     "docs": "rm -rf docs/lib && mkdir -p docs/lib && cp dist/umd/body-muscles.umd.js docs/lib/body-muscles.umd.js && npx serve docs",

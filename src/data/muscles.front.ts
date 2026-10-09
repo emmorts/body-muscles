@@ -1,11 +1,17 @@
 import { ViewSide } from "../types";
 import type { MuscleDef } from "./types";
+import { defineMuscles } from "./muscle-spec";
 
 /**
- * Front (Anterior) view muscle definitions
+ * Front (Anterior) view muscle definitions.
+ *
+ * Declared with `defineMuscles` so `FrontMuscleId` is derived from the data
+ * itself rather than a hand-maintained list; `FRONT_MUSCLES` re-exports the
+ * same entries with the public `MuscleDef` shape.
+ *
  * All muscle paths with x < 35 in the SVG coordinate system
  */
-export const FRONT_MUSCLES: MuscleDef[] = [
+const FRONT_SOURCE = defineMuscles([
   {
     id: "head",
     name: "Head",
@@ -254,4 +260,10 @@ export const FRONT_MUSCLES: MuscleDef[] = [
     view: ViewSide.FRONT,
     path: "M 26.759,43.802 Q 27.140,43.563 27.590,43.578 L 28.210,43.599 Q 28.660,43.614 28.999,43.317 L 29.088,43.239 Q 29.426,42.943 29.647,43.335 L 30.419,44.708 Q 30.639,45.100 30.752,45.536 L 31.434,48.167 Q 31.501,48.429 31.254,48.540 L 31.254,48.540 Q 31.008,48.650 30.937,48.389 L 30.483,46.718 Q 30.409,46.448 30.159,46.575 L 30.159,46.575 Q 29.909,46.701 29.949,46.979 L 30.218,48.864 Q 30.266,49.196 29.954,49.317 L 29.954,49.317 Q 29.642,49.439 29.587,49.109 L 29.276,47.236 Q 29.228,46.947 28.949,47.036 L 28.949,47.036 Q 28.669,47.126 28.693,47.418 L 28.862,49.476 Q 28.896,49.892 28.511,50.053 L 28.511,50.053 Q 28.126,50.214 28.089,49.799 L 27.889,47.575 Q 27.868,47.347 27.639,47.338 L 27.639,47.338 Q 27.411,47.329 27.396,47.557 L 27.267,49.626 Q 27.244,49.981 26.914,50.113 L 26.914,50.113 Q 26.584,50.244 26.579,49.889 L 26.516,45.874 Q 26.513,45.678 26.342,45.581 L 26.342,45.581 Q 26.172,45.484 26.049,45.637 L 24.967,46.982 Q 24.819,47.167 24.654,46.995 L 24.654,46.995 Q 24.490,46.824 24.569,46.600 L 25.067,45.193 Q 25.217,44.769 25.598,44.530 Z",
   },
-];
+]);
+
+/** Every front-view region identifier, derived from this dataset. */
+export type FrontMuscleId = (typeof FRONT_SOURCE)[number]["id"];
+
+/** Front (Anterior) view muscle definitions. */
+export const FRONT_MUSCLES: MuscleDef[] = [...FRONT_SOURCE];

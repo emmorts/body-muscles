@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1 complete).
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B2 complete).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -139,7 +139,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### B2 — Typed region identifiers and lookup
 
-- [ ] Complete B2
+- [x] Complete B2
 
 **Problem:** `MuscleId` is currently `string`, so misspelled identifiers receive no compile-time feedback.
 
@@ -496,3 +496,12 @@ For each completed item, append a record containing:
 - **Design decision resolved:** `--bm-*` prefix; resolver function plus `createIntensityColorScale`, with `INTENSITY_COLORS` as the default scale.
 - **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build` (89 regions across both views, 11 intensity colours), and 25 browser tests pass (7 new: custom resolvers, CSS-variable defaults and overrides, constrained container, reduced motion, default tooltip intensity, selection/focus distinguishable from intensity, demo theme overrides). Real-browser inspection confirmed the light theme is visually unchanged, the dark theme now renders visible region outlines, and the focus halo and tooltip render correctly in both.
 - **Compatibility:** additive for the documentable API (`intensityColor`, new exports, all CSS variables default to the previous values). Two behaviour changes: the default tooltip now includes intensity when state exists, and reduced-motion users no longer get transitions. Both are recorded in the CHANGELOG.
+
+### B2 — Typed region identifiers and lookup
+
+- **Completed:** 2026-10-09.
+- **Commit:** `feat(types)!: derive MuscleId from the anatomy dataset` (see git history for the hash).
+- **Changes:** the front and back data arrays are built with the new `defineMuscles` helper (`src/data/muscle-spec.ts`), which keeps each entry's `id` as a string literal while widening `name`/`path` — a bare `as const` would have emitted every SVG path as a literal type into the published declarations (measured: 50 KB of `.d.ts` versus 7.7 KB with the helper). `MuscleId` is now `FrontMuscleId | BackMuscleId`, derived from the data. Added `MUSCLE_DEFS` (typed `Record<MuscleId, MuscleDef>`), `getMuscleDef(id: string)` and `isMuscleId(value): value is MuscleId` in `src/data/index.ts`, exported through the root, plus the `MuscleSpec`, `MuscleEntry`, `FrontMuscleId`, and `BackMuscleId` types. `BodyChart`'s `musclePaths` map and `refreshPath` are keyed by `MuscleId`. Added `tests/types/consumer.ts` with `npm run test:types` (wired into CI after the build), a browser test for the lookup API, and README/site documentation including the migration for runtime identifiers.
+- **Design decision resolved:** strict literal union derived from the dataset, accepted as a breaking change requiring a major release.
+- **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build`, `npm run test:types` (fixture compiles; its `@ts-expect-error` directives fire, so unknown literals do fail), and 26 browser tests pass. Runtime checks against the built bundle confirm `getMuscleDef` resolves 89 identifiers, returns `undefined` for unknown input, does not leak prototype keys (`constructor`, `toString`), and that `MUSCLE_DEFS` is keyed by the canonical entries. Declaration output stays compact (7.7 KB across the three affected `.d.ts` files).
+- **Compatibility:** breaking. Consumers passing arbitrary strings as state keys, callback ids, or helper arguments must narrow with `isMuscleId` or switch to `getMuscleDef`. Recorded as **BREAKING** in the CHANGELOG, which now states the next release must be a major version. Existing identifiers are unchanged.

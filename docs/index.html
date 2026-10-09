@@ -500,7 +500,8 @@ chart.destroy();</code></pre>
   BOTH = "BOTH",
 }
 
-type MuscleId = string;
+// Derived from the dataset: the union of every region identifier.
+type MuscleId = "head" | "face" | "neck-left" | /* … 89 in total … */ "foot-back-right";
 
 interface BodyPartState {
   intensity: number;  // 0-10
@@ -510,6 +511,13 @@ interface BodyPartState {
 type BodyState = Partial&lt;Record&lt;MuscleId, BodyPartState&gt;&gt;;
 
 type IntensityColorResolver = (intensity: number) =&gt; string;</code></pre>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          <code>MuscleId</code> is derived from the dataset, so state keys, callbacks, and helpers are checked
+          at compile time and a misspelled literal is an error. Identifiers that only exist at runtime are not
+          narrowed automatically: narrow them with <code>isMuscleId(value)</code> before using them as keys, or
+          resolve them with <code>getMuscleDef(id)</code>, which accepts any string and returns
+          <code>undefined</code> when unknown.
+        </p>
 
         <h3>Data Exports</h3>
         <div style="overflow-x: auto">
@@ -524,6 +532,10 @@ type IntensityColorResolver = (intensity: number) =&gt; string;</code></pre>
               <tr>
                 <td><code>MUSCLE_MAP</code></td>
                 <td>All 70+ muscle definitions (front + back)</td>
+              </tr>
+              <tr>
+                <td><code>MUSCLE_DEFS</code></td>
+                <td>The same definitions keyed by identifier, for direct typed access; unknown literal keys are a compile error</td>
               </tr>
               <tr>
                 <td><code>FRONT_MUSCLES</code></td>
@@ -570,6 +582,14 @@ type IntensityColorResolver = (intensity: number) =&gt; string;</code></pre>
               <tr>
                 <td><code>filterMuscles(view)</code></td>
                 <td>Returns <code>MuscleDef[]</code> for the given view</td>
+              </tr>
+              <tr>
+                <td><code>getMuscleDef(id)</code></td>
+                <td>Region lookup by any string; <code>undefined</code> when unknown</td>
+              </tr>
+              <tr>
+                <td><code>isMuscleId(value)</code></td>
+                <td>Type guard narrowing a string to <code>MuscleId</code></td>
               </tr>
               <tr>
                 <td><code>createBodyPartState(intensity?, selected?)</code></td>

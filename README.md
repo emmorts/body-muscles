@@ -128,7 +128,8 @@ enum ViewSide {
   BOTH = "BOTH",
 }
 
-type MuscleId = string;
+// Derived from the dataset: the union of every region identifier.
+type MuscleId = "head" | "face" | "neck-left" | /* … 89 in total … */ "foot-back-right";
 
 interface BodyPartState {
   intensity: number; // 0-10
@@ -145,6 +146,7 @@ type IntensityColorResolver = (intensity: number) => string;
 | Export             | Description                                                                            |
 | ------------------ | -------------------------------------------------------------------------------------- |
 | `MUSCLE_MAP`       | All 70+ muscle definitions (front + back)                                              |
+| `MUSCLE_DEFS`      | The same definitions keyed by identifier, for direct typed access (`MUSCLE_DEFS["biceps-left"]`) |
 | `FRONT_MUSCLES`    | Anterior-view muscle definitions                                                       |
 | `BACK_MUSCLES`     | Posterior-view muscle definitions                                                      |
 | `MUSCLE_GROUPS`    | Named groups: Head & Neck, Shoulders, Arms, Chest, Back, Abdominals, Legs, Hands & Feet |
@@ -158,6 +160,8 @@ type IntensityColorResolver = (intensity: number) => string;
 | `resolveIntensityColor(intensity)`           | Default intensity → colour resolver       |
 | `createIntensityColorScale(colors)`          | Build a resolver from a custom palette    |
 | `filterMuscles(view)`                        | Returns `MuscleDef[]` for the given view  |
+| `getMuscleDef(id)`                           | Region lookup by any string; `undefined` when unknown |
+| `isMuscleId(value)`                          | Type guard narrowing a string to `MuscleId` |
 | `createBodyPartState(intensity?, selected?)` | Factory with validation                   |
 | `isValidIntensity(value)`                    | Type guard for 0-10 integer               |
 | `extractMuscleSide(id)`                      | Returns `"left" \| "right" \| "central"`  |
@@ -399,6 +403,36 @@ onUnmounted(() => chart?.destroy());
 {muscle_group}-{sub_group}-{side} →  shoulder-front-left
 {singular}                        →  spine
 ```
+
+### Typed identifiers
+
+`MuscleId` is a union derived from the dataset, so `bodyState` keys, callbacks, and helpers are
+checked at compile time:
+
+```ts
+const state: BodyState = {
+  "biceps-left": { intensity: 7, selected: true }, // ok
+  "bicepz-left": { intensity: 7, selected: true }, // error: not a region identifier
+};
+```
+
+Identifiers that only exist at runtime — URL parameters, stored state, user input — are not
+narrowed automatically, so validate them before using them as keys:
+
+```ts
+import { getMuscleDef, isMuscleId, createBodyPartState, type BodyState } from "@emmorts/body-muscles";
+
+const raw: string = new URLSearchParams(location.search).get("muscle") ?? "";
+
+// Narrow first when the value becomes a state key…
+const state: BodyState = isMuscleId(raw) ? { [raw]: createBodyPartState(5) } : {};
+
+// …or look the definition up, which accepts any string and returns undefined.
+const name = getMuscleDef(raw)?.name ?? "unknown";
+```
+
+`MUSCLE_DEFS` is the same data as `MUSCLE_MAP`, keyed by identifier for direct access
+(`MUSCLE_DEFS["biceps-left"]`); TypeScript rejects unknown literal keys on it.
 
 ## Project Structure
 

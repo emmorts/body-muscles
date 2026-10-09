@@ -1,11 +1,17 @@
 import { ViewSide } from "../types";
 import type { MuscleDef } from "./types";
+import { defineMuscles } from "./muscle-spec";
 
 /**
- * Back (Posterior) view muscle definitions
+ * Back (Posterior) view muscle definitions.
+ *
+ * Declared with `defineMuscles` so `BackMuscleId` is derived from the data
+ * itself rather than a hand-maintained list; `BACK_MUSCLES` re-exports the
+ * same entries with the public `MuscleDef` shape.
+ *
  * All muscle paths with x > 35 in the SVG coordinate system
  */
-export const BACK_MUSCLES: MuscleDef[] = [
+const BACK_SOURCE = defineMuscles([
   {
     id: "head-back",
     name: "Head (Posterior)",
@@ -300,4 +306,10 @@ export const BACK_MUSCLES: MuscleDef[] = [
     view: ViewSide.BACK,
     path: "M 57.550,51.653 Q 57.575,51.204 58.023,51.167 L 60.177,50.987 Q 60.625,50.950 60.624,51.400 L 60.617,54.183 Q 60.616,54.633 60.488,55.064 L 58.323,62.360 Q 58.195,62.791 58.152,63.239 L 58.069,64.099 Q 58.026,64.547 57.922,64.985 L 57.620,66.262 Q 57.525,66.663 57.120,66.738 L 57.120,66.738 Q 56.715,66.814 56.738,66.403 Z",
   },
-];
+]);
+
+/** Every back-view region identifier, derived from this dataset. */
+export type BackMuscleId = (typeof BACK_SOURCE)[number]["id"];
+
+/** Back (Posterior) view muscle definitions. */
+export const BACK_MUSCLES: MuscleDef[] = [...BACK_SOURCE];

@@ -142,7 +142,7 @@ export class BodyChart {
   private tooltipMuscleId: MuscleId | null = null;
   private tooltipClientX = 0;
   private tooltipClientY = 0;
-  private musclePaths: Map<string, SVGPathElement> = new Map();
+  private musclePaths: Map<MuscleId, SVGPathElement> = new Map();
   private muscleData: MuscleDef[] = [];
   private tabbableMuscle: MuscleId | null = null;
   private eventCleanup: (() => void)[] = [];
@@ -709,7 +709,7 @@ export class BodyChart {
     }
   }
 
-  private refreshPath(muscleId: string): void {
+  private refreshPath(muscleId: MuscleId): void {
     const path = this.musclePaths.get(muscleId);
     if (!path) return;
 

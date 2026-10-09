@@ -725,6 +725,30 @@ await test("selection and keyboard focus stay distinguishable from intensity", a
   assert.notEqual(facts.focused.stroke, facts.selected.stroke, "focus is distinct from selection");
 });
 
+await test("region identifiers resolve through the typed lookup API", async (page) => {
+  await mount(page);
+  const facts = await page.evaluate(() => {
+    const { getMuscleDef, isMuscleId, MUSCLE_DEFS, MUSCLE_MAP } = window.BodyMuscles;
+    return {
+      known: getMuscleDef("biceps-left")?.name ?? null,
+      unknown: getMuscleDef("bicepz-left") === undefined,
+      prototypeKey: getMuscleDef("constructor") === undefined,
+      guardKnown: isMuscleId("spine"),
+      guardUnknown: isMuscleId("spiney"),
+      tableSize: Object.keys(MUSCLE_DEFS).length,
+      canonical: MUSCLE_MAP.every((muscle) => MUSCLE_DEFS[muscle.id] === muscle),
+    };
+  });
+
+  assert.equal(facts.known, "Left Biceps", "a known identifier resolves to its definition");
+  assert.equal(facts.unknown, true, "an unknown identifier resolves to undefined");
+  assert.equal(facts.prototypeKey, true, "inherited object keys do not leak into the lookup");
+  assert.equal(facts.guardKnown, true);
+  assert.equal(facts.guardUnknown, false);
+  assert.equal(facts.tableSize, 89, "the table covers every region");
+  assert.equal(facts.canonical, true, "the table is keyed by the canonical entries");
+});
+
 // ── Demo: the controls a visitor actually uses ───────────
 
 function startDocsServer() {

@@ -11,6 +11,9 @@
 - The `intensityColor` option, plus the `resolveIntensityColor` and `createIntensityColorScale`
   exports, so applications can supply their own intensity colour scale. `getMuscleColor()` accepts
   an optional resolver as its third argument.
+- `MUSCLE_DEFS` (definitions keyed by identifier), `getMuscleDef(id)` (string lookup returning
+  `undefined` when unknown), and `isMuscleId(value)` (type guard), plus the `FrontMuscleId`,
+  `BackMuscleId`, `MuscleSpec`, and `MuscleEntry` types.
 
 ### Fixed
 
@@ -35,6 +38,12 @@
 
 ### Changed
 
+- **BREAKING:** `MuscleId` is now a union of the region identifiers derived from the dataset, not
+  `string`. State keys, callbacks, and helpers are type-checked, so a misspelled literal is a
+  compile error instead of a silently ignored region. Identifiers that only exist at runtime must
+  be narrowed with `isMuscleId(value)` (or resolved with `getMuscleDef(id)`) before being used as
+  state keys; the README's "Typed identifiers" section shows the migration. This release therefore
+  needs a major version.
 - Keyboard navigation now uses a roving tab index: the chart is a single tab stop and regions are
   reached with the arrow keys (`Home`/`End` jump to the ends), instead of placing every region in
   the tab order.

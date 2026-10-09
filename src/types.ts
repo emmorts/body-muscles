@@ -1,3 +1,6 @@
+import type { FrontMuscleId } from "./data/muscles.front";
+import type { BackMuscleId } from "./data/muscles.back";
+
 /**
  * Anatomical view direction for the body map
  * @enum
@@ -12,16 +15,22 @@ export enum ViewSide {
 }
 
 /**
- * Unique identifier for a muscle or body part
- * Format: {muscle_group}-{side} or {muscle_group}-{sub_group}-{side}
+ * Unique identifier for a muscle or body part.
+ *
+ * Derived from the canonical anatomy dataset, so a misspelled literal is a
+ * compile-time error:
  *
  * @example
- * 'biceps-left'
- * 'shoulder-front-left'
- * 'abs-upper-right'
- * 'spine' // Central/singular parts
+ * ```ts
+ * const state: BodyState = { 'biceps-left': { intensity: 7, selected: true } };
+ * const state: BodyState = { 'bicepz-left': { intensity: 7, selected: true } }; // error
+ * ```
+ *
+ * Identifiers that only exist at runtime (for example a value read from
+ * storage) are not narrowed automatically. Verify them with `isMuscleId`, or
+ * resolve definitions with `getMuscleDef`, which accepts any string.
  */
-export type MuscleId = string;
+export type MuscleId = FrontMuscleId | BackMuscleId;
 
 /**
  * State data for a single body part
