@@ -1,5 +1,5 @@
 import { filterMuscles, getMuscleColor } from "./utils";
-import { ViewSide, MuscleId, BodyState } from "./types";
+import { ViewSide, MuscleId, BodyState, BodyPartState } from "./types";
 import type { MuscleDef } from "./data";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -8,7 +8,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  * Configuration options for the BodyChart
  */
 export interface BodyChartOptions {
-  /** Current anatomical view (FRONT or BACK) */
+  /** Current anatomical view (FRONT, BACK, or BOTH) */
   view: ViewSide;
   /** State mapping for all body parts with intensity and selection */
   bodyState: BodyState;
@@ -24,6 +24,10 @@ export interface BodyChartOptions {
   showViewLabel?: boolean;
   /** Enable smooth transitions (default: true) */
   enableTransitions?: boolean;
+  /** Enable custom instant tooltip (default: true) */
+  showTooltip?: boolean;
+  /** Optional custom tooltip content formatter */
+  tooltipFormatter?: (muscle: MuscleDef, state?: BodyPartState) => string;
 }
 
 type ResolvedOptions = Required<BodyChartOptions>;
@@ -34,6 +38,8 @@ function resolveOptions(options: BodyChartOptions): ResolvedOptions {
     ariaLabel: "",
     showViewLabel: false,
     enableTransitions: true,
+    showTooltip: true,
+    tooltipFormatter: (muscle) => muscle.name,
     onMuscleClick: () => {},
     onMuscleHover: () => {},
     ...options,
@@ -44,7 +50,7 @@ function resolveOptions(options: BodyChartOptions): ResolvedOptions {
  * BodyChart — Framework-agnostic interactive SVG body map
  *
  * Renders a detailed human body with 70+ clickable muscle regions into any DOM element.
- * Supports dual views (anterior/posterior), intensity visualization (0-10 scale),
+ * Supports front, back, and side-by-side views, intensity visualization (0-10 scale),
  * and interactive selection states with visual feedback.
  *
  * @example
@@ -58,20 +64,27 @@ function resolveOptions(options: BodyChartOptions): ResolvedOptions {
  * // Update state
  * chart.update({ bodyState: newState });
  *
- * // Switch view
+ * // Switch to back view
  * chart.update({ view: ViewSide.BACK });
+ *
+ * // Show both views side-by-side
+ * chart.update({ view: ViewSide.BOTH });
  *
  * // Cleanup
  * chart.destroy();
  * ```
  */
 export class BodyChart {
+  private static instanceCounter = 0;
+
   private container: HTMLElement;
   private options: ResolvedOptions;
   private hoveredMuscle: MuscleId | null = null;
   private wrapperEl: HTMLDivElement | null = null;
   private svgEl: SVGSVGElement | null = null;
   private labelEl: HTMLDivElement | null = null;
+  private tooltipEl: HTMLDivElement | null = null;
+  private tooltipId: string = "";
   private musclePaths: Map<string, SVGPathElement> = new Map();
   private muscleData: MuscleDef[] = [];
   private eventCleanup: (() => void)[] = [];
@@ -102,25 +115,36 @@ export class BodyChart {
    * Remove the chart from the DOM and clean up all event listeners.
    */
   destroy(): void {
+    this.hideTooltip();
     for (const fn of this.eventCleanup) fn();
     this.eventCleanup = [];
     this.musclePaths.clear();
     this.muscleData = [];
 
+    if (this.tooltipEl && this.wrapperEl?.contains(this.tooltipEl)) {
+      this.wrapperEl.removeChild(this.tooltipEl);
+    }
     if (this.wrapperEl && this.container.contains(this.wrapperEl)) {
       this.container.removeChild(this.wrapperEl);
     }
     this.wrapperEl = null;
     this.svgEl = null;
     this.labelEl = null;
+    this.tooltipEl = null;
   }
 
   // ── Build ────────────────────────────────────────────────
 
   private build(): void {
-    const { view, className, ariaLabel, showViewLabel, enableTransitions } = this.options;
+    const { view, className, ariaLabel, showViewLabel, enableTransitions } =
+      this.options;
     this.muscleData = filterMuscles(view);
-    const viewBox = view === ViewSide.FRONT ? "0 0 35 93" : "37 0 35 93";
+    const isBoth = view === ViewSide.BOTH;
+    const viewBox = isBoth
+      ? "0 0 72 93"
+      : view === ViewSide.FRONT
+        ? "0 0 35 93"
+        : "37 0 35 93";
 
     // Wrapper
     this.wrapperEl = document.createElement("div");
@@ -135,7 +159,13 @@ export class BodyChart {
       padding: "1rem",
     });
     this.wrapperEl.setAttribute("role", "img");
-    this.wrapperEl.setAttribute("aria-label", ariaLabel || `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} body map view`);
+    this.wrapperEl.setAttribute(
+      "aria-label",
+      ariaLabel ||
+        (isBoth
+          ? "Anterior and posterior body map views"
+          : `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} body map view`),
+    );
 
     // SVG
     this.svgEl = document.createElementNS(SVG_NS, "svg");
@@ -146,7 +176,7 @@ export class BodyChart {
       height: "auto",
       width: "100%",
       maxHeight: "70vh",
-      maxWidth: "400px",
+      maxWidth: isBoth ? "760px" : "400px",
       filter: "drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3))",
       ...(enableTransitions ? { transition: "all 200ms ease-out" } : {}),
     });
@@ -178,11 +208,35 @@ export class BodyChart {
 
     this.wrapperEl.appendChild(this.svgEl);
 
-    // Optional view label
+    // Optional view label(s)
     if (showViewLabel) {
-      this.labelEl = this.buildViewLabel(view);
-      this.wrapperEl.appendChild(this.labelEl);
+      if (isBoth) {
+        this.labelEl = this.buildViewLabel("Anterior View", 25);
+        this.wrapperEl.appendChild(this.labelEl);
+        const posteriorLabel = this.buildViewLabel("Posterior View", 75);
+        this.wrapperEl.appendChild(posteriorLabel);
+      } else {
+        this.labelEl = this.buildViewLabel(
+          `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} View`,
+          50,
+        );
+        this.wrapperEl.appendChild(this.labelEl);
+      }
     }
+
+    // Instant Tooltip DOM
+    this.buildTooltip();
+
+    // Hide tooltip when tapping outside wrapper
+    const onDocumentPointerDown = (e: PointerEvent) => {
+      if (this.wrapperEl && !this.wrapperEl.contains(e.target as Node)) {
+        this.hideTooltip();
+      }
+    };
+    document.addEventListener("pointerdown", onDocumentPointerDown);
+    this.eventCleanup.push(() => {
+      document.removeEventListener("pointerdown", onDocumentPointerDown);
+    });
 
     this.container.appendChild(this.wrapperEl);
     this.refreshAllPaths();
@@ -222,6 +276,99 @@ export class BodyChart {
     return defs;
   }
 
+  private buildTooltip(): void {
+    if (!this.options.showTooltip || !this.wrapperEl) return;
+
+    BodyChart.instanceCounter++;
+    this.tooltipId = `body-chart-tooltip-${BodyChart.instanceCounter}`;
+
+    this.tooltipEl = document.createElement("div");
+    this.tooltipEl.id = this.tooltipId;
+    this.tooltipEl.className = "body-chart-tooltip";
+    this.tooltipEl.setAttribute("role", "tooltip");
+    this.tooltipEl.setAttribute("aria-hidden", "true");
+
+    setStyles(this.tooltipEl, {
+      position: "absolute",
+      top: "0",
+      left: "0",
+      pointerEvents: "none",
+      opacity: "0",
+      visibility: "hidden",
+      transition: "opacity 120ms ease-out, transform 120ms ease-out",
+      zIndex: "50",
+      backgroundColor: "rgba(15, 23, 42, 0.92)",
+      color: "#f8fafc",
+      padding: "0.35rem 0.65rem",
+      borderRadius: "0.5rem",
+      fontSize: "0.75rem",
+      fontWeight: "500",
+      lineHeight: "1.2",
+      whiteSpace: "nowrap",
+      boxShadow:
+        "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25)",
+      border: "1px solid rgba(255, 255, 255, 0.15)",
+      backdropFilter: "blur(8px)",
+      WebkitBackdropFilter: "blur(8px)",
+      transform: "translate3d(0, 0, 0)",
+    });
+
+    this.wrapperEl.appendChild(this.tooltipEl);
+  }
+
+  private showTooltipAt(
+    content: string,
+    clientX: number,
+    clientY: number,
+  ): void {
+    if (!this.tooltipEl || !this.wrapperEl || !this.options.showTooltip) return;
+
+    this.tooltipEl.textContent = content;
+    this.tooltipEl.style.visibility = "visible";
+    this.tooltipEl.style.opacity = "1";
+    this.tooltipEl.setAttribute("aria-hidden", "false");
+
+    const wrapperRect = this.wrapperEl.getBoundingClientRect();
+    const tooltipRect = this.tooltipEl.getBoundingClientRect();
+
+    // Center horizontally over cursor/target point, position above target point
+    let left = clientX - wrapperRect.left - tooltipRect.width / 2;
+    let top = clientY - wrapperRect.top - tooltipRect.height - 10;
+
+    // Boundary collision detection
+    const padding = 8;
+    const maxLeft = Math.max(
+      padding,
+      wrapperRect.width - tooltipRect.width - padding,
+    );
+    const minLeft = padding;
+
+    if (left < minLeft) left = minLeft;
+    if (left > maxLeft) left = maxLeft;
+
+    // Flip below if overflowing wrapper top boundary
+    if (top < padding) {
+      top = clientY - wrapperRect.top + 16;
+    }
+
+    // Clamp vertical position so tooltip stays visible within container
+    const maxTop = Math.max(
+      padding,
+      wrapperRect.height - tooltipRect.height - padding,
+    );
+    if (top > maxTop) top = maxTop;
+    if (top < padding) top = padding;
+
+    this.tooltipEl.style.transform = `translate3d(${Math.round(left)}px, ${Math.round(top)}px, 0)`;
+  }
+
+  private hideTooltip(): void {
+    if (!this.tooltipEl) return;
+    this.tooltipEl.style.opacity = "0";
+    this.tooltipEl.style.visibility = "hidden";
+    this.tooltipEl.setAttribute("aria-hidden", "true");
+  }
+
   private buildMusclePath(muscle: MuscleDef): SVGPathElement {
     const path = document.createElementNS(SVG_NS, "path");
     path.setAttribute("d", muscle.path);
@@ -229,40 +376,80 @@ export class BodyChart {
     path.setAttribute("role", "button");
     path.setAttribute("tabindex", "0");
 
-    const title = document.createElementNS(SVG_NS, "title");
-    title.textContent = muscle.name;
-    path.appendChild(title);
+    const getTooltipText = () => {
+      const state = this.options.bodyState[muscle.id];
+      return this.options.tooltipFormatter(muscle, state);
+    };
 
     // Event listeners
-    const onEnter = () => {
+    const onPointerEnter = (e: PointerEvent) => {
       this.hoveredMuscle = muscle.id;
       this.options.onMuscleHover(muscle.id);
       this.refreshPath(muscle.id);
+      this.showTooltipAt(getTooltipText(), e.clientX, e.clientY);
     };
-    const onLeave = () => {
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (this.hoveredMuscle === muscle.id) {
+        this.showTooltipAt(getTooltipText(), e.clientX, e.clientY);
+      }
+    };
+
+    const onPointerLeave = () => {
       const prev = this.hoveredMuscle;
       this.hoveredMuscle = null;
       this.options.onMuscleHover(null);
       if (prev) this.refreshPath(prev);
+      this.hideTooltip();
     };
+
+    const onFocus = () => {
+      this.hoveredMuscle = muscle.id;
+      this.refreshPath(muscle.id);
+      if (this.tooltipId) {
+        path.setAttribute("aria-describedby", this.tooltipId);
+      }
+      const rect = path.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const topY = rect.top;
+      this.showTooltipAt(getTooltipText(), centerX, topY);
+    };
+
+    const onBlur = () => {
+      const prev = this.hoveredMuscle;
+      this.hoveredMuscle = null;
+      if (prev) this.refreshPath(prev);
+      path.removeAttribute("aria-describedby");
+      this.hideTooltip();
+    };
+
     const onClick = () => {
       this.options.onMuscleClick(muscle.id, muscle.name);
     };
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         this.options.onMuscleClick(muscle.id, muscle.name);
+      } else if (e.key === "Escape") {
+        this.hideTooltip();
       }
     };
 
-    path.addEventListener("mouseenter", onEnter);
-    path.addEventListener("mouseleave", onLeave);
+    path.addEventListener("pointerenter", onPointerEnter);
+    path.addEventListener("pointermove", onPointerMove);
+    path.addEventListener("pointerleave", onPointerLeave);
+    path.addEventListener("focus", onFocus);
+    path.addEventListener("blur", onBlur);
     path.addEventListener("click", onClick);
     path.addEventListener("keydown", onKeyDown);
 
     this.eventCleanup.push(() => {
-      path.removeEventListener("mouseenter", onEnter);
-      path.removeEventListener("mouseleave", onLeave);
+      path.removeEventListener("pointerenter", onPointerEnter);
+      path.removeEventListener("pointermove", onPointerMove);
+      path.removeEventListener("pointerleave", onPointerLeave);
+      path.removeEventListener("focus", onFocus);
+      path.removeEventListener("blur", onBlur);
       path.removeEventListener("click", onClick);
       path.removeEventListener("keydown", onKeyDown);
     });
@@ -306,14 +493,17 @@ export class BodyChart {
 
   // ── View label ───────────────────────────────────────────
 
-  private buildViewLabel(view: ViewSide): HTMLDivElement {
+  private buildViewLabel(
+    text: string,
+    horizontalCenter: number,
+  ): HTMLDivElement {
     const el = document.createElement("div");
     el.className = "body-chart-view-label";
     el.setAttribute("aria-hidden", "true");
     setStyles(el, {
       position: "absolute",
       bottom: "1rem",
-      left: "50%",
+      left: `${horizontalCenter}%`,
       transform: "translateX(-50%)",
       color: "#64748b",
       fontSize: "0.875rem",
@@ -327,7 +517,7 @@ export class BodyChart {
       backdropFilter: "blur(4px)",
       zIndex: "10",
     });
-    el.textContent = `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} View`;
+    el.textContent = text;
     return el;
   }
 }
@@ -336,6 +526,8 @@ export class BodyChart {
 
 function setStyles(el: HTMLElement, styles: Record<string, string>) {
   for (const [k, v] of Object.entries(styles)) {
-    (el.style as any)[k] = v;
+    (el.style as unknown as Record<string, string>)[k] = v;
+    const kebab = k.replace(/([A-Z])/g, "-$1").toLowerCase();
+    el.style.setProperty(kebab, v);
   }
 }

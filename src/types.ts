@@ -7,6 +7,8 @@ export enum ViewSide {
   FRONT = "FRONT",
   /** Posterior (back) view of the body */
   BACK = "BACK",
+  /** Both anterior and posterior views shown side-by-side */
+  BOTH = "BOTH",
 }
 
 /**

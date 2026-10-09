@@ -1,5 +1,7 @@
-// Fixes ESM imports by adding .js extensions to relative specifiers.
-// tsc outputs `from "./foo"` which browsers can't resolve without extensions.
+// Post-processes the `tsc --module esnext` output in dist/esm so it can be loaded as modules:
+// adds .js extensions to relative specifiers (tsc emits `from "./foo"`, which neither browsers
+// nor Node can resolve) and marks the directory as ESM, since this package is untyped and
+// `exports.import` points here.
 
 const fs = require("fs");
 const path = require("path");
@@ -32,4 +34,8 @@ function walk(d) {
 }
 
 walk(dir);
+fs.writeFileSync(
+  path.join(dir, "package.json"),
+  `${JSON.stringify({ type: "module" }, null, 2)}\n`,
+);
 console.log("Fixed ESM import extensions in dist/esm/");

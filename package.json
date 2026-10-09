@@ -1,7 +1,7 @@
 {
-  "name": "body-muscles",
-  "version": "1.0.0",
-  "description": "Interactive SVG body map with 70+ muscles, intensity visualization, and zero dependencies. Works with React, Vue, Svelte, or vanilla JS.",
+  "name": "@emmorts/body-muscles",
+  "version": "1.1.0",
+  "description": "Interactive SVG body map with 70+ muscles, intensity visualization, and zero dependencies. Works with React, Vue, Svelte, or vanilla JS. Maintained fork of vulovix/body-muscles published as @emmorts/body-muscles.",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
   "browser": "dist/umd/body-muscles.umd.min.js",
@@ -23,9 +23,12 @@
     "NOTICE"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && tsc -p tsconfig.build.json --module esnext --outDir dist/esm && node scripts/fix-esm-imports.js && node scripts/build-umd.js",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && tsc -p tsconfig.build.json --module esnext --outDir dist/esm && node scripts/fix-esm-imports.js && node scripts/build-umd.js && node scripts/export-data.js",
     "typecheck": "tsc -p tsconfig.build.json --noEmit",
-    "docs": "rm -rf docs/lib && cp dist/umd/body-muscles.umd.js docs/lib/body-muscles.umd.js && npx serve docs",
+    "verify-build": "node scripts/verify-build.mjs",
+    "smooth-paths": "node scripts/smooth-raw-paths.ts",
+    "export-data": "node scripts/export-data.js",
+    "docs": "rm -rf docs/lib && mkdir -p docs/lib && cp dist/umd/body-muscles.umd.js docs/lib/body-muscles.umd.js && npx serve docs",
     "docs:build": "rm -rf docs/lib && mkdir -p docs/lib && cp dist/umd/body-muscles.umd.js docs/lib/body-muscles.umd.js",
     "prepublishOnly": "npm run build"
   },
@@ -61,10 +64,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/vulovix/body-muscles.git"
+    "url": "https://github.com/emmorts/body-muscles.git"
   },
   "bugs": {
-    "url": "https://github.com/vulovix/body-muscles/issues"
+    "url": "https://github.com/emmorts/body-muscles/issues"
   },
-  "homepage": "https://vulovix.github.io/body-muscles"
+  "homepage": "https://github.com/emmorts/body-muscles"
 }

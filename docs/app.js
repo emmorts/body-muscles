@@ -288,7 +288,7 @@ document.getElementById("btnExport").addEventListener("click", () => {
 const installCopyBtn = document.getElementById("installCopyBtn");
 if (installCopyBtn) {
   installCopyBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText("npm install body-muscles").then(() => {
+    navigator.clipboard.writeText("npm install @emmorts/body-muscles").then(() => {
       installCopyBtn.classList.add("copied");
       installCopyBtn.querySelector(".icon-copy").style.display = "none";
       installCopyBtn.querySelector(".icon-check").style.display = "block";

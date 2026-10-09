@@ -3,14 +3,14 @@
 **Interactive SVG body map with 70+ muscles, intensity visualization, and zero dependencies.**
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![npm](https://img.shields.io/npm/v/body-muscles)](https://www.npmjs.com/package/body-muscles)
+[![npm](https://img.shields.io/npm/v/@emmorts%2Fbody-muscles)](https://www.npmjs.com/package/@emmorts/body-muscles)
 
 Works with React, Vue, Svelte, Angular, or vanilla JavaScript. No framework required.
 
 ## Features
 
 - **70+ Anatomical Regions** — Granular muscle mapping with accurate SVG paths
-- **Dual Views** — Anterior (front) and posterior (back) with automatic viewport switching
+- **Multiple Views** — Anterior (front), posterior (back), and side-by-side with automatic viewport switching
 - **Intensity Scale** — 0–10 gradient color mapping (yellow → orange → red)
 - **Interactive** — Hover effects, selection states, glow filters
 - **Zero Dependencies** — Pure TypeScript, ~40KB UMD / ~29KB minified
@@ -20,29 +20,29 @@ Works with React, Vue, Svelte, Angular, or vanilla JavaScript. No framework requ
 ## Installation
 
 ```bash
-npm install body-muscles
+npm install @emmorts/body-muscles
 ```
 
 ```bash
-yarn add body-muscles
+yarn add @emmorts/body-muscles
 ```
 
 ```bash
-pnpm add body-muscles
+pnpm add @emmorts/body-muscles
 ```
 
 **CDN (ESM):**
 
 ```html
 <script type="module">
-  import { BodyChart, ViewSide } from "https://esm.sh/body-muscles";
+  import { BodyChart, ViewSide } from "https://esm.sh/@emmorts/body-muscles";
 </script>
 ```
 
 **CDN (UMD) — no bundler needed, works from filesystem:**
 
 ```html
-<script src="https://unpkg.com/body-muscles/dist/umd/body-muscles.umd.min.js"></script>
+<script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"></script>
 <script>
   const { BodyChart, ViewSide } = BodyMuscles;
 </script>
@@ -51,7 +51,7 @@ pnpm add body-muscles
 ## Quick Start
 
 ```typescript
-import { BodyChart, ViewSide } from "body-muscles";
+import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
 const chart = new BodyChart(document.getElementById("container"), {
   view: ViewSide.FRONT,
@@ -75,6 +75,9 @@ chart.update({
 // Switch to back view
 chart.update({ view: ViewSide.BACK });
 
+// Show both views side-by-side
+chart.update({ view: ViewSide.BOTH });
+
 // Cleanup when done
 chart.destroy();
 ```
@@ -89,14 +92,16 @@ Creates an interactive body map inside the given DOM element.
 
 | Option              | Type                                   | Default     | Description                                 |
 | ------------------- | -------------------------------------- | ----------- | ------------------------------------------- |
-| `view`              | `ViewSide`                             | —           | `FRONT` or `BACK` anatomical view           |
+| `view`              | `ViewSide`                             | —           | `FRONT`, `BACK`, or `BOTH` anatomical view  |
 | `bodyState`         | `BodyState`                            | —           | Map of muscle IDs to intensity & selection   |
 | `onMuscleClick`     | `(id: MuscleId, name: string) => void` | `() => {}`  | Click handler                               |
 | `onMuscleHover`     | `(id: MuscleId \| null) => void`       | `() => {}`  | Hover state change handler                  |
 | `className`         | `string`                               | `""`        | CSS class for the container wrapper          |
 | `ariaLabel`         | `string`                               | `""`        | Accessibility label for the SVG             |
-| `showViewLabel`     | `boolean`                              | `false`     | Show "Front View" / "Back View" indicator   |
+| `showViewLabel`     | `boolean`                              | `false`     | Show "Front / Back / Both" view indicator   |
 | `enableTransitions` | `boolean`                              | `true`      | Smooth CSS transitions on state changes     |
+| `showTooltip`       | `boolean`                              | `true`      | Display custom instant floating tooltip     |
+| `tooltipFormatter`  | `(muscle, state) => string`            | default     | Custom tooltip content formatter callback   |
 
 #### Methods
 
@@ -111,6 +116,7 @@ Creates an interactive body map inside the given DOM element.
 enum ViewSide {
   FRONT = "FRONT",
   BACK = "BACK",
+  BOTH = "BOTH",
 }
 
 type MuscleId = string;
@@ -150,7 +156,7 @@ type BodyState = Partial<Record<MuscleId, BodyPartState>>;
 
 ```html
 <div id="body-map"></div>
-<script src="https://unpkg.com/body-muscles/dist/umd/body-muscles.umd.min.js"></script>
+<script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"></script>
 <script>
   const { BodyChart, ViewSide } = BodyMuscles;
   const state = {};
@@ -171,7 +177,7 @@ type BodyState = Partial<Record<MuscleId, BodyPartState>>;
 
 ```jsx
 import { useRef, useEffect, useState } from "react";
-import { BodyChart, ViewSide } from "body-muscles";
+import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
 function BodyMap() {
   const ref = useRef(null);
@@ -212,7 +218,7 @@ function BodyMap() {
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from "vue";
-import { BodyChart, ViewSide } from "body-muscles";
+import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
 const container = ref(null);
 const bodyState = ref({});
@@ -242,7 +248,7 @@ onUnmounted(() => chart?.destroy());
 ```svelte
 <script>
   import { onMount, onDestroy } from "svelte";
-  import { BodyChart, ViewSide } from "body-muscles";
+  import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
   let container;
   let chart;

@@ -100,7 +100,7 @@
         <p>Framework-agnostic interactive SVG body map with 70+ anatomical regions, intensity visualization, and zero dependencies.</p>
         <div class="install-block">
           <span class="prefix">$</span>
-          <span class="cmd">npm install body-muscles</span>
+          <span class="cmd">npm install @emmorts/body-muscles</span>
           <button class="copy-btn" id="installCopyBtn" aria-label="Copy">
             <svg class="icon-copy" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" />
@@ -149,8 +149,8 @@
           </div>
           <div class="card feature-card">
             <div class="feature-icon">&#9783;</div>
-            <h3>Dual Views</h3>
-            <p>Anterior (front) and posterior (back) views with smooth transitions.</p>
+            <h3>Multiple Views</h3>
+            <p>Anterior, posterior, and side-by-side views with smooth transitions.</p>
           </div>
           <div class="card feature-card">
             <div class="feature-icon">&#9881;</div>
@@ -181,6 +181,7 @@
               <div class="view-toggle">
                 <button class="active" data-view="FRONT">Anterior</button>
                 <button data-view="BACK">Posterior</button>
+                <button data-view="BOTH">Both</button>
               </div>
             </div>
 
@@ -268,23 +269,23 @@
             <button class="install-tab-btn" data-tab="cdn-umd">CDN (UMD)</button>
           </div>
           <div class="install-tab-panel active" data-panel="npm">
-            <pre><code class="language-bash">npm install body-muscles</code></pre>
+            <pre><code class="language-bash">npm install @emmorts/body-muscles</code></pre>
           </div>
           <div class="install-tab-panel" data-panel="yarn">
-            <pre><code class="language-bash">yarn add body-muscles</code></pre>
+            <pre><code class="language-bash">yarn add @emmorts/body-muscles</code></pre>
           </div>
           <div class="install-tab-panel" data-panel="pnpm">
-            <pre><code class="language-bash">pnpm add body-muscles</code></pre>
+            <pre><code class="language-bash">pnpm add @emmorts/body-muscles</code></pre>
           </div>
           <div class="install-tab-panel" data-panel="cdn-esm">
             <pre><code class="language-html">&lt;script type="module"&gt;
-  import { BodyChart, ViewSide } from 'https://esm.sh/body-muscles';
+  import { BodyChart, ViewSide } from 'https://esm.sh/@emmorts/body-muscles';
 &lt;/script&gt;</code></pre>
             <p class="tab-note"><a href="https://esm.sh" target="_blank" rel="noopener">esm.sh</a> — CDN that serves npm packages as native ES modules.</p>
           </div>
           <div class="install-tab-panel" data-panel="cdn-umd">
             <pre><code class="language-html">&lt;!-- Global: window.BodyMuscles --&gt;
-&lt;script src="https://unpkg.com/body-muscles/dist/umd/body-muscles.umd.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"&gt;&lt;/script&gt;
 
 &lt;script&gt;
   const { BodyChart, ViewSide } = BodyMuscles;
@@ -299,7 +300,7 @@
     <section id="quickstart">
       <div class="container">
         <h2>Quick Start</h2>
-        <pre><code class="language-typescript">import { BodyChart, ViewSide } from 'body-muscles';
+        <pre><code class="language-typescript">import { BodyChart, ViewSide } from '@emmorts/body-muscles';
 
 const chart = new BodyChart(document.getElementById('container'), {
   view: ViewSide.FRONT,
@@ -322,6 +323,9 @@ chart.update({
 
 // Switch to back view
 chart.update({ view: ViewSide.BACK });
+
+// Show both views side-by-side
+chart.update({ view: ViewSide.BOTH });
 
 // Cleanup when done
 chart.destroy();</code></pre>
@@ -352,7 +356,7 @@ chart.destroy();</code></pre>
                 <td><code>view</code></td>
                 <td><code>ViewSide</code></td>
                 <td>—</td>
-                <td>Anatomical view: <code>"FRONT"</code> or <code>"BACK"</code></td>
+                <td>Anatomical view: <code>"FRONT"</code>, <code>"BACK"</code>, or <code>"BOTH"</code></td>
               </tr>
               <tr>
                 <td><code>bodyState</code></td>
@@ -388,13 +392,25 @@ chart.destroy();</code></pre>
                 <td><code>showViewLabel</code></td>
                 <td><code>boolean</code></td>
                 <td><code>false</code></td>
-                <td>Show "Anterior / Posterior" overlay label</td>
+                <td>Show "Anterior / Posterior / Both" overlay labels</td>
               </tr>
               <tr>
                 <td><code>enableTransitions</code></td>
                 <td><code>boolean</code></td>
                 <td><code>true</code></td>
                 <td>Smooth CSS transitions</td>
+              </tr>
+              <tr>
+                <td><code>showTooltip</code></td>
+                <td><code>boolean</code></td>
+                <td><code>true</code></td>
+                <td>Display the instant floating tooltip</td>
+              </tr>
+              <tr>
+                <td><code>tooltipFormatter</code></td>
+                <td><code>(muscle, state) =&gt; string</code></td>
+                <td>muscle name</td>
+                <td>Custom tooltip content</td>
               </tr>
             </tbody>
           </table>
@@ -423,7 +439,11 @@ chart.destroy();</code></pre>
         </div>
 
         <h3>Types</h3>
-        <pre><code class="language-typescript">enum ViewSide { FRONT = "FRONT", BACK = "BACK" }
+        <pre><code class="language-typescript">enum ViewSide {
+  FRONT = "FRONT",
+  BACK = "BACK",
+  BOTH = "BOTH",
+}
 
 type MuscleId = string;
 
@@ -532,7 +552,7 @@ type BodyState = Partial&lt;Record&lt;MuscleId, BodyPartState&gt;&gt;;</code></p
 
         <h3>React</h3>
         <pre><code class="language-javascript">import { useRef, useEffect, useState } from 'react';
-import { BodyChart, ViewSide } from 'body-muscles';
+import { BodyChart, ViewSide } from '@emmorts/body-muscles';
 
 function BodyMap() {
   const ref = useRef(null);
@@ -567,7 +587,7 @@ function BodyMap() {
 
 &lt;script setup&gt;
   import { ref, onMounted, onUnmounted, watch } from 'vue';
-  import { BodyChart, ViewSide } from 'body-muscles';
+  import { BodyChart, ViewSide } from '@emmorts/body-muscles';
 
   const container = ref(null);
   const bodyState = ref({});
@@ -591,7 +611,7 @@ function BodyMap() {
         <h3>Svelte</h3>
         <pre><code class="language-html">&lt;script&gt;
   import { onMount, onDestroy } from 'svelte';
-  import { BodyChart, ViewSide } from 'body-muscles';
+  import { BodyChart, ViewSide } from '@emmorts/body-muscles';
 
   let container;
   let chart;
@@ -672,9 +692,9 @@ function BodyMap() {
         pre.appendChild(btn);
       });
     </script>
-    <!-- Option A: Switch the docs to use the CDN version (simplest — no build step needed) -->
+    <!-- Load the local UMD build (generated by `npm run docs:build`) -->
 
-    <script src="https://unpkg.com/body-muscles/dist/umd/body-muscles.umd.js"></script>
+    <script src="./lib/body-muscles.umd.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
