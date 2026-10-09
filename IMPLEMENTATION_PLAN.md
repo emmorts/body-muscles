@@ -583,3 +583,10 @@ Review baseline: `051005a`. Corrections are implemented and committed separately
 - [x] **P2-R11 — Genuine vanilla callback replacement.** Replaced closure-suffix mutation with distinct baseline/decorated functions passed through `update()`; rebuilds retain the chosen handler. Verification: built example; Chromium produced baseline → decorated → decorated after rebuild → baseline output, toggling once each time with one container/tooltip. Commit: `fix(examples): demonstrate genuine callback replacement`.
 
 Final correction verification: `typecheck`, `build`, `verify-build`, `test:types`, `test:package`, `test:browser` (38 passed, 0 failed), `docs:build`, and both example builds/type-checks passed. TypeScript 5.0.4 compiled the consumer fixture. Manual browser checks cover cached navigation, the copied CDN snippet, catalog submission/filter/current-row transitions, reused localization objects, optional label state, live CSS-variable colours, and callback replacement/rebuild. Screen-reader verification and remote CI remain unobserved.
+
+## Release 2.0.0
+
+- **Prepared:** 2026-10-09. Major release for strict region identifiers, finite-integer intensity validation, TypeScript 5.0+ declarations, and readonly group typings.
+- **Metadata:** synchronized the root manifest/lockfile and both examples' local-library lock entries at 2.0.0. Finalized the versioned changelog with runtime, documentation, tooling, migration, and accessibility-verification limits.
+- **Local verification:** clean installs, all root build/type/package gates, 38 browser regressions, documentation build, and both example builds/type-checks passed. Packed consumer verification used `emmorts-body-muscles-2.0.0.tgz`. The release-note extractor selected only the 2.0.0 section.
+- **Publication method:** use the documented manual release sequence so main-branch CI must pass before pushing `v2.0.0`; tag-triggered trusted publishing then publishes npm and creates the GitHub release from the same changelog.

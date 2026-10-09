@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 (2026-10-09)
 
 ### Added
 
@@ -27,6 +27,13 @@
   `@emmorts/body-muscles/data` (the canonical anatomy exports, ESM and CommonJS with types) and
   `@emmorts/body-muscles/data.json` (the same geometry and intensity scale as one JSON document,
   now carrying a `schemaVersion` field). Both work in Node and in bundlers without browser globals.
+- A searchable anatomy catalog on the documentation site, generated from canonical data, with
+  group/side/view filters and anterior/posterior previews.
+- Runnable vanilla TypeScript and React integration examples in the repository, including React
+  server rendering/hydration, callback updates, cleanup, and remounts. Examples are not shipped in
+  the npm package.
+- Development-only browser regressions, consumer declaration checks, isolated packaged-entry-point
+  checks, and CI builds for both examples. The library still has zero runtime dependencies.
 
 ### Fixed
 
@@ -52,6 +59,13 @@
   `role="img"`, so muscle regions are reachable by assistive technology instead of being hidden
   focusable content nested inside an image. Regions are exposed as toggle buttons whose
   `aria-pressed` state tracks `selected`, and keyboard focus shows a high-contrast indicator.
+- Documentation demo controls remain mounted during state changes, retain keyboard focus when rows
+  disappear, and keep large selections scrollable. Theme contrast, landmarks, and prose links were corrected.
+- Catalog search no longer reloads the page on Enter; filtering removes stale preview highlights
+  and retains the current-row annotation.
+- Vanilla examples no longer destroy charts before back/forward-cache restoration. The site's
+  standalone HTML example loads a browser-resolvable UMD script, and the runnable example replaces
+  genuinely distinct callback functions, retaining the active handler across rebuilds.
 
 ### Changed
 
@@ -59,18 +73,18 @@
   helper uses const type parameters. Upgrade older consumer compilers; `skipLibCheck` cannot
   suppress syntax errors. JavaScript runtime requirements are unchanged.
 - **BREAKING:** intensities are validated as finite integers from 0 to 10. The `BodyChart`
-  constructor, `update()`, and `createBodyPartState()` now throw a descriptive `Error` describing
-  the offending region and value instead of the renderer silently rounding and clamping. Validation
-  runs before submitted options or rendering changes are applied; it cannot roll back prior consumer
-  mutations to already-accepted objects. Rejected construction mounts nothing. Colour helpers (`getMuscleColor`,
-  `resolveIntensityColor`, `createIntensityColorScale`) still round and clamp defensively, because
-  they also render mappings a consumer mutates after the chart has accepted them.
+  constructor and `update()` now throw descriptive errors identifying the region and invalid value;
+  `createBodyPartState()` identifies the invalid value. Validation runs before submitted options or
+  rendering changes are applied; it cannot roll back prior consumer mutations to already-accepted
+  objects. Rejected construction mounts nothing. Default and custom-palette colour resolvers still
+  round and clamp defensively; application-provided resolvers remain application code.
 - **BREAKING:** `MuscleId` is now a union of the region identifiers derived from the dataset, not
   `string`. State keys, callbacks, and helpers are type-checked, so a misspelled literal is a
   compile error instead of a silently ignored region. Identifiers that only exist at runtime must
   be narrowed with `isMuscleId(value)` (or resolved with `getMuscleDef(id)`) before being used as
-  state keys; the README's "Typed identifiers" section shows the migration. This release therefore
-  needs a major version.
+  state keys; the README's "Typed identifiers" section shows the migration.
+- **BREAKING:** `MUSCLE_GROUPS` has literal keys and readonly member arrays in its declarations.
+  Consumers needing mutable lists should copy the selected group with `[...MUSCLE_GROUPS[group]]`.
 - Keyboard navigation now uses a roving tab index: the chart is a single tab stop and regions are
   reached with the arrow keys (`Home`/`End` jump to the ends), instead of placing every region in
   the tab order.
@@ -82,6 +96,15 @@
   state. Pass `tooltipFormatter` to customize the wording.
 - `prefers-reduced-motion: reduce` disables chart and tooltip transitions regardless of
   `enableTransitions`; the preference is re-evaluated when it changes.
+
+### Documentation and verification limits
+
+- `bodyState` and `labels` are replaced as whole objects by `update()`; spreading preserves members
+  you are not changing. No patch API or internal selection-state model was added.
+- CSS-variable expressions are supported by intensity resolvers; the browser resolves them on each
+  SVG region, while the `fill` attribute retains the expression.
+- Automated browser and accessibility-tree checks are not a claim of full WCAG conformance.
+  Real screen-reader announcements and browse/focus-mode behavior remain unverified.
 
 ## 1.1.1 (2026-10-09)
 
