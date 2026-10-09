@@ -748,6 +748,160 @@ pre code.hljs {
   font-size: 0.78rem;
 }
 
+/* ── Anatomy Catalog ───────────────────────────────── */
+.catalog-controls {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.catalog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.catalog-field label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.catalog-field input,
+.catalog-field select {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--fg);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.6rem;
+  width: 100%;
+}
+.catalog-field input:focus-visible,
+.catalog-field select:focus-visible,
+.catalog-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.catalog-body {
+  display: grid;
+  grid-template-columns: minmax(170px, 230px) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+.catalog-preview {
+  position: sticky;
+  top: 4.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+}
+.catalog-preview-views {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+.catalog-preview figure {
+  margin: 0;
+  text-align: center;
+}
+.catalog-preview-figure {
+  width: 84px;
+}
+.catalog-preview-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.catalog-preview-path {
+  fill: var(--fg-muted);
+  opacity: 0.35;
+}
+.catalog-preview-path.is-active {
+  fill: var(--accent);
+  stroke: var(--fg);
+  stroke-width: 0.4;
+  opacity: 1;
+}
+.catalog-preview figcaption {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.catalog-preview-caption {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--fg-muted);
+  min-height: 3.4em;
+}
+.catalog-count {
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+}
+.catalog-results {
+  display: grid;
+  gap: 0.4rem;
+  list-style: none;
+  max-height: 30rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+.catalog-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  text-align: left;
+  color: var(--fg);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.catalog-row[aria-current="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.catalog-row-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+.catalog-row-head code {
+  font-size: 0.78rem;
+  color: var(--fg-code);
+}
+.catalog-row-name {
+  font-size: 0.82rem;
+}
+.catalog-row-meta {
+  font-size: 0.72rem;
+  color: var(--fg-muted);
+}
+@media (max-width: 768px) {
+  .catalog-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+  .catalog-body {
+    grid-template-columns: 1fr;
+  }
+  .catalog-preview {
+    position: static;
+  }
+  .catalog-preview-figure {
+    width: 72px;
+  }
+}
+
 /* ── Section spacer ────────────────────────────────── */
 section {
   padding: 2rem 0;

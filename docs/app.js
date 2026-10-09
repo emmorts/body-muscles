@@ -373,3 +373,138 @@ if (installCopyBtn) {
     });
   });
 }
+
+// ── Anatomy Catalog ────────────────────────────────────
+const catalogResults = document.getElementById("catalogResults");
+
+if (catalogResults) {
+  const CATALOG_SVG_NS = "http://www.w3.org/2000/svg";
+  const { MUSCLE_METADATA, FRONT_MUSCLES, BACK_MUSCLES } = window.BodyMuscles;
+
+  // Generated from the library's exported anatomy data, so an added or renamed
+  // region never needs a second list maintained here.
+  const regions = MUSCLE_MAP.map((muscle) => MUSCLE_METADATA[muscle.id]);
+
+  const searchInput = document.getElementById("catalogSearch");
+  const groupSelect = document.getElementById("catalogGroup");
+  const sideSelect = document.getElementById("catalogSide");
+  const viewSelect = document.getElementById("catalogView");
+  const countEl = document.getElementById("catalogCount");
+  const captionEl = document.getElementById("catalogPreviewCaption");
+  const previewFront = document.getElementById("catalogPreviewFront");
+  const previewBack = document.getElementById("catalogPreviewBack");
+
+  const VIEW_NAMES = { FRONT: "Anterior", BACK: "Posterior" };
+  const SIDE_NAMES = { left: "subject's left", right: "subject's right", central: "central" };
+
+  for (const group of Object.keys(MUSCLE_GROUPS)) {
+    groupSelect.appendChild(new Option(group, group));
+  }
+
+  // One preview per view, drawn from the same geometry as the chart. The
+  // preview SVGs are decorative; the caption carries the description.
+  const previewPaths = new Map();
+  const buildPreview = (container, muscles, viewBox) => {
+    const svg = document.createElementNS(CATALOG_SVG_NS, "svg");
+    svg.setAttribute("viewBox", viewBox);
+    svg.setAttribute("focusable", "false");
+    svg.setAttribute("aria-hidden", "true");
+    svg.classList.add("catalog-preview-svg");
+    for (const muscle of muscles) {
+      const path = document.createElementNS(CATALOG_SVG_NS, "path");
+      path.setAttribute("d", muscle.path);
+      path.classList.add("catalog-preview-path");
+      svg.appendChild(path);
+      previewPaths.set(muscle.id, path);
+    }
+    container.appendChild(svg);
+  };
+  buildPreview(previewFront, FRONT_MUSCLES, "0 0 35 93");
+  buildPreview(previewBack, BACK_MUSCLES, "37 0 35 93");
+
+  const rowButtons = new Map();
+  let activeId = null;
+
+  const setActive = (id) => {
+    if (id === activeId) return;
+    rowButtons.get(activeId)?.removeAttribute("aria-current");
+    previewPaths.get(activeId)?.classList.remove("is-active");
+    activeId = id;
+    rowButtons.get(id)?.setAttribute("aria-current", "true");
+    previewPaths.get(id)?.classList.add("is-active");
+    const region = MUSCLE_METADATA[id];
+    captionEl.textContent = `${region.name} (${id}) · ${region.group} · ${SIDE_NAMES[region.side]} · ${VIEW_NAMES[region.view]} view`;
+  };
+
+  const createRow = (region) => {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "catalog-row";
+
+    const head = document.createElement("span");
+    head.className = "catalog-row-head";
+    const code = document.createElement("code");
+    code.textContent = region.id;
+    const name = document.createElement("span");
+    name.className = "catalog-row-name";
+    name.textContent = region.name;
+    head.appendChild(code);
+    head.appendChild(name);
+
+    const meta = document.createElement("span");
+    meta.className = "catalog-row-meta";
+    meta.textContent = `${region.group} · ${SIDE_NAMES[region.side]} · ${VIEW_NAMES[region.view]} view`;
+
+    // The preview follows keyboard focus, so tabbing through the results shows
+    // each region without a pointer.
+    button.addEventListener("focus", () => setActive(region.id));
+    button.addEventListener("pointerenter", () => setActive(region.id));
+
+    button.appendChild(head);
+    button.appendChild(meta);
+    item.appendChild(button);
+    rowButtons.set(region.id, button);
+    return item;
+  };
+
+  const renderResults = () => {
+    const term = searchInput.value.trim().toLowerCase();
+    const group = groupSelect.value;
+    const side = sideSelect.value;
+    const view = viewSelect.value;
+
+    const matches = regions.filter(
+      (region) =>
+        (!group || region.group === group) &&
+        (!side || region.side === side) &&
+        (!view || region.view === view) &&
+        (!term ||
+          `${region.id} ${region.name} ${region.group} ${SIDE_NAMES[region.side]} ${VIEW_NAMES[region.view]}`
+            .toLowerCase()
+            .includes(term)),
+    );
+
+    rowButtons.clear();
+    catalogResults.replaceChildren(...matches.map(createRow));
+    countEl.textContent = `${matches.length} of ${regions.length} regions`;
+
+    if (matches.length === 0) {
+      activeId = null;
+      for (const path of previewPaths.values()) path.classList.remove("is-active");
+      captionEl.textContent = "No regions match these filters.";
+      return;
+    }
+    if (!matches.some((region) => region.id === activeId)) {
+      activeId = null;
+      setActive(matches[0].id);
+    }
+  };
+
+  searchInput.addEventListener("input", renderResults);
+  groupSelect.addEventListener("change", renderResults);
+  sideSelect.addEventListener("change", renderResults);
+  viewSelect.addEventListener("change", renderResults);
+
+  renderResults();
+}

@@ -1218,6 +1218,123 @@ await test("populated demo badges and checked markers meet contrast in both them
   }
 });
 
+await test("demo anatomy catalog lists every region from canonical data", async (page) => {
+  await openDemo(page);
+  const facts = await page.evaluate(() => {
+    const { MUSCLE_MAP } = window.BodyMuscles;
+    const rows = [...document.querySelectorAll(".catalog-row")];
+    return {
+      rows: rows.length,
+      ids: rows.map((row) => row.querySelector("code").textContent),
+      canonicalIds: MUSCLE_MAP.map((muscle) => muscle.id),
+      groups: [...document.getElementById("catalogGroup").options].filter((o) => o.value).length,
+      labels: [...document.querySelectorAll("#catalogControls label")].map((l) => l.getAttribute("for")),
+      count: document.getElementById("catalogCount").textContent,
+    };
+  });
+
+  assert.equal(facts.rows, facts.canonicalIds.length, "the catalog covers every region");
+  assert.deepEqual(facts.ids, facts.canonicalIds, "the catalog follows the canonical dataset order");
+  assert.equal(facts.groups, 8, "group options come from the canonical group table");
+  assert.deepEqual(facts.labels, ["catalogSearch", "catalogGroup", "catalogSide", "catalogView"]);
+  assert.equal(facts.count, "89 of 89 regions");
+});
+
+await test("demo anatomy catalog filters by text, group, side, and view", async (page) => {
+  await openDemo(page);
+  const read = () =>
+    page.evaluate(() => ({
+      count: document.getElementById("catalogCount").textContent,
+      ids: [...document.querySelectorAll(".catalog-row code")].map((code) => code.textContent),
+    }));
+
+  await page.fill("#catalogSearch", "biceps");
+  const searched = await read();
+  assert.equal(searched.count, "4 of 89 regions");
+  assert.deepEqual(searched.ids, [
+    "biceps-left",
+    "biceps-right",
+    "hamstrings-lateral-left",
+    "hamstrings-lateral-right",
+  ]);
+
+  await page.fill("#catalogSearch", "");
+  await page.selectOption("#catalogGroup", "Legs");
+  await page.selectOption("#catalogSide", "left");
+  await page.selectOption("#catalogView", "FRONT");
+  const filtered = await read();
+  assert.equal(filtered.count, "5 of 89 regions");
+  assert.deepEqual(filtered.ids, [
+    "hip-flexor-left",
+    "quads-left",
+    "adductors-left",
+    "tibialis-anterior-left",
+    "knee-left",
+  ]);
+
+  await page.fill("#catalogSearch", "zzzz");
+  const empty = await read();
+  assert.equal(empty.count, "0 of 89 regions");
+  assert.deepEqual(empty.ids, []);
+  assert.match(await page.locator("#catalogPreviewCaption").textContent(), /No regions match/);
+  assert.equal(await page.locator(".catalog-preview-path.is-active").count(), 0);
+});
+
+await test("demo anatomy catalog previews follow keyboard focus", async (page) => {
+  await openDemo(page);
+  const facts = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll(".catalog-row")];
+    const target = rows.find((row) => row.querySelector("code").textContent === "knee-back-left");
+    target.focus();
+    const current = document.querySelector('.catalog-row[aria-current="true"]');
+    return {
+      focused: document.activeElement === target,
+      currentCount: document.querySelectorAll('.catalog-row[aria-current="true"]').length,
+      currentId: current?.querySelector("code").textContent,
+      caption: document.getElementById("catalogPreviewCaption").textContent,
+      frontActive: document.querySelectorAll("#catalogPreviewFront .catalog-preview-path.is-active").length,
+      backActive: document.querySelectorAll("#catalogPreviewBack .catalog-preview-path.is-active").length,
+      frontPaths: document.querySelectorAll("#catalogPreviewFront .catalog-preview-path").length,
+      backPaths: document.querySelectorAll("#catalogPreviewBack .catalog-preview-path").length,
+      previewHidden: document.querySelector("#catalogPreviewFront svg").getAttribute("aria-hidden"),
+    };
+  });
+
+  assert.equal(facts.focused, true, "row buttons are focusable");
+  assert.equal(facts.currentCount, 1, "exactly one row is marked as current");
+  assert.equal(facts.currentId, "knee-back-left");
+  assert.match(facts.caption, /Left Back Knee \(knee-back-left\)/);
+  assert.match(facts.caption, /subject's left/);
+  assert.match(facts.caption, /Posterior view/);
+  assert.equal(facts.frontActive, 0, "the region is not drawn in the anterior preview");
+  assert.equal(facts.backActive, 1, "exactly one region is highlighted in the posterior preview");
+  assert.equal(facts.frontPaths, 40, "the anterior preview uses the canonical geometry");
+  assert.equal(facts.backPaths, 49);
+  assert.equal(facts.previewHidden, "true", "previews are decorative; the caption carries the description");
+});
+
+await test("demo anatomy catalog stays usable on a narrow screen", async (page) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  await openDemo(page);
+  const facts = await page.evaluate(() => {
+    const viewport = window.innerWidth;
+    const controls = [...document.querySelectorAll(".catalog-controls input, .catalog-controls select")];
+    const rows = [...document.querySelectorAll(".catalog-row")];
+    const boxes = [...controls, ...rows].map((el) => el.getBoundingClientRect());
+    return {
+      overflows: boxes.some((box) => box.right > viewport + 1 || box.left < -1),
+      minControlHeight: Math.min(...controls.map((el) => el.getBoundingClientRect().height)),
+      bodyColumns: getComputedStyle(document.querySelector(".catalog-body")).gridTemplateColumns.split(" ").length,
+      sectionWidth: document.getElementById("catalog").getBoundingClientRect().width,
+    };
+  });
+
+  assert.equal(facts.overflows, false, "catalog controls and rows fit the viewport");
+  assert.ok(facts.minControlHeight >= 32, `controls stay tappable, got ${facts.minControlHeight}`);
+  assert.equal(facts.bodyColumns, 1, "the preview stacks above the results");
+  assert.ok(facts.sectionWidth <= 390, "the section does not overflow");
+});
+
 await test("the demo themes chart regions through CSS custom properties", async (page) => {
   await page.emulateMedia({ colorScheme: "light" });
   await openDemo(page);

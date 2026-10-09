@@ -396,6 +396,11 @@ available for identifier-shaped input, but note that `extractMuscleGroup` return
 prefix (`"biceps"` for `biceps-left`), which is *not* the display group: use
 `MUSCLE_METADATA[id].group` for that.
 
+The [documentation site](https://emmorts.github.io/body-muscles/#catalog) includes a searchable
+catalog of every region — identifier, display name, group, side, and view, with front/back previews
+drawn from the same geometry as the chart. It is generated from these exports, so it matches the
+installed version.
+
 ## Framework Examples
 
 ### Vanilla JavaScript

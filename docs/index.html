@@ -75,6 +75,7 @@
           <a href="#demo">Demo</a>
           <a href="#install">Install</a>
           <a href="#api">API</a>
+          <a href="#catalog">Catalog</a>
           <a href="#examples">Examples</a>
           <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
             <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -797,6 +798,75 @@ interface MuscleMetadata {
           Transitions are disabled whenever the system requests reduced motion, regardless of
           <code>enableTransitions</code>.
         </p>
+      </div>
+    </section>
+
+    <!-- ── Anatomy Catalog ───────────────────────────── -->
+    <section id="catalog">
+      <div class="container">
+        <h2>Anatomy Catalog</h2>
+        <p>
+          Search the canonical regions by identifier, display name, group, side, or view. This catalog is
+          generated from the library's exported anatomy data, so it always matches the installed version —
+          previews are drawn from the same geometry the chart renders.
+        </p>
+
+        <form class="catalog-controls" id="catalogControls" role="search">
+          <div class="catalog-field">
+            <label for="catalogSearch">Search regions</label>
+            <input
+              id="catalogSearch"
+              type="search"
+              placeholder="biceps, Left, Arms…"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+          <div class="catalog-field">
+            <label for="catalogGroup">Group</label>
+            <select id="catalogGroup">
+              <option value="">All groups</option>
+            </select>
+          </div>
+          <div class="catalog-field">
+            <label for="catalogSide">Side</label>
+            <select id="catalogSide">
+              <option value="">All sides</option>
+              <option value="left">Subject's left</option>
+              <option value="right">Subject's right</option>
+              <option value="central">Central</option>
+            </select>
+          </div>
+          <div class="catalog-field">
+            <label for="catalogView">View</label>
+            <select id="catalogView">
+              <option value="">All views</option>
+              <option value="FRONT">Anterior</option>
+              <option value="BACK">Posterior</option>
+            </select>
+          </div>
+        </form>
+
+        <div class="catalog-body">
+          <div class="catalog-preview">
+            <div class="catalog-preview-views">
+              <figure>
+                <div class="catalog-preview-figure" id="catalogPreviewFront"></div>
+                <figcaption>Anterior</figcaption>
+              </figure>
+              <figure>
+                <div class="catalog-preview-figure" id="catalogPreviewBack"></div>
+                <figcaption>Posterior</figcaption>
+              </figure>
+            </div>
+            <p class="catalog-preview-caption" id="catalogPreviewCaption"></p>
+          </div>
+
+          <div class="catalog-results-wrap">
+            <p class="catalog-count" id="catalogCount" role="status"></p>
+            <ul class="catalog-results" id="catalogResults" aria-label="Anatomy regions"></ul>
+          </div>
+        </div>
       </div>
     </section>
 

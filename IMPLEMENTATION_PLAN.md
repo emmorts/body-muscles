@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B6 complete).
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B7 complete).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -222,7 +222,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### B7 — Searchable developer anatomy catalog
 
-- [ ] Complete B7
+- [x] Complete B7
 
 **Problem:** Identifier naming rules do not show consumers which regions actually exist.
 
@@ -540,3 +540,11 @@ For each completed item, append a record containing:
 - **Changes:** `MUSCLE_GROUPS` is now `as const satisfies Record<string, readonly MuscleId[]>`, so its names become the `MuscleGroup` literal union and every listed identifier is checked against the dataset at compile time. New `MuscleMetadata` (`id`, `name`, `view`, `side`, `group`), the canonical `MUSCLE_METADATA` record keyed by identifier, and `getMuscleMetadata(id)` for dynamic input. `side` is derived through the existing `extractMuscleSide` (one implementation, so metadata and helper cannot disagree) and `group` is inverted from `MUSCLE_GROUPS`, so the table is not a second source of truth. README and site documentation state that sides are the subject's own left/right (anatomical convention, `biceps-left` drawn on the viewer's right in the anterior view), that the dataset describes regions rather than only individual muscles, and that `extractMuscleGroup` returns the identifier prefix rather than the display group.
 - **Verification:** `npm run build`, `npm run verify-build` (now additionally asserts metadata/group consistency across all 89 regions, single-group coverage, and no prototype leakage from the lookups), `npm run test:types` (typed side/group access, rejected unknown keys and group names), and 31 browser tests pass. The new browser regression pins representative front, bilateral, back, and central regions, group membership for every region, exactly one group per region, the eight group names, and undefined results for unknown and prototype keys. Identifier values and geometry are unchanged (89 regions, 11 intensity colours).
 - **Compatibility:** additive for metadata; `MUSCLE_GROUPS` values are now `readonly` and its keys are a literal union, so in-place mutation of that canonical table stops compiling. No identifier changed.
+
+### B7 — Searchable developer anatomy catalog
+
+- **Completed:** 2026-10-09.
+- **Commit:** `feat(docs): add a searchable anatomy catalog` (see git history for the hash).
+- **Changes:** new "Anatomy Catalog" section on the documentation site (`docs/index.html`, `docs/style.css`, `docs/app.js`), reachable from the header nav. It renders one row per region — identifier, display name, group, side, and view — built from `MUSCLE_MAP` + `MUSCLE_METADATA`, with the group filter options taken from `MUSCLE_GROUPS`, so it is generated from the exported data rather than a second manual list. Controls are a labelled search input plus labelled native group/side/view selects inside a `role="search"` form; results are buttons in a list, with a `role="status"` result count, and the preview follows keyboard focus and marks the active row with `aria-current`. The preview draws both views from the canonical geometry (40 anterior paths, 49 posterior paths) and highlights the active region, with the SVG marked `aria-hidden` so the text caption carries the description. Layout stacks to a single column below 768px.
+- **Verification:** 35 browser tests pass (4 new: canonical coverage and order, text/group/side/view filtering including the empty state, preview-follows-focus with exactly one `aria-current` and one highlighted path in the correct view, and a 390px check that controls and rows fit the viewport, stay tappable, and stack). Manual browser inspection confirmed 89 rows, correct filtering, keyboard preview updates, and responsive stacking; axe-core 4.13.0 on the served page reports 0 violations, 1 incomplete, and 50 passes in both themes (up from 45 passes with no new violations). The pre-existing narrow-screen overflow in the site header and install tabs is unrelated to the catalog and unchanged.
+- **Compatibility:** documentation site only; no package API, changelog, or behaviour change. The README now links to the catalog from the anatomy-data section.
