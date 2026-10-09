@@ -334,12 +334,17 @@ await test("update applies every option without a view change", async (page) => 
     chart.update({ showViewLabel: true });
     out.viewLabelsAfterToggling = document.querySelectorAll(".body-chart-view-label").length;
 
+    const focusedRegion = document.querySelector(".body-chart-muscle");
+    focusedRegion.focus();
     for (let i = 0; i < 3; i++) chart.update({ showTooltip: i % 2 === 0 });
+    out.describedByWhenOn =
+      document.getElementById(focusedRegion.getAttribute("aria-describedby")) === document.querySelector(".body-chart-tooltip");
     chart.update({ showTooltip: false });
     out.tooltipsWhenOff = document.querySelectorAll(".body-chart-tooltip").length;
     out.describedByWhenOff = document.querySelectorAll(".body-chart-muscle[aria-describedby]").length;
     chart.update({ showTooltip: true });
     out.tooltipsWhenOn = document.querySelectorAll(".body-chart-tooltip").length;
+    focusedRegion.blur();
 
     chart.update({ enableTransitions: false });
     out.transitionOff = document.querySelector(".body-chart-svg").style.transition;
@@ -360,6 +365,7 @@ await test("update applies every option without a view change", async (page) => 
   assert.equal(facts.className, "body-chart-container customer-chart");
   assert.equal(facts.ariaLabel, "Muscle heat map");
   assert.equal(facts.viewLabelsAfterToggling, 1, "repeated toggling leaves one label");
+  assert.equal(facts.describedByWhenOn, true, "a live description exists before disabling");
   assert.equal(facts.tooltipsWhenOff, 0, "disabling removes the tooltip");
   assert.equal(facts.describedByWhenOff, 0, "disabling clears stale aria-describedby");
   assert.equal(facts.tooltipsWhenOn, 1, "enabling recreates exactly one tooltip");
