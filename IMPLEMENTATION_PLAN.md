@@ -332,7 +332,7 @@ These suggestions remain tracked, but are not part of the initial implementation
 Review findings are tracked individually; each correction is committed separately.
 
 - [x] R1 — Refresh visible tooltips for reused state objects.
-- [ ] R2 — Preserve focus when the final demo row is deselected.
+- [x] R2 — Preserve focus when the final demo row is deselected.
 - [ ] R3 — Restore bounded scrolling and spacing to the demo muscle list.
 - [ ] R4 — Fix populated-state contrast and CDN prose-link styling.
 - [ ] R5 — Preserve constructor defaults for undefined options.
@@ -404,3 +404,11 @@ For each completed item, append a record containing:
 - **Changes:** explicit non-undefined `bodyState` updates refresh an open tooltip regardless of object identity. Extended the existing browser regression to cover both replacement mappings and in-place mutation.
 - **Verification:** build and 12 browser tests pass. Separate keyboard-focus smoke on the built bundle changed Head intensity 1→7 using the same state object; both the region label and visible tooltip reflected 7, with focus retained.
 - **Compatibility:** no signature changes or runtime dependencies; Unreleased changelog clarified. Later review corrections remain pending.
+
+### R2 — Final-row focus hand-off
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix(docs): retain focus when the final muscle row disappears`.
+- **Changes:** move focus to the active group's persistent chip (or Reset) before hiding an empty panel, only when focus is inside that panel.
+- **Verification:** 13 browser tests pass, including final-row deselection and keyboard activation of the fallback chip. Separate demo smoke confirmed zero rows, a hidden panel, and focus on Head & Neck rather than the document body.
+- **Compatibility:** documentation-site only; no package API or changelog change.

@@ -533,6 +533,28 @@ await test("demo deselecting a row hands focus to a neighbouring control", async
   assert.equal(after.inList, true, "focus moves to a control still in the list");
 });
 
+await test("demo deselecting the final row focuses its group chip", async (page) => {
+  await openDemo(page);
+  await page.locator(".body-chart-muscle").first().focus();
+  await page.keyboard.press("Enter");
+  await page.locator(".muscle-item-toggle").focus();
+  await page.keyboard.press("Space");
+
+  assert.equal(await page.locator("#groupMusclesCard").isVisible(), false);
+  assert.equal(await page.locator("#statSelected").textContent(), "0");
+  assert.equal(
+    await page.evaluate(() => document.activeElement.textContent),
+    "Head & Neck",
+    "focus moves to a visible group chip before the panel disappears",
+  );
+  await page.keyboard.press("Space");
+  assert.equal(
+    await page.getByRole("button", { name: "Head & Neck", exact: true }).getAttribute("aria-pressed"),
+    "true",
+    "the focused fallback remains keyboard-operable",
+  );
+});
+
 await browser.close();
 docsServer.close();
 

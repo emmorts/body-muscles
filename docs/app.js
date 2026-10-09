@@ -269,6 +269,9 @@ function renderGroupMuscles() {
     .map(([id]) => id);
 
   if (selectedIds.length === 0) {
+    if (groupMusclesCard.contains(document.activeElement)) {
+      (groupChipButtons.get(activeGroup) || document.getElementById("btnReset")).focus();
+    }
     groupMusclesCard.style.display = "none";
     activeGroup = null;
     for (const entry of muscleRows.values()) entry.row.remove();
