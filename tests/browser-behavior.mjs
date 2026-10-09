@@ -532,12 +532,14 @@ await test("custom intensity resolvers drive region fills", async (page) => {
 
     const scaled = new BodyChart(host, {
       view: ViewSide.FRONT,
-      bodyState: { head: { intensity: 4, selected: false }, face: { intensity: 12, selected: false } },
+      bodyState: { head: { intensity: 4, selected: false } },
       intensityColor: createIntensityColorScale({ 4: "rgb(1, 2, 3)", 10: "rgb(9, 9, 9)" }),
     });
     const out = {
       inRange: fill("Head"),
-      clamped: fill("Face"),
+      // The chart rejects out-of-range intensities, but the colour scale itself
+      // stays defensive for mappings mutated after they were accepted.
+      clamped: createIntensityColorScale({ 4: "rgb(1, 2, 3)", 10: "rgb(9, 9, 9)" })(12),
       paletteFallback: resolveIntensityColor(7),
     };
     scaled.destroy();
@@ -794,6 +796,73 @@ await test("bodyState updates replace the mapping while spreads preserve entries
   assert.equal(facts.spread.face.pressed, "true", "a spread preserves the other regions");
   assert.notEqual(facts.removedFace.fill, facts.spread.face.fill, "a deleted key returns the region to its default");
   assert.equal(facts.callerIntact, true, "the chart never mutates the caller's mapping");
+});
+
+await test("intensities are validated at the chart boundary", async (page) => {
+  await mount(page);
+  const facts = await page.evaluate(() => {
+    const { BodyChart, ViewSide, createBodyPartState, isValidIntensity } = window.BodyMuscles;
+    const host = document.getElementById("host");
+    const reject = (run) => {
+      try {
+        run();
+        return null;
+      } catch (error) {
+        return String(error.message);
+      }
+    };
+    const out = {
+      accepted: [0, 10].map((intensity) => createBodyPartState(intensity).intensity),
+      guard: [0, 10, 5.5, -1, 11, NaN, Infinity].map((value) => isValidIntensity(value)),
+      factoryFraction: reject(() => createBodyPartState(5.5)),
+      factoryNegative: reject(() => createBodyPartState(-1)),
+      factoryHigh: reject(() => createBodyPartState(11)),
+      factoryNaN: reject(() => createBodyPartState(NaN)),
+      factoryInfinity: reject(() => createBodyPartState(Infinity)),
+    };
+
+    out.constructorError = reject(
+      () =>
+        new BodyChart(host, {
+          view: ViewSide.FRONT,
+          bodyState: { head: { intensity: 3.5, selected: false } },
+        }),
+    );
+    out.mountedAfterConstructorError = document.querySelectorAll(".body-chart-container").length;
+
+    const chart = new BodyChart(host, {
+      view: ViewSide.FRONT,
+      bodyState: { head: { intensity: 6, selected: true } },
+    });
+    const head = () => host.querySelector('.body-chart-muscle[aria-label^="Head"]');
+    out.before = { fill: head().getAttribute("fill"), pressed: head().getAttribute("aria-pressed") };
+    out.updateError = reject(() =>
+      chart.update({ bodyState: { head: { intensity: 11, selected: false } } }),
+    );
+    out.afterRejected = { fill: head().getAttribute("fill"), pressed: head().getAttribute("aria-pressed") };
+    chart.update({ bodyState: { head: { intensity: 2, selected: false } } });
+    out.afterValid = { fill: head().getAttribute("fill"), pressed: head().getAttribute("aria-pressed") };
+    chart.destroy();
+    return out;
+  });
+
+  assert.deepEqual(facts.accepted, [0, 10], "boundary values are accepted");
+  assert.deepEqual(
+    facts.guard,
+    [true, true, false, false, false, false, false],
+    "the guard rejects fractions, negatives, values above 10, NaN, and infinities",
+  );
+  assert.match(facts.factoryFraction, /Invalid intensity: 5\.5/);
+  assert.match(facts.factoryNegative, /Invalid intensity: -1/);
+  assert.match(facts.factoryHigh, /Invalid intensity: 11/);
+  assert.match(facts.factoryNaN, /Invalid intensity: NaN/);
+  assert.match(facts.factoryInfinity, /Invalid intensity: Infinity/);
+  assert.match(facts.constructorError, /intensity 3\.5/);
+  assert.equal(facts.mountedAfterConstructorError, 0, "a rejected construction mounts nothing");
+  assert.match(facts.updateError, /Invalid bodyState entry for "head"/);
+  assert.deepEqual(facts.afterRejected, facts.before, "a rejected update leaves the render untouched");
+  assert.equal(facts.afterValid.fill, "#facc15", "a valid update still applies");
+  assert.equal(facts.afterValid.pressed, "false");
 });
 
 // ── Demo: the controls a visitor actually uses ───────────

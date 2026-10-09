@@ -61,12 +61,17 @@ export type BodyState = Partial<Record<MuscleId, BodyPartState>>;
 export type IntensityColorResolver = (intensity: number) => string;
 
 /**
- * Intensity level type guard
- * @param value - Number to check
- * @returns true if value is a valid intensity (0-10)
+ * Intensity level type guard.
+ *
+ * A valid intensity is a finite integer from 0 (inactive) to 10 (maximum).
+ * Fractions, negative numbers, values above 10, `NaN`, and infinities are
+ * rejected, so untrusted input can be checked before it reaches the chart.
+ *
+ * @param value - Value to check
+ * @returns true if value is a valid intensity (an integer from 0 to 10)
  */
-export function isValidIntensity(value: number): boolean {
-  return Number.isInteger(value) && value >= 0 && value <= 10;
+export function isValidIntensity(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 10;
 }
 
 /**
@@ -74,12 +79,40 @@ export function isValidIntensity(value: number): boolean {
  * @param intensity - Initial intensity (default: 0)
  * @param selected - Initial selection state (default: false)
  * @returns New BodyPartState object
+ * @throws Error when `intensity` is not an integer from 0 to 10
  */
 export function createBodyPartState(intensity: number = 0, selected: boolean = false): BodyPartState {
   if (!isValidIntensity(intensity)) {
-    throw new Error(`Invalid intensity: ${intensity}. Must be 0-10.`);
+    throw new Error(
+      `Invalid intensity: ${String(intensity)}. Expected an integer from 0 to 10.`,
+    );
   }
   return { intensity, selected };
+}
+
+/**
+ * Validate a state mapping before it reaches the chart.
+ *
+ * Throws a descriptive `Error` for the first entry whose intensity is not an
+ * integer from 0 to 10, so invalid input is rejected instead of being silently
+ * rounded or clamped. Entries that are `undefined` are allowed, because
+ * `BodyState` is a sparse partial record.
+ *
+ * The chart calls this from its constructor and from `update()` before any
+ * internal state changes, so a rejected update leaves the chart as it was.
+ *
+ * @param bodyState - State mapping to validate
+ * @throws Error describing the offending region and value
+ */
+export function assertValidBodyState(bodyState: BodyState): void {
+  for (const [id, entry] of Object.entries(bodyState)) {
+    if (entry == null) continue;
+    if (!isValidIntensity(entry.intensity)) {
+      throw new Error(
+        `Invalid bodyState entry for "${id}": intensity ${String(entry.intensity)}. Expected an integer from 0 to 10.`,
+      );
+    }
+  }
 }
 
 /**

@@ -143,6 +143,29 @@ chart.update({ bodyState: rest });
 There is deliberately no separate patch method: a spread expresses both preservation and removal,
 and a second entry point with different merge rules would only make the two easy to mix up.
 
+#### Intensity values
+
+An intensity is a **finite integer from 0 to 10**. `createBodyPartState()`, the `BodyChart`
+constructor, and `update()` all enforce that rule and throw a descriptive `Error` for fractions,
+negative numbers, values above 10, `NaN`, or infinities. Validation runs before anything is applied,
+so a rejected `update()` leaves the chart exactly as it was:
+
+```ts
+try {
+  chart.update({ bodyState: { "biceps-left": { intensity: 12, selected: true } } });
+} catch (error) {
+  // Invalid bodyState entry for "biceps-left": intensity 12. Expected an integer from 0 to 10.
+}
+
+isValidIntensity(9); // true
+isValidIntensity(9.5); // false
+```
+
+The colour helpers (`resolveIntensityColor`, `createIntensityColorScale`, `getMuscleColor`) never
+throw: they round and clamp into 0-10, because they also render mappings that a consumer mutated
+after the chart accepted them. If you relied on the chart silently rounding or clamping, validate
+or clamp before calling `update()`.
+
 ### Types
 
 ```typescript
@@ -187,7 +210,7 @@ type IntensityColorResolver = (intensity: number) => string;
 | `getMuscleDef(id)`                           | Region lookup by any string; `undefined` when unknown |
 | `isMuscleId(value)`                          | Type guard narrowing a string to `MuscleId` |
 | `createBodyPartState(intensity?, selected?)` | Factory with validation                   |
-| `isValidIntensity(value)`                    | Type guard for 0-10 integer               |
+| `isValidIntensity(value)`                    | Type guard for a finite integer intensity (0-10) |
 | `extractMuscleSide(id)`                      | Returns `"left" \| "right" \| "central"`  |
 | `extractMuscleGroup(id)`                     | Returns base group string                 |
 

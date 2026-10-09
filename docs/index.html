@@ -514,6 +514,21 @@ chart.update({ bodyState: rest });</code></pre>
           and a second entry point with different merge rules would only make the two easy to mix up.
         </p>
 
+        <h3>Intensity Values</h3>
+        <p style="color: var(--fg-muted); font-size: 0.9rem">
+          An intensity is a <strong>finite integer from 0 to 10</strong>. <code>createBodyPartState()</code>,
+          the constructor, and <code>update()</code> enforce that rule and throw a descriptive
+          <code>Error</code> for fractions, negative numbers, values above 10, <code>NaN</code>, or
+          infinities. Validation runs before anything is applied, so a rejected <code>update()</code> leaves
+          the chart exactly as it was. The colour helpers never throw — they round and clamp into 0-10, because
+          they also render mappings a consumer mutated after the chart accepted them.
+        </p>
+        <pre><code class="language-typescript">isValidIntensity(9);   // true
+isValidIntensity(9.5); // false
+
+// Invalid bodyState entry for "biceps-left": intensity 12. Expected an integer from 0 to 10.
+chart.update({ bodyState: { "biceps-left": { intensity: 12, selected: true } } });</code></pre>
+
         <h3>Types</h3>
         <pre><code class="language-typescript">enum ViewSide {
   FRONT = "FRONT",
@@ -618,7 +633,7 @@ type IntensityColorResolver = (intensity: number) =&gt; string;</code></pre>
               </tr>
               <tr>
                 <td><code>isValidIntensity(value)</code></td>
-                <td>Type guard for 0-10 integer</td>
+                <td>Type guard for a finite integer intensity (0-10)</td>
               </tr>
               <tr>
                 <td><code>extractMuscleSide(id)</code></td>

@@ -1,5 +1,5 @@
 import { filterMuscles, getMuscleColor, resolveIntensityColor } from "./utils";
-import { ViewSide, MuscleId, BodyState, BodyPartState } from "./types";
+import { ViewSide, MuscleId, BodyState, BodyPartState, assertValidBodyState } from "./types";
 import type { IntensityColorResolver } from "./types";
 import type { MuscleDef } from "./data";
 
@@ -158,6 +158,8 @@ export class BodyChart {
   constructor(container: HTMLElement, options: BodyChartOptions) {
     this.container = container;
     this.options = resolveOptions(options);
+    // Validate before mounting so a rejected construction leaves the container empty.
+    assertValidBodyState(this.options.bodyState);
     this.build();
   }
 
@@ -189,6 +191,10 @@ export class BodyChart {
    * focus); every other change is applied in place and preserves focus.
    */
   update(options: Partial<BodyChartOptions>): void {
+    // Validate before mutating anything, so a rejected update leaves the chart
+    // — options and rendered output — exactly as it was.
+    if (options.bodyState !== undefined) assertValidBodyState(options.bodyState);
+
     const previous = this.options;
     const next = { ...previous };
     for (const [key, value] of Object.entries(options)) {

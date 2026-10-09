@@ -38,6 +38,13 @@
 
 ### Changed
 
+- **BREAKING:** intensities are validated as finite integers from 0 to 10. The `BodyChart`
+  constructor, `update()`, and `createBodyPartState()` now throw a descriptive `Error` describing
+  the offending region and value instead of the renderer silently rounding and clamping. Validation
+  runs before anything is applied, so a rejected `update()` leaves the chart unchanged, and a
+  rejected construction mounts nothing. The colour helpers (`getMuscleColor`,
+  `resolveIntensityColor`, `createIntensityColorScale`) still round and clamp defensively, because
+  they also render mappings a consumer mutates after the chart has accepted them.
 - **BREAKING:** `MuscleId` is now a union of the region identifiers derived from the dataset, not
   `string`. State keys, callbacks, and helpers are type-checked, so a misspelled literal is a
   compile error instead of a silently ignored region. Identifiers that only exist at runtime must

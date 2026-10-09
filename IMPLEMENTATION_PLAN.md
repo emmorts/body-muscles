@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B3 complete).
+Status: Phase 1 review corrections complete; A1 screen-reader verification remains pending. Phase 2 in progress (B1–B4 complete).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -173,7 +173,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### B4 — Consistent intensity validation
 
-- [ ] Complete B4
+- [x] Complete B4
 
 **Problem:** `createBodyPartState()` rejects fractional and out-of-range values, while rendering rounds fractions and caps large values. Negative values and `NaN` render as neutral; positive infinity renders at maximum intensity.
 
@@ -514,3 +514,12 @@ For each completed item, append a record containing:
 - **Design decision resolved:** no patch API. A spread expresses preservation and removal, and a second entry point with different merge rules would make the two easy to confuse; the decision and its rationale are documented next to the examples.
 - **Verification:** `npm run test:browser` — 27 tests pass, including the new replacement/preservation regression, which asserts observed region attributes rather than source text.
 - **Compatibility:** documentation plus a test; no behaviour, API, or changelog change. The chart still never mutates the mapping it receives and owns no selection state.
+
+### B4 — Consistent intensity validation
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix(api)!: validate intensities as integers from 0 to 10` (see git history for the hash).
+- **Changes:** `isValidIntensity` now accepts `unknown` and requires a finite integer from 0 to 10; `createBodyPartState` throws a descriptive message naming the value; the new exported `assertValidBodyState` reports the offending region and value. The `BodyChart` constructor validates before mounting (a rejected construction leaves the container empty) and `update()` validates before mutating any internal state (a rejected update leaves options and rendering untouched). Colour helpers keep rounding and clamping defensively, now documented as deliberate because consumers own the mapping and may mutate it between updates.
+- **Policy chosen:** one validity rule (finite integers 0–10) enforced at the API boundary, with tolerant rendering; the review's recommendation was adopted.
+- **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build`, `npm run test:types`, and 28 browser tests pass. The new browser regression covers `0` and `10` as accepted boundaries, the guard's verdicts for `0, 10, 5.5, -1, 11, NaN, Infinity`, factory messages for each rejection, a rejected construction mounting nothing, a rejected `update()` leaving the fill and `aria-pressed` unchanged, and a subsequent valid update still applying. The earlier resolver regression was rewritten so the clamping assertion targets the colour scale itself rather than a chart accepted out-of-range input.
+- **Compatibility:** breaking for consumers who passed fractional or out-of-range intensities and relied on silent rounding or clamping; recorded as **BREAKING** in the CHANGELOG with the migration (validate or clamp before calling `update()`).

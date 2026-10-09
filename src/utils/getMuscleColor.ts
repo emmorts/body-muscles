@@ -1,7 +1,13 @@
 import { INTENSITY_COLORS } from "../data";
 import type { BodyPartState, IntensityColorResolver } from "../types";
 
-/** Clamp any intensity value into the 0-10 palette range. */
+/**
+ * Clamp any intensity value into the 0-10 palette range.
+ *
+ * The chart validates intensities at its API boundary, but consumers own the
+ * state mapping and may mutate it between updates, so rendering stays
+ * defensive: never throw here, round and clamp instead.
+ */
 function clampIntensity(intensity: number): number {
   return Math.min(Math.max(Math.round(intensity), 0), 10);
 }
