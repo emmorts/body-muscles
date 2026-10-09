@@ -302,3 +302,14 @@ body-muscles/
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
+## Releasing
+
+This repository publishes
+[`@emmorts/body-muscles`](https://www.npmjs.com/package/@emmorts/body-muscles) from GitHub Actions.
+
+1. Add a `## <version>` section to [`CHANGELOG.md`](./CHANGELOG.md) describing the change.
+2. Run `npm run release -- <version>`. It checks the tree, the changelog and the tag, then bumps
+   `package.json`, commits, tags `v<version>` and pushes.
+3. CI type-checks, builds and verifies the artifacts, publishes the package, then opens a GitHub
+   release whose notes are that changelog section.
