@@ -327,6 +327,9 @@ body-muscles/
 
 ## Development
 
+Development and browser tests require **Node 20+** (Playwright 1.64's minimum) and a downloaded Chromium.
+This tooling requirement is separate from the published library's unchanged Node `>=16` consumer contract.
+
 ```bash
 npm install
 npm run build          # ESM, CommonJS, UMD and dist/data/body-muscles-data.json

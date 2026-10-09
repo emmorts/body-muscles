@@ -339,7 +339,7 @@ Review findings are tracked individually; each correction is committed separatel
 - [x] R6 — Reposition visible tooltips after content updates.
 - [x] R7 — Restore tooltip visibility and description when enabled during focus.
 - [x] R8 — Replace the vacuous tooltip-reference cleanup assertion.
-- [ ] R9 — Correct the browser tooling Node prerequisite.
+- [x] R9 — Correct the browser tooling Node prerequisite.
 - [ ] R10 — Verify accessibility-tree behavior and record screen-reader verification limits.
 
 ## Completion record
@@ -385,7 +385,7 @@ For each completed item, append a record containing:
 - **Files:** `tests/browser-behavior.mjs`, `package.json`, `package-lock.json`, `.github/workflows/ci.yml`, `README.md`.
 - **Changes:** added Playwright 1.64.0 as a devDependency and `npm run test:browser`. The suite runs the built UMD bundle in headless Chromium: the library tests inject `dist/umd/body-muscles.umd.js` into a blank page, and the demo tests serve `docs/` from an in-process HTTP server that maps the git-ignored `docs/lib/body-muscles.umd.js` to the freshly built bundle, so no artifact is written into the working tree and external CDN requests are blocked. Each test uses a fresh page. Covered: single-tab-stop and toggle-button semantics, display-only mode, keyboard navigation and activation, focus preservation across in-place updates, tooltip show/refresh/hide and stale `aria-describedby`, every mutable option, callback replacement, view transitions, destruction, multiple instances, and three demo-control behaviours (slider increments, labelled native controls, focus hand-off when a row is deselected).
 - **Verification:** `npm run test:browser` — 12 passed, 0 failed, in ~2.5 s. To prove the suite is a real regression guard rather than a tautology, `src/BodyChart.ts` was reverted to `0a6b1a2` (pre-A2) and `docs/{app.js,index.html,style.css}` to `5ceb9a2` (pre-A3), the bundle rebuilt, and the suite re-run: 6 tests failed — the option-update, tooltip-refresh, focus/tooltip, and all three demo-control tests — confirming they exercise the fixed behaviour. The fixes were then restored and the suite returned to 12 passed. CI wiring (`npx playwright install --with-deps chromium` then `npm run test:browser`) is added but has not yet run on GitHub; that result is still pending.
-- **Compatibility:** development-only; `playwright` is a devDependency, the published `files` list is unchanged, so the runtime dependency footprint stays zero. The browser tests require Node 18+ and a downloaded Chromium; `engines.node` (the consumer contract) was deliberately left at `>=16`. No changelog entry. No `[INFERENCE]` items outstanding.
+- **Compatibility:** development-only; `playwright` is a devDependency and the published files list is unchanged, so runtime dependencies remain zero. The browser tests require Node 20+ (the locked Playwright packages' minimum) and a downloaded Chromium; the consumer engines.node contract remains >=16. No changelog entry.
 
 ### A5 — Documentation-site structural and contrast accessibility
 
@@ -461,3 +461,11 @@ For each completed item, append a record containing:
 - **Changes:** focus a region before the tooltip-toggle checks and assert its description resolves to the live tooltip before checking removal. The old empty-state-only assertion no longer supplies false assurance.
 - **Verification:** 18 browser tests pass. Separate smoke starts with body-chart-tooltip-2 referenced by the focused region, then disables tooltips: the reference becomes null, the tooltip count becomes zero, and focus remains on the region.
 - **Compatibility:** test-only behavior coverage; no package API or changelog change.
+
+### R9 — Browser tooling runtime prerequisite
+
+- **Completed:** 2026-10-09.
+- **Commit:** `docs: correct browser tooling Node prerequisite`.
+- **Changes:** README development prerequisites and A4's compatibility record now state Node 20+, matching Playwright and playwright-core 1.64.0.
+- **Verification:** both lockfile engine entries are >=20; the installed CLI reports Playwright 1.64.0 on Node v24.21.0. CI specifies Node 24. The published package's engines.node remains >=16.
+- **Compatibility:** documentation correction only; no dependency, consumer engine, or changelog change.
