@@ -335,8 +335,10 @@ const chart = new BodyChart(container, {
 });
 ```
 
-The resolver must return a concrete CSS colour value; `var()` references are not resolved in the SVG
-`fill` attribute.
+The resolver must return a valid CSS colour, including `var(--application-color, #ef4444)`.
+The browser resolves inherited custom properties on each region. `getAttribute("fill")` returns the
+resolver's expression; `getComputedStyle(region).fill` returns the resolved colour. Changing the
+custom property updates the fill without a chart `update()`.
 
 ### Reduced motion
 

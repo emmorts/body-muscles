@@ -51,9 +51,9 @@ export type BodyState = Partial<Record<MuscleId, BodyPartState>>;
 /**
  * Resolve the fill colour for an intensity level.
  *
- * Must return a concrete CSS colour value (for example `#ef4444` or
- * `hsl(0 84% 60%)`); `var()` references are not resolved where the resolver
- * output is written to the SVG `fill` presentation attribute.
+ * Return a valid CSS colour, for example `#ef4444`, `hsl(0 84% 60%)`, or
+ * `var(--application-color, #ef4444)`. The browser resolves inherited custom
+ * properties on the SVG region; the attribute itself retains the expression.
  *
  * @param intensity - Intensity value on the active scale (0-10 by default)
  * @returns A CSS colour string

@@ -100,9 +100,9 @@ export interface BodyChartOptions {
    * Resolve the fill colour for a region from its intensity (default: the
    * exported `INTENSITY_COLORS` palette).
    *
-   * Build a custom scale with `createIntensityColorScale`. The resolver must
-   * return a concrete CSS colour value; `var()` references are not resolved in
-   * the `fill` presentation attribute.
+   * Build a custom scale with `createIntensityColorScale`. Return a valid CSS
+   * colour, including `var(--application-color, #ef4444)`; the browser resolves
+   * inherited custom properties on the region's SVG `fill` attribute.
    */
   intensityColor?: IntensityColorResolver;
   /**
@@ -871,8 +871,8 @@ export class BodyChart {
       state.intensity === 0 && !isSelected ? bmVar("region-inactive-opacity", "0.6") : "1";
     const muscle = this.muscleData.find((m) => m.id === muscleId);
 
-    // `fill` stays a presentation attribute so the resolved colour is
-    // introspectable; strokes are CSS properties so `--bm-*` variables resolve.
+    // Preserve the resolver expression in the attribute; getComputedStyle(path).fill
+    // reports the colour after the browser resolves any CSS variable references.
     path.setAttribute("fill", fill);
     path.style.stroke = isFocused
       ? bmVar("region-stroke-focus", "#1d4ed8")

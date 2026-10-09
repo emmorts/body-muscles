@@ -560,6 +560,30 @@ await test("custom intensity resolvers drive region fills", async (page) => {
   assert.equal(facts.inline, "rgb(4, 5, 6)", "a plain resolver function is accepted");
 });
 
+await test("intensity resolver CSS variables follow live ancestor theme changes", async (page) => {
+  await mount(page);
+  const facts = await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    const host = document.getElementById("host");
+    host.style.setProperty("--application-color", "#ff0000");
+    const chart = new BodyChart(host, {
+      view: ViewSide.FRONT, bodyState: { head: { intensity: 6, selected: false } },
+      enableTransitions: false, intensityColor: () => "var(--application-color, #ef4444)",
+    });
+    const region = host.querySelector(".body-chart-muscle");
+    const before = getComputedStyle(region).fill;
+    host.style.setProperty("--application-color", "#0000ff");
+    const after = getComputedStyle(region).fill;
+    host.style.removeProperty("--application-color");
+    const fallback = getComputedStyle(region).fill;
+    chart.destroy();
+    return { before, after, fallback };
+  });
+  assert.equal(facts.before, "rgb(255, 0, 0)");
+  assert.equal(facts.after, "rgb(0, 0, 255)", "theme changes apply without chart.update()");
+  assert.equal(facts.fallback, "rgb(239, 68, 68)", "unset variables use the resolver's CSS fallback");
+});
+
 await test("regions, tooltip, and layout respond to chart CSS custom properties", async (page) => {
   await mount(page);
   const defaults = await page.evaluate(() => {

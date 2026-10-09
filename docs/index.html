@@ -825,6 +825,9 @@ const { MUSCLE_MAP } = require("@emmorts/body-muscles/data"); // CommonJS</code>
           Region fill comes from the <code>intensityColor</code> resolver. Build one from a custom palette
           with <code>createIntensityColorScale({ 0: "#e5e7eb", 5: "#f59e0b", 10: "#dc2626" })</code>;
           intensities are rounded and clamped into 0-10 and missing levels fall back to the default palette.
+          Resolvers can return <code>var(--application-color, #ef4444)</code>: the browser resolves
+          inherited custom properties on each SVG region. The fill attribute retains the expression;
+          <code>getComputedStyle(region).fill</code> reports the resolved colour.
           Transitions are disabled whenever the system requests reduced motion, regardless of
           <code>enableTransitions</code>.
         </p>
