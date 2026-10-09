@@ -1,414 +1,303 @@
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/emmorts/body-muscles/main/docs/favicon.svg" width="64" height="64" alt="" />
+
 # Body Muscles
 
-**An interactive, accessible SVG body map: 89 anatomical regions, intensity and selection state, zero dependencies.**
+An interactive, accessible SVG body map for the web.
 
-[![npm](https://img.shields.io/npm/v/@emmorts%2Fbody-muscles)](https://www.npmjs.com/package/@emmorts/body-muscles)
+[![npm](https://img.shields.io/npm/v/@emmorts/body-muscles)](https://www.npmjs.com/package/@emmorts/body-muscles)
+[![types](https://img.shields.io/npm/types/@emmorts/body-muscles)](https://www.npmjs.com/package/@emmorts/body-muscles)
 [![CI](https://github.com/emmorts/body-muscles/actions/workflows/ci.yml/badge.svg)](https://github.com/emmorts/body-muscles/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![license](https://img.shields.io/npm/l/@emmorts/body-muscles)](LICENSE)
 
-**Documentation and live playground:** <https://emmorts.github.io/body-muscles/>
+[Documentation](https://emmorts.github.io/body-muscles/) ·
+[Live playground](https://emmorts.github.io/body-muscles/#playground) ·
+[Examples](examples/README.md) ·
+[Changelog](CHANGELOG.md)
 
-You own the state — an intensity from 0 to 10 and a selected flag per region — and the chart draws
-it, handles pointer and keyboard interaction, and labels every region. It is plain DOM, so it works
-with React, Vue, Svelte, Angular, or no framework at all.
+</div>
 
-`@emmorts/body-muscles` is a maintained fork of [vulovix/body-muscles](https://github.com/vulovix/body-muscles)
-by [Ivan Vulović](https://github.com/vulovix); see [Credits](#credits).
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/emmorts/body-muscles/main/.github/assets/preview-dark.png" />
+    <img src="https://raw.githubusercontent.com/emmorts/body-muscles/main/.github/assets/preview-light.png" width="840" alt="The Body Muscles playground: front and back body views with the chest and shoulders shaded by intensity, beside an inspector showing the selected region, its intensity, and the state passed to the chart." />
+  </picture>
+</p>
 
-## Features
+You own the state — an intensity from 0 to 10 and a selected flag per region — and Body Muscles
+draws it, handles pointer and keyboard interaction, and labels every region. It is plain DOM, so it
+works with React, Vue, Svelte, Angular, or no framework at all.
 
-- **89 anatomical regions** — 40 anterior and 49 posterior, drawn as smoothed bezier paths, with
-  name, side, and group metadata for each
-- **Three views** — anterior, posterior, or both side by side
-- **Intensity scale** — 0–10 colour mapping, replaceable with your own resolver or palette
-- **Accessible by default** — one tab stop, arrow-key navigation, toggle-button semantics, tooltips
-  on hover and focus, and a static image mode
+- **89 anatomical regions** across anterior and posterior views, with name, side, and group metadata
+- **Accessible by default** — one tab stop, arrow-key navigation, toggle-button semantics, focus tooltips
 - **Typed identifiers** — a misspelled region identifier is a compile error
-- **Selection helpers** — pure functions to select a whole group or both sides of a region
+- **Selection helpers** — pure functions that select a whole group or both sides of a region
 - **Themeable and localizable** — `--bm-*` CSS custom properties and replaceable labels
 - **Data without a DOM** — `/data` and `/data.json` entry points for servers and custom renderers
-- **Zero dependencies** — ESM, CommonJS, and a browser global build (64 KB minified, about 23 KB gzipped)
+- **Zero dependencies** — ESM, CommonJS, and a browser build (about 23 KB gzipped)
+
+This is a maintained fork of [vulovix/body-muscles](https://github.com/vulovix/body-muscles) — see [Credits](#credits).
 
 ## Installation
 
-```bash
+```sh
 npm install @emmorts/body-muscles
-```
-
-```bash
-yarn add @emmorts/body-muscles
-```
-
-```bash
 pnpm add @emmorts/body-muscles
+yarn add @emmorts/body-muscles
+bun add @emmorts/body-muscles
 ```
 
-TypeScript consumers require **TypeScript 5.0+**. The declarations use const type parameters;
-`skipLibCheck` cannot make older compilers parse them. JavaScript consumers need no TypeScript compiler.
+> [!NOTE]
+> TypeScript consumers need **TypeScript 5.0 or later**: the declarations use const type
+> parameters, which older compilers cannot parse even with `skipLibCheck`. JavaScript needs no
+> compiler, and the runtime supports Node 16+.
 
-**CDN (ESM):**
+### Without a build step
 
 ```html
+<!-- Native ES module -->
 <script type="module">
   import { BodyChart, ViewSide } from "https://esm.sh/@emmorts/body-muscles";
 </script>
-```
 
-**CDN (UMD) — no bundler needed, works from filesystem:**
-
-```html
+<!-- Classic script exposing a BodyMuscles global; also works from file:// -->
 <script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"></script>
-<script>
-  const { BodyChart, ViewSide } = BodyMuscles;
-</script>
 ```
 
-## Quick Start
+## Quick start
 
-```typescript
-import { BodyChart, ViewSide } from "@emmorts/body-muscles";
+```ts
+import { BodyChart, ViewSide, type BodyState } from "@emmorts/body-muscles";
 
-const container = document.getElementById("container");
-if (!container) throw new Error("Missing #container element");
+const container = document.querySelector<HTMLElement>("#body-map");
+if (!container) throw new Error("Missing #body-map");
+
+let state: BodyState = {
+  "biceps-left": { intensity: 7, selected: true },
+  "quads-right": { intensity: 3, selected: false },
+};
 
 const chart = new BodyChart(container, {
-  view: ViewSide.FRONT,
-  bodyState: {},
-  onMuscleClick: (id, name) => {
-    console.log(`Clicked: ${name} (${id})`);
-  },
-  onMuscleHover: (id) => {
-    console.log("Hovered:", id);
-  },
-});
-
-// Update body state
-chart.update({
-  bodyState: {
-    "biceps-left": { intensity: 7, selected: true },
-    "chest-upper-right": { intensity: 4, selected: false },
+  view: ViewSide.BOTH,
+  bodyState: state,
+  onMuscleClick(id) {
+    const current = state[id] ?? { intensity: 0, selected: false };
+    state = { ...state, [id]: { ...current, selected: !current.selected } };
+    chart.update({ bodyState: state });
   },
 });
 
-// Switch to back view
-chart.update({ view: ViewSide.BACK });
-
-// Show both views side-by-side
-chart.update({ view: ViewSide.BOTH });
-
-// Cleanup when done
+// Later: switch views in place, and destroy the chart when its widget is removed.
+chart.update({ view: ViewSide.FRONT });
 chart.destroy();
 ```
 
-## API Reference
+The chart fills its container's width. Leave it mounted across page navigation so the browser's
+back/forward cache can restore it; call `destroy()` only when you remove the widget.
 
-### `new BodyChart(container, options)`
+## Guides
 
-Creates an interactive body map inside the given DOM element.
+### State
 
-#### Options
-
-| Option              | Type                                   | Default     | Description                                 |
-| ------------------- | -------------------------------------- | ----------- | ------------------------------------------- |
-| `view`              | `ViewSide`                             | —           | `FRONT`, `BACK`, or `BOTH` anatomical view  |
-| `bodyState`         | `BodyState`                            | —           | Map of muscle IDs to intensity & selection   |
-| `onMuscleClick`     | `(id: MuscleId, name: string) => void` | `() => {}`  | Click handler                               |
-| `onMuscleHover`     | `(id: MuscleId \| null) => void`       | `() => {}`  | Hover state change handler                  |
-| `className`         | `string`                               | `""`        | CSS class for the container wrapper          |
-| `ariaLabel`         | `string`                               | `""`        | Accessibility label for the SVG             |
-| `showViewLabel`     | `boolean`                              | `false`     | Show "Front / Back / Both" view indicator   |
-| `enableTransitions` | `boolean`                              | `true`      | Smooth CSS transitions on state changes     |
-| `showTooltip`       | `boolean`                              | `true`      | Display custom instant floating tooltip     |
-| `tooltipFormatter`  | `(muscle, state) => string`            | default     | Custom tooltip content formatter callback   |
-| `intensityColor`    | `(intensity: number) => string`        | `INTENSITY_COLORS` | Fill-colour resolver for region intensity |
-| `labels`            | `ChartLabels`                          | `{}`        | Localize the chart name, region names, tooltips, intensity wording, and view labels |
-| `interactive`       | `boolean`                              | `true`      | Enable pointer/keyboard interaction         |
-
-Optional constructor fields set to `undefined` use their documented defaults; explicit `false` values are preserved.
-
-The default `tooltipFormatter` renders the region name, plus `- intensity N` when the region has state. Supply your own to change that wording.
-
-#### Methods
-
-| Method                              | Description                                       |
-| ----------------------------------- | ------------------------------------------------- |
-| `update(options: Partial<Options>)` | Merge new options. `view`/`interactive` changes rebuild; `undefined` values are ignored. |
-| `destroy()`                         | Remove all DOM elements and event listeners.       |
-
-#### State updates
-
-`update()` merges the options object shallowly, and `undefined` values are ignored. `bodyState`,
-however, is **replaced as a whole** — it is not merged region by region, so a region omitted from
-the new mapping returns to its default (intensity 0, unselected). The chart never mutates the
-mapping you pass and keeps no selection state of its own, so your application remains the single
-source of truth.
+`update()` merges options shallowly and ignores `undefined` values. `bodyState`, however, is
+**replaced as a whole**: a region missing from the new mapping returns to intensity 0, unselected.
+The chart never mutates your mapping and keeps no selection state of its own, so your application
+remains the single source of truth.
 
 ```ts
 // Keep every other region and change one.
-chart.update({ bodyState: { ...current, "biceps-left": { intensity: 7, selected: true } } });
-
-// Apply a patch you built elsewhere to the current mapping.
-const patch: BodyState = { "biceps-left": { intensity: 7, selected: true } };
-chart.update({ bodyState: { ...current, ...patch } });
+chart.update({ bodyState: { ...state, "biceps-left": { intensity: 7, selected: true } } });
 
 // Remove one region's state.
-const { "biceps-left": removed, ...rest } = current;
+const { "biceps-left": removed, ...rest } = state;
 chart.update({ bodyState: rest });
 ```
 
 There is deliberately no separate patch method: a spread expresses both preservation and removal,
-and a second entry point with different merge rules would only make the two easy to mix up.
+and a second entry point with different merge rules would be easy to mix up. Changing `view` or
+`interactive` rebuilds the chart; every other update applies in place and keeps keyboard focus and
+any open tooltip.
 
 #### Intensity values
 
-An intensity is a **finite integer from 0 to 10**. `createBodyPartState()`, the `BodyChart`
-constructor, and `update()` all enforce that rule and throw a descriptive `Error` for fractions,
-negative numbers, values above 10, `NaN`, or infinities. A rejected `update()` applies none of the
-submitted options and performs no rendering changes. It cannot undo your earlier mutations to an
-already-accepted mapping or its entries: the chart retains those objects by reference. Validate before
-mutating shared state, or submit a new mapping with new changed entries to preserve the previous state:
+An intensity is a **finite integer from 0 to 10**. The constructor, `update()`, and
+`createBodyPartState()` throw a descriptive error for fractions, negatives, values above 10, `NaN`,
+or infinities, and a rejected `update()` applies none of the submitted options.
 
 ```ts
-try {
-  chart.update({ bodyState: { "biceps-left": { intensity: 12, selected: true } } });
-} catch (error) {
-  // Invalid bodyState entry for "biceps-left": intensity 12. Expected an integer from 0 to 10.
-}
-
 isValidIntensity(9); // true
 isValidIntensity(9.5); // false
+
+// Error: Invalid bodyState entry for "biceps-left": intensity 12. Expected an integer from 0 to 10.
+chart.update({ bodyState: { "biceps-left": { intensity: 12, selected: true } } });
 ```
+
+> [!IMPORTANT]
+> The chart holds your mapping by reference, so a rejected update cannot undo mutations you already
+> made to an accepted object. Validate before mutating shared state, or submit a new mapping.
 
 The colour helpers (`resolveIntensityColor`, `createIntensityColorScale`, `getMuscleColor`) never
-throw: they round and clamp into 0-10, because they also render mappings that a consumer mutated
-after the chart accepted them. If you relied on the chart silently rounding or clamping, validate
-or clamp before calling `update()`.
-
-### Types
-
-```typescript
-enum ViewSide {
-  FRONT = "FRONT",
-  BACK = "BACK",
-  BOTH = "BOTH",
-}
-
-// Derived from the dataset: the union of every region identifier.
-type MuscleId = "head" | "face" | "neck-left" | /* … 89 in total … */ "foot-back-right";
-
-interface BodyPartState {
-  intensity: number; // 0-10
-  selected: boolean;
-}
-
-type BodyState = Partial<Record<MuscleId, BodyPartState>>;
-
-type IntensityColorResolver = (intensity: number) => string;
-
-type MuscleSide = "left" | "right" | "central";
-type MuscleGroup = keyof typeof MUSCLE_GROUPS;
-
-interface MuscleMetadata {
-  id: MuscleId;
-  name: string;
-  view: ViewSide;
-  side: MuscleSide; // the subject's own side
-  group: MuscleGroup;
-}
-```
-
-### Data Exports
-
-| Export             | Description                                                                            |
-| ------------------ | -------------------------------------------------------------------------------------- |
-| `MUSCLE_MAP`       | All 89 region definitions (front + back)                                               |
-| `MUSCLE_DEFS`      | The same definitions keyed by identifier, for direct typed access (`MUSCLE_DEFS["biceps-left"]`) |
-| `FRONT_MUSCLES`    | Anterior-view muscle definitions                                                       |
-| `BACK_MUSCLES`     | Posterior-view muscle definitions                                                      |
-| `MUSCLE_GROUPS`    | Named groups: Head & Neck, Shoulders, Arms, Chest, Back, Abdominals, Legs, Hands & Feet |
-| `MUSCLE_PAIRS`     | Readonly canonical `[left, right]` counterparts for the same region and anatomical view |
-| `MUSCLE_METADATA`  | Canonical side, group, view, and name for every region, keyed by identifier             |
-| `INTENSITY_COLORS` | Color map (0-10) from slate → yellow → orange → red                                    |
-
-### Utility Functions
-
-| Function                                     | Description                              |
-| -------------------------------------------- | ---------------------------------------- |
-| `getMuscleColor(state, isHovered, resolver?)` | Returns the fill colour for a `BodyPartState` |
-| `resolveIntensityColor(intensity)`           | Default intensity → colour resolver       |
-| `createIntensityColorScale(colors)`          | Build a resolver from a custom palette    |
-| `filterMuscles(view)`                        | Returns `MuscleDef[]` for the given view  |
-| `getMuscleDef(id)`                           | Region lookup by any string; `undefined` when unknown |
-| `getMuscleMetadata(id)`                      | Side/group/view lookup by any string; `undefined` when unknown |
-| `isMuscleId(value)`                          | Type guard narrowing a string to `MuscleId` |
-| `extractMuscleSide(id)`                      | Canonical side derived from the identifier suffix |
-| `extractMuscleGroup(id)`                     | Identifier prefix only — not the display group |
-| `createBodyPartState(intensity?, selected?)` | Factory with validation                   |
-| `isValidIntensity(value)`                    | Type guard for a finite integer intensity (0-10) |
-| `setGroupSelection(state, group, action)`    | Pure selection operation on a canonical group |
-| `setBilateralSelection(state, id, action)`   | Pure selection operation on a region and its counterpart |
-| `extractMuscleSide(id)`                      | Returns `"left" \| "right" \| "central"`  |
-| `extractMuscleGroup(id)`                     | Returns base group string                 |
+throw: they round and clamp into 0–10, because they also render mappings mutated after the chart
+accepted them.
 
 ### Group and bilateral selection
 
-Both helpers accept an explicit `SelectionAction`: `"select"`, `"deselect"`, or `"toggle"`.
-Toggle deselects the target set when **all** members are selected; otherwise it selects them all.
-Groups include their regions in both views. Bilateral selection uses `MUSCLE_PAIRS`, not identifier
-substitution: either side addresses the same pair; central or unpaired regions act alone.
+Two pure helpers return a new state for a whole group, or for a region and its opposite side:
 
 ```ts
-import { setGroupSelection, setBilateralSelection, type BodyState } from "@emmorts/body-muscles";
+import { setBilateralSelection, setGroupSelection } from "@emmorts/body-muscles";
 
-let state: BodyState = { "biceps-left": { intensity: 7, selected: true } };
 state = setGroupSelection(state, "Arms", "toggle");
-state = setBilateralSelection(state, "biceps-right", "deselect");
-chart.update({ bodyState: state }); // Replace the complete mapping; no per-region patch.
+state = setBilateralSelection(state, "biceps-right", "select");
+chart.update({ bodyState: state });
 ```
 
-Neither helper mutates the mapping or its entries. Existing intensities and unrelated entries are
-preserved. Selecting a missing entry creates `{ intensity: 0, selected: true }`; deselecting a
-missing entry leaves it absent. No-op operations return the original mapping, and unchanged entries
-are shared, so these are not deep-copy/snapshot APIs. Use `isMuscleId` to narrow dynamic region IDs.
+- Actions are explicit: `"select"`, `"deselect"`, or `"toggle"`. Toggle deselects a fully selected
+  target and otherwise selects all of it.
+- Groups span both views. Pairs come from `MUSCLE_PAIRS`, never identifier substitution; either
+  side addresses the same pair, and central regions such as `spine` act alone.
+- Existing intensities and unrelated entries are kept. Selecting a missing entry creates
+  `{ intensity: 0, selected: true }`; deselecting a missing entry leaves it absent.
+- Inputs are never mutated. A no-op returns the same mapping, and unchanged entries are shared.
 
-## Accessibility
+### Typed identifiers
 
-The chart is a composite widget with a **single tab stop**. `Tab` enters the chart on the first
-region and leaves it in one step — a keyboard user never has to tab through all regions to reach
-the next control.
+`MuscleId` is a union derived from the dataset, so state keys, callbacks, and helpers are checked at
+compile time:
 
-- `ArrowRight` / `ArrowDown` — next region in reading order
-- `ArrowLeft` / `ArrowUp` — previous region in reading order
-- `Home` / `End` — first / last region
-- `Enter` / `Space` — activate the focused region (fires `onMuscleClick`)
-- `Escape` — dismiss the tooltip
+```ts
+const state: BodyState = {
+  "biceps-left": { intensity: 7, selected: true }, // ok
+  "bicepz-left": { intensity: 7, selected: true }, // error: not a region identifier
+};
+```
 
-Each region is exposed as a toggle button: its name is available to assistive technology and its
-pressed state tracks `selected`, so selection is not conveyed by colour alone. Keyboard focus shows
-a high-contrast indicator that is independent of the selection/hover styling.
+Identifiers that only exist at runtime — URL parameters, stored state, user input — must be
+narrowed before they are used as keys:
 
-Set `interactive: false` for a display-only chart. It is then announced as a single labelled
-graphic: regions are not focusable, hoverable, or clickable, `onMuscleClick` / `onMuscleHover`
-never fire, and no tooltip is rendered. Use `ariaLabel` to name the chart in either mode.
+```ts
+const raw = new URLSearchParams(location.search).get("muscle") ?? "";
 
-Verification covers keyboard interaction, Chromium's accessibility tree, and targeted automated audits.
-Screen-reader announcements and browse/focus-mode behavior remain unverified; these checks do not establish full WCAG conformance.
+const state: BodyState = isMuscleId(raw) ? { [raw]: createBodyPartState(5) } : {};
+const name = getMuscleDef(raw)?.name ?? "unknown"; // accepts any string
+```
 
-## Styling and Theming
+Identifiers follow `{group}-{side}` (`biceps-left`), `{group}-{part}-{side}`
+(`shoulder-front-left`), or a single word for central regions (`spine`). Read side and group from
+the metadata rather than parsing identifiers.
 
-The chart renders with inline styles that reference `--bm-*` CSS custom properties. Every variable
-falls back to the built-in default, so existing output is unchanged until you override one. Set them
-on the chart container or any ancestor:
+### Accessibility
+
+An interactive chart is one composite widget with a **single tab stop**. Each region is a toggle
+button whose pressed state follows `selected`, so selection is never conveyed by colour alone, and
+keyboard focus has its own high-contrast halo.
+
+| Key                         | Action                                       |
+| --------------------------- | -------------------------------------------- |
+| <kbd>Tab</kbd>              | Enter or leave the chart in one step         |
+| <kbd>→</kbd> <kbd>↓</kbd>   | Next region                                  |
+| <kbd>←</kbd> <kbd>↑</kbd>   | Previous region                              |
+| <kbd>Home</kbd> / <kbd>End</kbd> | First / last region                     |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | Activate the focused region (fires `onMuscleClick`) |
+| <kbd>Esc</kbd>              | Dismiss the tooltip                          |
+
+Set `interactive: false` for a display-only chart, announced as a single labelled image: regions
+are not focusable or clickable, callbacks never fire, and no tooltip renders. Use `ariaLabel` to
+name the chart in either mode.
+
+> [!NOTE]
+> Verified with keyboard interaction, Chromium's accessibility tree, and automated audits.
+> Screen-reader announcements and browse-mode behaviour have not been verified, and these checks do
+> not establish full WCAG conformance.
+
+### Theming
+
+Every chart style reads a `--bm-*` custom property with the built-in value as its fallback, so
+nothing changes until you override one. Set them on the container or any ancestor:
 
 ```css
-.my-chart {
-  --bm-padding: 0.5rem;
+.body-map {
   --bm-max-height: 55vh;
-  --bm-max-width: 320px;
   --bm-region-stroke: #0f172a;
   --bm-region-stroke-selected: #f8fafc;
   --bm-region-inactive-opacity: 0.4;
-  --bm-tooltip-bg: rgba(15, 23, 42, 0.95);
-  --bm-tooltip-color: #f8fafc;
+  --bm-tooltip-bg: rgb(15 23 42 / 0.95);
 }
 ```
 
-| Variable                         | Applies to                             | Default                          |
-| -------------------------------- | -------------------------------------- | -------------------------------- |
-| `--bm-padding`                   | Wrapper padding                        | `1rem`                           |
-| `--bm-max-height`                | SVG height limit                       | `70vh`                           |
-| `--bm-max-width`                 | SVG width limit, single-view charts    | `400px`                          |
-| `--bm-max-width-both`            | SVG width limit, `BOTH` view           | `760px`                          |
-| `--bm-svg-shadow`                | SVG drop shadow                        | `drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3))` |
-| `--bm-transition-duration`       | Transition timing                      | `200ms`                          |
-| `--bm-region-stroke`             | Unselected region outline              | `#1e293b`                        |
-| `--bm-region-stroke-width`       | Unselected outline weight              | `0.1`                            |
-| `--bm-region-stroke-selected`    | Selected region outline                | `#ffffff`                        |
-| `--bm-region-stroke-width-selected` | Selected outline weight             | `0.3`                            |
-| `--bm-region-stroke-focus`       | Keyboard-focus outline                 | `#1d4ed8`                        |
-| `--bm-region-stroke-width-focus` | Keyboard-focus outline weight          | `0.5`                            |
-| `--bm-region-focus-shadow`       | Keyboard-focus halo filter             | dual `drop-shadow(...)` ring     |
-| `--bm-region-active-shadow`      | Selected / hovered filter              | `url(#glow)`                     |
-| `--bm-region-inactive-opacity`   | Fill opacity of an untouched region    | `0.6`                            |
-| `--bm-background-fill`           | Decorative silhouette fill             | `#cbd5e1`                        |
-| `--bm-background-opacity`        | Decorative silhouette opacity          | `0.1`                            |
-| `--bm-tooltip-bg`                | Tooltip background                     | `rgba(15, 23, 42, 0.92)`         |
-| `--bm-tooltip-color`             | Tooltip text                           | `#f8fafc`                        |
-| `--bm-tooltip-padding`           | Tooltip padding                        | `0.35rem 0.65rem`                |
-| `--bm-tooltip-radius`            | Tooltip corner radius                  | `0.5rem`                         |
-| `--bm-tooltip-font-size`         | Tooltip font size                      | `0.75rem`                        |
-| `--bm-tooltip-font-weight`       | Tooltip font weight                    | `500`                            |
-| `--bm-tooltip-line-height`       | Tooltip line height                    | `1.2`                            |
-| `--bm-tooltip-shadow`            | Tooltip shadow                         | two-layer `box-shadow`           |
-| `--bm-tooltip-border`            | Tooltip border                         | `1px solid rgba(255, 255, 255, 0.15)` |
-| `--bm-tooltip-backdrop-filter`   | Tooltip backdrop filter                | `blur(8px)`                      |
-| `--bm-view-label-color`          | View label text                        | `#64748b`                        |
-| `--bm-view-label-bg`             | View label background                  | `rgba(15, 23, 42, 0.5)`          |
-| `--bm-view-label-padding`        | View label padding                     | `0.25rem 0.75rem`                |
-| `--bm-view-label-radius`         | View label corner radius               | `9999px`                         |
-| `--bm-view-label-font-size`      | View label font size                   | `0.875rem`                       |
+Selection draws its own outline and glow, and keyboard focus a separate dual-tone halo, so both stay
+distinguishable from any intensity palette.
 
-Selection is drawn as its own outline and glow, and keyboard focus as a dual-tone halo, so both stay
-distinguishable from the intensity fill regardless of which palette you use.
+<details>
+<summary>All CSS custom properties</summary>
 
-### Colour mapping
+| Property                            | Applies to                          | Default                                      |
+| ----------------------------------- | ----------------------------------- | -------------------------------------------- |
+| `--bm-padding`                      | Wrapper padding                     | `1rem`                                       |
+| `--bm-max-height`                   | Chart height limit                  | `70vh`                                       |
+| `--bm-max-width`                    | Width limit, single view            | `400px`                                      |
+| `--bm-max-width-both`               | Width limit, `BOTH` view            | `760px`                                      |
+| `--bm-svg-shadow`                   | Chart drop shadow                   | `drop-shadow(0 4px 20px rgba(0, 0, 0, 0.3))` |
+| `--bm-transition-duration`          | Transition timing                   | `200ms`                                      |
+| `--bm-region-stroke`                | Region outline                      | `#1e293b`                                    |
+| `--bm-region-stroke-width`          | Region outline weight               | `0.1`                                        |
+| `--bm-region-stroke-selected`       | Selected outline                    | `#ffffff`                                    |
+| `--bm-region-stroke-width-selected` | Selected outline weight             | `0.3`                                        |
+| `--bm-region-stroke-focus`          | Keyboard-focus outline              | `#1d4ed8`                                    |
+| `--bm-region-stroke-width-focus`    | Keyboard-focus outline weight       | `0.5`                                        |
+| `--bm-region-focus-shadow`          | Keyboard-focus halo                 | dual `drop-shadow(…)` ring                   |
+| `--bm-region-active-shadow`         | Selected or hovered filter          | `url(#glow)`                                 |
+| `--bm-region-inactive-opacity`      | Opacity of untouched regions        | `0.6`                                        |
+| `--bm-background-fill`              | Silhouette fill                     | `#cbd5e1`                                    |
+| `--bm-background-opacity`           | Silhouette opacity                  | `0.1`                                        |
+| `--bm-tooltip-bg`                   | Tooltip background                  | `rgba(15, 23, 42, 0.92)`                     |
+| `--bm-tooltip-color`                | Tooltip text                        | `#f8fafc`                                    |
+| `--bm-tooltip-padding`              | Tooltip padding                     | `0.35rem 0.65rem`                            |
+| `--bm-tooltip-radius`               | Tooltip corner radius               | `0.5rem`                                     |
+| `--bm-tooltip-font-size`            | Tooltip font size                   | `0.75rem`                                    |
+| `--bm-tooltip-font-weight`          | Tooltip font weight                 | `500`                                        |
+| `--bm-tooltip-line-height`          | Tooltip line height                 | `1.2`                                        |
+| `--bm-tooltip-shadow`               | Tooltip shadow                      | two-layer `box-shadow`                       |
+| `--bm-tooltip-border`               | Tooltip border                      | `1px solid rgba(255, 255, 255, 0.15)`        |
+| `--bm-tooltip-backdrop-filter`      | Tooltip backdrop                    | `blur(8px)`                                  |
+| `--bm-view-label-color`             | View label text                     | `#64748b`                                    |
+| `--bm-view-label-bg`                | View label background               | `rgba(15, 23, 42, 0.5)`                      |
+| `--bm-view-label-padding`           | View label padding                  | `0.25rem 0.75rem`                            |
+| `--bm-view-label-radius`            | View label corner radius            | `9999px`                                     |
+| `--bm-view-label-font-size`         | View label font size                | `0.875rem`                                   |
 
-Region fill comes from an intensity resolver. The default is the exported `INTENSITY_COLORS` palette
-(0-10, slate → yellow → orange → red): intensities are rounded and clamped into 0-10, and levels
-missing from a custom palette fall back to the default one. Pass `intensityColor`, either as a
-function or built from your own palette:
+</details>
+
+#### Colour mapping
+
+Region fill comes from the `intensityColor` resolver, which defaults to the `INTENSITY_COLORS`
+palette (slate → yellow → orange → red). Build one from your own stops; intensities are rounded and
+clamped into 0–10, and missing levels fall back to the default palette:
 
 ```ts
-import { BodyChart, ViewSide, createIntensityColorScale } from "@emmorts/body-muscles";
-
 const chart = new BodyChart(container, {
   view: ViewSide.FRONT,
   bodyState: {},
-  intensityColor: createIntensityColorScale({ 0: "#e5e7eb", 5: "#f59e0b", 10: "#dc2626" }),
+  intensityColor: createIntensityColorScale({ 0: "var(--app-rest, #e5e7eb)", 5: "#f59e0b", 10: "#dc2626" }),
 });
 ```
 
-The resolver must return a valid CSS colour, including `var(--application-color, #ef4444)`.
-The browser resolves inherited custom properties on each region. `getAttribute("fill")` returns the
-resolver's expression; `getComputedStyle(region).fill` returns the resolved colour. Changing the
-custom property updates the fill without a chart `update()`.
+A resolver may return any valid CSS colour, including `var()` expressions. The browser resolves them
+on each region, so they follow theme changes without an `update()`. `getAttribute("fill")` returns
+the expression; `getComputedStyle(region).fill` returns the resolved colour.
 
-### Reduced motion
+#### Reduced motion
 
-Transitions are on by default (`enableTransitions: true`). When the user's system requests reduced
-motion (`prefers-reduced-motion: reduce`), chart and tooltip transitions are disabled regardless of
-`enableTransitions` — the OS preference wins, and it is re-evaluated if the preference changes at
-runtime. Overriding `--bm-transition-duration` changes the timing but never re-enables motion.
+Transitions are on by default. When the system requests reduced motion, chart and tooltip
+transitions are disabled regardless of `enableTransitions`, and the preference is re-evaluated if it
+changes at runtime. `--bm-transition-duration` changes timing but never re-enables motion.
 
-## Update performance
+### Localization
 
-Region refreshes use keyed definitions and a shared rendering-only default, then compare the
-computed fill, label, selection, and styling values before writing to the DOM. Cursor/outline setup
-and transition configuration are outside the per-state refresh.
-
-This is not a state-reference cache: reused state mappings and resolver/label closures are still
-evaluated on updates. CSS-variable fill expressions remain intact and respond to ancestor theme
-changes without `update()`. The C3 record in [the implementation plan](IMPLEMENTATION_PLAN.md)
-documents the measured local workload; its timings are not a cross-device performance guarantee.
-
-## Localization
-
-Every string the chart renders comes from the `labels` option, so the interface can be translated
-without patching the library. Each member is optional and falls back to the English default.
-
-| Member                  | Renders                                                     | Default                                            |
-| ----------------------- | ----------------------------------------------------------- | -------------------------------------------------- |
-| `chart(view)`           | Accessible name of the chart                                 | `"Anterior body map view"`, `"Posterior body map view"`, `"Anterior and posterior body map views"` |
-| `regionName(muscle)`    | Base region name, used by the accessible name, tooltip, and `onMuscleClick` | `muscle.name`                        |
-| `region(muscle, state)` | Complete accessible name of a region                          | region name, plus `- intensity N` when intensity > 0 |
-| `intensity(value)`      | How a numeric intensity is written                            | `intensity 7`                                       |
-| `tooltip(muscle, state)`| Tooltip content                                              | region name, plus `- intensity N` when the region has state |
-| `viewLabel(view)`       | Overlay label for one side                                    | `Anterior View` / `Posterior View`                  |
-
-Precedence: the dedicated option wins over the matching `labels` member, which wins over the
-default — `ariaLabel` beats `labels.chart`, and `tooltipFormatter` beats `labels.tooltip`.
-`region`, `tooltip`, and `tooltipFormatter` receive `undefined` state for omitted regions, and the
-supplied state object for tracked regions, including explicit intensity 0.
+Every rendered string comes from the optional `labels` members, falling back to English. A dedicated
+option beats the matching member: `ariaLabel` over `labels.chart`, and `tooltipFormatter` over
+`labels.tooltip`.
 
 ```ts
 const labels: ChartLabels = {
@@ -421,122 +310,74 @@ const labels: ChartLabels = {
 chart.update({ labels: { ...labels, intensity: (value) => `${value} von 10` } });
 ```
 
-`labels` is replaced as a whole by `update()`, like `bodyState`, so spread the current set to change
-one member. Label updates apply in place: the overlay, the tooltip, and the accessible names all
-change without rebuilding the chart or dropping focus.
-Explicit `update({ labels })` calls also refresh every label when you mutate and reuse the same object.
+| Member                   | Renders                                                     | Default                                      |
+| ------------------------ | ----------------------------------------------------------- | -------------------------------------------- |
+| `chart(view)`            | Accessible name of the chart                                | “Anterior body map view” and variants        |
+| `regionName(muscle)`     | Base name used by labels, tooltip, and `onMuscleClick`      | `muscle.name`                                |
+| `region(muscle, state)`  | Complete accessible name of a region                        | name, plus “- intensity N” above 0           |
+| `intensity(value)`       | How an intensity is written                                 | “intensity 7”                                |
+| `tooltip(muscle, state)` | Tooltip content                                             | name, plus “- intensity N” when state exists |
+| `viewLabel(view)`        | Overlay label for one side                                  | “Anterior View” / “Posterior View”           |
 
-## Anatomy Data and Terminology
+Like `bodyState`, `labels` is replaced as a whole and applied in place without dropping focus.
+Explicitly passing `labels` refreshes every label, even when you mutate and resubmit the same object.
+`region`, `tooltip`, and `tooltipFormatter` receive `undefined` for regions missing from state, and
+the supplied object otherwise — including an explicit intensity 0.
 
-The dataset describes **regions** of the body rather than a muscle-by-muscle inventory: alongside
-individual muscles it contains areas such as `head`, `face`, `nape`, `spine`, and `knee-left`.
-`MuscleId`, `MuscleDef`, and every helper name the region drawn in the SVG, so `name` is that
-region's display name, not a claim about anatomy.
+### Anatomy and terminology
 
-Sides are the **subject's own** left and right (the anatomical convention), not the viewer's. The
-subject faces the camera in the anterior view, so `biceps-left` is the subject's left arm and is
-drawn on the viewer's right. Regions without a side suffix — `spine`, `nape`, `head` — are central.
-
-Canonical side and group metadata is available directly, so consumers never parse identifiers:
+The dataset describes **regions**, not a muscle-by-muscle inventory: alongside individual muscles
+it includes areas such as `head`, `nape`, `spine`, and `knee-left`. Sides are the **subject's own**,
+as in an anatomy atlas, so `biceps-left` is drawn on the viewer's right.
 
 ```ts
 MUSCLE_METADATA["biceps-left"];
 // { id: "biceps-left", name: "Left Biceps", view: "FRONT", side: "left", group: "Arms" }
 
-getMuscleMetadata(raw); // MuscleMetadata | undefined, for dynamic input
+getMuscleMetadata(input); // MuscleMetadata | undefined, for untrusted strings
 ```
 
-`MUSCLE_GROUPS` is the canonical group table — group name to region identifiers — checked at compile
-time against the dataset and verified at build time to cover every region exactly once;
-`MuscleGroup` is the union of its keys. `extractMuscleSide(id)` and `extractMuscleGroup(id)` remain
-available for identifier-shaped input, but note that `extractMuscleGroup` returns the identifier
-prefix (`"biceps"` for `biceps-left`), which is *not* the display group: use
-`MUSCLE_METADATA[id].group` for that.
+`MUSCLE_GROUPS` is checked at compile time against the dataset and verified at build time to cover
+every region exactly once. `extractMuscleGroup(id)` returns the identifier prefix (`"biceps"`), not
+the display group — use `MUSCLE_METADATA[id].group` for that. The
+[region catalog](https://emmorts.github.io/body-muscles/#catalog) lists every region with
+front/back previews, generated from these exports.
 
-The [documentation site](https://emmorts.github.io/body-muscles/#catalog) includes a searchable
-catalog of every region — identifier, display name, group, side, and view, with front/back previews
-drawn from the same geometry as the chart. It is generated from these exports, so it matches the
-installed version.
+### Data without a DOM
 
-## Data-Only Usage
-
-Rendering the map without a DOM — a backend that rasterises an SVG, a CLI that validates a saved
-session, or a build script — needs the anatomy data, not the chart. It ships through a dedicated
-subpath, so importing it never pulls in the chart code or touches browser globals:
+Server code, native apps, and custom renderers can import the anatomy alone. The `/data` subpath
+never loads chart code or touches browser globals:
 
 ```ts
-// ESM, bundlers, and TypeScript
 import { MUSCLE_MAP, MUSCLE_METADATA, INTENSITY_COLORS } from "@emmorts/body-muscles/data";
-
-// CommonJS
-const { MUSCLE_MAP } = require("@emmorts/body-muscles/data");
+const { MUSCLE_MAP } = require("@emmorts/body-muscles/data"); // CommonJS
 ```
 
-`@emmorts/body-muscles/data` exports the canonical values without the chart: `MUSCLE_MAP`,
-`MUSCLE_DEFS`, `MUSCLE_METADATA`, `MUSCLE_GROUPS`, `MUSCLE_PAIRS`, `FRONT_MUSCLES`, `BACK_MUSCLES`,
-`INTENSITY_COLORS`, and the `getMuscleDef` / `getMuscleMetadata` / `isMuscleId` lookups.
-
-### JSON artifact
-
-For consumers that cannot run JavaScript at all, the geometry and colour scale also ship as one JSON
-document at `@emmorts/body-muscles/data.json` (on disk: `dist/data/body-muscles-data.json`):
+It exports `MUSCLE_MAP`, `MUSCLE_DEFS`, `MUSCLE_METADATA`, `MUSCLE_GROUPS`, `MUSCLE_PAIRS`,
+`FRONT_MUSCLES`, `BACK_MUSCLES`, `INTENSITY_COLORS`, and the `getMuscleDef` / `getMuscleMetadata` /
+`isMuscleId` lookups. For consumers that cannot run JavaScript, the geometry and palette also ship as
+JSON at `@emmorts/body-muscles/data.json`:
 
 ```jsonc
 {
-  "schemaVersion": 1, // integer; bumped only when the shape changes incompatibly
-  "intensityColors": ["#94a3b8", "…"], // 11 CSS colours, index 0-10
+  "schemaVersion": 1, // bumped only when the shape changes incompatibly
+  "intensityColors": ["#94a3b8", "…"], // 11 CSS colours, index 0–10
   "frontMuscles": [{ "id": "head", "name": "Head", "view": "FRONT", "path": "M 11.639,…" }],
   "backMuscles": [{ "id": "head-back", "name": "Head (Posterior)", "view": "BACK", "path": "M …" }]
 }
 ```
 
-`id`, `name`, `path`, and `view` match `MuscleDef`, and `view` is the string `"FRONT"` or
-`"BACK"`. Load it with `import data from "@emmorts/body-muscles/data.json" with { type: "json" }`
-(Node 20.10+), `require("@emmorts/body-muscles/data.json")`, or by reading the file in any language.
-Additions keep `schemaVersion`; only a breaking shape change bumps it.
+Import it with `import data from "@emmorts/body-muscles/data.json" with { type: "json" }` (Node
+20.10+ or Bun), `require()`, or read the file from any language. The module subpaths work in Node 16+.
 
-Runtime requirements: the subpaths work in Node 16+ (the package's `engines` floor) through
-CommonJS and in any modern bundler; JSON import attributes need Node 20.10 or later.
+## Frameworks
 
-## Framework Examples
+The chart is plain DOM, so every framework integrates the same way: create it once the container
+exists, forward state with `update()`, and destroy it on unmount. Runnable vanilla TypeScript and
+React projects, including a server-rendered path, live in [`examples/`](examples/README.md).
 
-Runnable versions of the vanilla TypeScript and React examples live in
-[`examples/`](examples/README.md), including the server-rendered path:
-
-```bash
-cd examples/vanilla-typescript && npm install && npm start   # http://127.0.0.1:5173
-cd examples/react            && npm install && npm start   # http://127.0.0.1:5174
-```
-
-### Vanilla JavaScript
-
-```html
-<div id="body-map"></div>
-<script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"></script>
-<script>
-  const { BodyChart, ViewSide } = BodyMuscles;
-  const container = document.getElementById("body-map");
-  if (!container) throw new Error("Missing #body-map element");
-
-  // The application owns the state; the chart renders it and keeps no copy.
-  const state = {};
-
-  const chart = new BodyChart(container, {
-    view: ViewSide.FRONT,
-    bodyState: state,
-    onMuscleClick(id) {
-      const cur = state[id] || { intensity: 0, selected: false };
-      state[id] = { ...cur, selected: !cur.selected };
-      chart.update({ bodyState: state }); // bodyState replaces the whole mapping
-    },
-  });
-
-  // Call chart.destroy() when removing this widget from the page.
-  // Leave it mounted on navigation so back/forward-cache restoration works.
-</script>
-```
-
-### React
+<details open>
+<summary><strong>React</strong></summary>
 
 ```jsx
 import { useEffect, useRef, useState } from "react";
@@ -547,17 +388,16 @@ export function BodyMap({ view = ViewSide.FRONT }) {
   const chartRef = useRef(null);
   const [bodyState, setBodyState] = useState({});
 
-  // Props are read through a ref, so the instance effect depends only on `view`.
-  const latest = useRef({ bodyState });
-  latest.current = { bodyState };
+  // Read state through a ref so the instance effect depends only on `view`.
+  const latest = useRef(bodyState);
+  latest.current = bodyState;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return undefined;
-
     const chart = new BodyChart(container, {
       view,
-      bodyState: latest.current.bodyState,
+      bodyState: latest.current,
       onMuscleClick(id) {
         setBodyState((prev) => ({
           ...prev,
@@ -566,16 +406,13 @@ export function BodyMap({ view = ViewSide.FRONT }) {
       },
     });
     chartRef.current = chart;
-
-    // Unmounting, a changed `key`, or a view change destroys the chart and its
-    // listeners; nothing is left behind.
     return () => {
       chart.destroy();
       chartRef.current = null;
     };
   }, [view]);
 
-  // State and callback changes are applied in place, which preserves focus.
+  // State changes apply in place, preserving focus.
   useEffect(() => {
     chartRef.current?.update({ bodyState });
   }, [bodyState]);
@@ -584,20 +421,17 @@ export function BodyMap({ view = ViewSide.FRONT }) {
 }
 ```
 
-The chart is constructed in an effect and never during render, so `BodyMap` is safe to
-server-render: the server emits an empty container and the chart appears after hydration. Give the
-component a `key` to force a clean remount, and note that React 18+ development StrictMode
-double-invokes effects — the cleanup above handles that without leaking instances.
+The chart is created in an effect, never during render, so the component is safe to server-render
+and survives StrictMode's double-invoked effects.
 
-### Vue 3
+</details>
+
+<details>
+<summary><strong>Vue</strong></summary>
 
 ```vue
-<template>
-  <div ref="container" />
-</template>
-
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
 const container = ref(null);
@@ -605,30 +439,33 @@ const bodyState = ref({});
 let chart;
 
 onMounted(() => {
-  if (!container.value) return;
   chart = new BodyChart(container.value, {
     view: ViewSide.FRONT,
     bodyState: bodyState.value,
     onMuscleClick(id) {
-      const cur = bodyState.value[id] || { intensity: 0, selected: false };
-      bodyState.value = {
-        ...bodyState.value,
-        [id]: { ...cur, selected: !cur.selected },
-      };
+      const current = bodyState.value[id] ?? { intensity: 0, selected: false };
+      bodyState.value = { ...bodyState.value, [id]: { ...current, selected: !current.selected } };
     },
   });
 });
 
-watch(bodyState, (s) => chart?.update({ bodyState: s }), { deep: true });
+watch(bodyState, (state) => chart?.update({ bodyState: state }));
 onUnmounted(() => chart?.destroy());
 </script>
+
+<template>
+  <div ref="container" />
+</template>
 ```
 
-### Svelte
+</details>
+
+<details>
+<summary><strong>Svelte</strong></summary>
 
 ```svelte
 <script>
-  import { onMount, onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { BodyChart, ViewSide } from "@emmorts/body-muscles";
 
   let container;
@@ -636,13 +473,12 @@ onUnmounted(() => chart?.destroy());
   let bodyState = {};
 
   onMount(() => {
-    if (!container) return;
     chart = new BodyChart(container, {
       view: ViewSide.FRONT,
       bodyState,
       onMuscleClick(id) {
-        const cur = bodyState[id] || { intensity: 0, selected: false };
-        bodyState = { ...bodyState, [id]: { ...cur, selected: !cur.selected } };
+        const current = bodyState[id] ?? { intensity: 0, selected: false };
+        bodyState = { ...bodyState, [id]: { ...current, selected: !current.selected } };
         chart.update({ bodyState });
       },
     });
@@ -654,95 +490,173 @@ onUnmounted(() => chart?.destroy());
 <div bind:this={container} />
 ```
 
-## Muscle ID Naming
+</details>
 
+<details>
+<summary><strong>Plain HTML</strong></summary>
+
+```html
+<div id="body-map"></div>
+<script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"></script>
+<script>
+  const { BodyChart, ViewSide } = BodyMuscles;
+
+  let state = {};
+  const chart = new BodyChart(document.getElementById("body-map"), {
+    view: ViewSide.FRONT,
+    bodyState: state,
+    onMuscleClick(id) {
+      const current = state[id] ?? { intensity: 0, selected: false };
+      state = { ...state, [id]: { ...current, selected: !current.selected } };
+      chart.update({ bodyState: state });
+    },
+  });
+</script>
 ```
-{muscle_group}-{side}             →  biceps-left
-{muscle_group}-{sub_group}-{side} →  shoulder-front-left
-{singular}                        →  spine
-```
 
-### Typed identifiers
+</details>
 
-This is a breaking typing change: upgrade the consumer compiler to TypeScript 5.0+ before migrating
-state keys and dynamic identifiers. The JavaScript runtime requirements are unchanged.
+## API reference
 
-`MuscleId` is a union derived from the dataset, so `bodyState` keys, callbacks, and helpers are
-checked at compile time:
+### `new BodyChart(container, options)`
+
+Mounts a chart inside `container`. Options set to `undefined` use their defaults; an explicit
+`false` is kept.
+
+| Option              | Type                                   | Default            | Description                                         |
+| ------------------- | -------------------------------------- | ------------------ | --------------------------------------------------- |
+| `view`              | `ViewSide`                             | required           | `FRONT`, `BACK`, or `BOTH`                          |
+| `bodyState`         | `BodyState`                            | required           | Intensity and selection per region                  |
+| `onMuscleClick`     | `(id: MuscleId, name: string) => void` | no-op              | A region was activated by pointer or keyboard       |
+| `onMuscleHover`     | `(id: MuscleId \| null) => void`       | no-op              | Pointer entered a region, or left the chart         |
+| `interactive`       | `boolean`                              | `true`             | `false` renders a static labelled image             |
+| `intensityColor`    | `(intensity: number) => string`        | default palette    | Fill colour for an intensity                        |
+| `labels`            | `ChartLabels`                          | `{}`               | Localized strings; see [Localization](#localization) |
+| `ariaLabel`         | `string`                               | per view           | Accessible name of the chart                        |
+| `showTooltip`       | `boolean`                              | `true`             | Tooltip on hover and keyboard focus                 |
+| `tooltipFormatter`  | `(muscle, state) => string`            | name and intensity | Tooltip content                                     |
+| `showViewLabel`     | `boolean`                              | `false`            | Anterior / Posterior overlay labels                 |
+| `enableTransitions` | `boolean`                              | `true`             | Animate state changes, unless reduced motion is set |
+| `className`         | `string`                               | `""`               | Extra class on the chart wrapper                    |
+
+| Method            | Description                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------------- |
+| `update(options)` | Merge partial options; `undefined` is ignored. `view` and `interactive` rebuild; the rest applies in place. |
+| `destroy()`       | Remove the chart and all of its listeners.                                                                |
+
+### Types
 
 ```ts
-const state: BodyState = {
-  "biceps-left": { intensity: 7, selected: true }, // ok
-  "bicepz-left": { intensity: 7, selected: true }, // error: not a region identifier
-};
+enum ViewSide { FRONT = "FRONT", BACK = "BACK", BOTH = "BOTH" }
+
+type MuscleId = "head" | "face" | "neck-left" | /* … 89 in total … */ "foot-back-right";
+
+interface BodyPartState {
+  intensity: number; // integer 0–10
+  selected: boolean;
+}
+type BodyState = Partial<Record<MuscleId, BodyPartState>>;
+
+type IntensityColorResolver = (intensity: number) => string;
+type SelectionAction = "select" | "deselect" | "toggle";
+type MuscleGroup = keyof typeof MUSCLE_GROUPS;
+type MuscleSide = "left" | "right" | "central";
+
+interface MuscleMetadata {
+  id: MuscleId;
+  name: string;
+  view: ViewSide;
+  side: MuscleSide; // the subject's own side
+  group: MuscleGroup;
+}
 ```
 
-Identifiers that only exist at runtime — URL parameters, stored state, user input — are not
-narrowed automatically, so validate them before using them as keys:
+### Data exports
 
-```ts
-import { getMuscleDef, isMuscleId, createBodyPartState, type BodyState } from "@emmorts/body-muscles";
+Available from the package root and from `/data`.
 
-const raw: string = new URLSearchParams(location.search).get("muscle") ?? "";
+| Export                          | Contents                                                         |
+| ------------------------------- | ---------------------------------------------------------------- |
+| `MUSCLE_MAP`                    | All 89 region definitions, front then back                       |
+| `FRONT_MUSCLES`, `BACK_MUSCLES` | Definitions for one view                                         |
+| `MUSCLE_DEFS`                   | Definitions keyed by identifier                                  |
+| `MUSCLE_METADATA`               | Name, view, side, and group keyed by identifier                  |
+| `MUSCLE_GROUPS`                 | The eight canonical groups; each region belongs to exactly one   |
+| `MUSCLE_PAIRS`                  | Readonly `[left, right]` counterparts within the same view       |
+| `INTENSITY_COLORS`              | Default palette, levels 0–10                                     |
 
-// Narrow first when the value becomes a state key…
-const state: BodyState = isMuscleId(raw) ? { [raw]: createBodyPartState(5) } : {};
+### Utilities
 
-// …or look the definition up, which accepts any string and returns undefined.
-const name = getMuscleDef(raw)?.name ?? "unknown";
-```
+| Function                                      | Description                                                    |
+| --------------------------------------------- | -------------------------------------------------------------- |
+| `setGroupSelection(state, group, action)`     | New state with a whole group selected, deselected, or toggled  |
+| `setBilateralSelection(state, id, action)`    | The same for a region and its counterpart                      |
+| `createBodyPartState(intensity?, selected?)`  | Validated state entry                                          |
+| `isValidIntensity(value)`                     | Whether a value is an integer from 0 to 10                     |
+| `isMuscleId(value)`                           | Type guard for a known region identifier                       |
+| `getMuscleDef(id)`                            | Region definition, or `undefined`                              |
+| `getMuscleMetadata(id)`                       | Region metadata, or `undefined`                                |
+| `filterMuscles(view)`                         | Definitions drawn in a view                                    |
+| `getMuscleColor(state, isHovered, resolver?)` | Fill colour for a state entry                                  |
+| `resolveIntensityColor(intensity)`            | The default colour resolver                                    |
+| `createIntensityColorScale(colors)`           | Resolver from custom palette stops                             |
+| `extractMuscleSide(id)`                       | `"left"`, `"right"`, or `"central"`                            |
+| `extractMuscleGroup(id)`                      | Identifier prefix such as `"biceps"` — not the display group   |
 
-`MUSCLE_DEFS` is the same data as `MUSCLE_MAP`, keyed by identifier for direct access
-(`MUSCLE_DEFS["biceps-left"]`); TypeScript rejects unknown literal keys on it.
+## Contributing
 
-## Project Structure
+Development needs **Node 20+** (Playwright's minimum) and a downloaded Chromium; this is separate
+from the library's Node 16+ runtime support.
 
-```
-body-muscles/
-├── src/
-│   ├── BodyChart.ts          # The chart class
-│   ├── types.ts              # Public types
-│   ├── index.ts              # Public exports
-│   ├── data/                 # Region geometry, metadata, groups, and pairs
-│   └── utils/                # Colour, lookup, validation, and selection helpers
-├── dist/                     # Build output: esm/, cjs/, umd/, data/ (git-ignored)
-├── docs/                     # Documentation site (HTML, css, js/)
-├── examples/                 # Runnable vanilla TypeScript and React projects
-├── tests/                    # Browser, selection, and consumer type tests
-├── scripts/                  # Build, verification, docs, and release scripts
-├── package.json
-└── tsconfig.json
-```
-
-## Development
-
-Development and browser tests require **Node 20+** (Playwright 1.64's minimum) and a downloaded Chromium.
-This tooling requirement is separate from the published library's unchanged Node `>=16` consumer contract.
-
-```bash
+```sh
 npm install
+npx playwright install chromium
+
 npm run typecheck
-npm run build          # ESM, CommonJS, UMD and dist/data/body-muscles-data.json
-npm run verify-build   # load the built artifacts and assert they are complete
+npm run build          # ESM, CommonJS, UMD, and dist/data/body-muscles-data.json
+npm run verify-build   # assert the built artifacts are complete
 npm run test:types     # compile a consumer against the built declarations
-npm run test:selection # selection helper behaviour (Node test runner)
-npm run test:package   # pack the package and import it from ESM and CommonJS consumers
+npm run test:selection # selection helper behaviour
+npm run test:package   # pack the package and import it from ESM and CommonJS
 npm run test:browser   # chart, docs, and accessibility tests in headless Chromium
-                       # (needs `npx playwright install chromium` first)
-npm run smooth-paths   # redraw src/data/muscles.*.ts as bezier paths (idempotent)
-npm run docs           # assemble docs/lib (bundle, fonts) and serve the docs site on :3000
+npm run docs           # assemble docs/lib and serve the site on :3000
 ```
 
-Every command after `build` uses the built output. The [examples](./examples) install the library
-from this checkout, so build it before running them.
+Commands after `build` test the built output, and the [examples](examples/README.md) install the
+library from this checkout, so build first.
 
-The site is static HTML, one cascade-layered stylesheet whose colours and type live only in its
-`tokens` layer, and ES modules in `docs/js/`. It themes the chart solely through the public `--bm-*`
-properties, and `npm run test:browser` audits it with axe in both themes.
+<details>
+<summary>Repository layout</summary>
 
-The site in [`docs/`](./docs) is published to <https://emmorts.github.io/body-muscles/> by
-[`.github/workflows/docs.yml`](./.github/workflows/docs.yml), which builds the library and uploads
-the `docs` directory as the Pages artifact on every push to `main` that touches it.
+```
+src/
+  BodyChart.ts   the chart
+  types.ts       public types
+  data/          region geometry, metadata, groups, and pairs
+  utils/         colour, lookup, validation, and selection helpers
+docs/            documentation site: static HTML, one layered stylesheet, ES modules
+examples/        runnable vanilla TypeScript and React projects
+tests/           browser, selection, and consumer type tests
+scripts/         build, verification, docs, and release scripts
+```
+
+The documentation site themes the chart only through the public `--bm-*` properties and is deployed
+to GitHub Pages by [`docs.yml`](.github/workflows/docs.yml) on every push to `main` that touches it.
+
+</details>
+
+<details>
+<summary>Releasing</summary>
+
+Releases publish to npm from GitHub Actions with provenance.
+
+1. Add a `## <version>` section to [`CHANGELOG.md`](CHANGELOG.md).
+2. Run `npm run release -- <version>`. It checks the tree, changelog, and tag, then bumps
+   `package.json`, commits, tags `v<version>`, and pushes.
+3. CI verifies the build, publishes the package, and opens a GitHub release from that changelog
+   section.
+
+</details>
 
 ## Credits
 
@@ -750,24 +664,13 @@ Body Muscles was created by [Ivan Vulović](https://github.com/vulovix) as
 [vulovix/body-muscles](https://github.com/vulovix/body-muscles). The anatomical artwork, the region
 dataset, and the chart's original design and API are his work.
 
-This fork is maintained by [Tomas Stropus](https://github.com/emmorts) and published as
-[`@emmorts/body-muscles`](https://www.npmjs.com/package/@emmorts/body-muscles). Since forking, it has
-added keyboard and screen-reader semantics, typed identifiers and metadata, input validation,
-theming and localization hooks, selection helpers, a data-only entry point, browser tests, and
-runnable examples. [CHANGELOG.md](CHANGELOG.md) lists every change.
+This fork is maintained by [@emmorts](https://github.com/emmorts) and published as
+[`@emmorts/body-muscles`](https://www.npmjs.com/package/@emmorts/body-muscles). It adds keyboard and
+screen-reader semantics, typed identifiers and metadata, input validation, theming and localization
+hooks, selection helpers, a data-only entry point, browser tests, and runnable examples; the
+[changelog](CHANGELOG.md) lists every change.
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). The original copyright notice is kept in
-`NOTICE`, as the license requires.
-
-## Releasing
-
-This repository publishes
-[`@emmorts/body-muscles`](https://www.npmjs.com/package/@emmorts/body-muscles) from GitHub Actions.
-
-1. Add a `## <version>` section to [`CHANGELOG.md`](./CHANGELOG.md) describing the change.
-2. Run `npm run release -- <version>`. It checks the tree, the changelog and the tag, then bumps
-   `package.json`, commits, tags `v<version>` and pushes.
-3. CI type-checks, builds and verifies the artifacts, publishes the package, then opens a GitHub
-   release whose notes are that changelog section.
+[Apache-2.0](LICENSE). The original copyright notice is kept in [NOTICE](NOTICE), as the license
+requires.

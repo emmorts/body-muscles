@@ -7,8 +7,11 @@
 - Credited the original project and author, Ivan Vulović, in the README, the documentation site
   footer, and package metadata, and recorded this fork's modifications in `NOTICE`.
 - Corrected stale README claims: 89 regions rather than "70+", actual bundle sizes, and removed
-  "automatic viewport switching", which the chart does not do. Refreshed the feature list, project
-  structure, and development commands.
+  "automatic viewport switching", which the chart does not do.
+- Restructured the README: a preview image that follows the reader's light or dark theme, a compact
+  feature list, one install block covering npm, pnpm, yarn, and Bun, task-oriented guides,
+  collapsible framework examples and reference tables, and a Contributing section. Removed duplicate
+  utility rows. The documentation site's install tabs also gained Bun.
 
 ## 2.1.0 (2026-10-09)
 
