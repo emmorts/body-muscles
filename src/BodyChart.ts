@@ -112,6 +112,8 @@ export class BodyChart {
   private tooltipEl: HTMLDivElement | null = null;
   private tooltipId: string = "";
   private tooltipMuscleId: MuscleId | null = null;
+  private tooltipClientX = 0;
+  private tooltipClientY = 0;
   private musclePaths: Map<string, SVGPathElement> = new Map();
   private muscleData: MuscleDef[] = [];
   private tabbableMuscle: MuscleId | null = null;
@@ -175,6 +177,8 @@ export class BodyChart {
     this.tabbableMuscle = null;
     this.hoveredMuscle = null;
     this.tooltipMuscleId = null;
+    this.tooltipClientX = 0;
+    this.tooltipClientY = 0;
 
     if (this.tooltipEl && this.wrapperEl?.contains(this.tooltipEl)) {
       this.wrapperEl.removeChild(this.tooltipEl);
@@ -262,10 +266,7 @@ export class BodyChart {
     if (!this.tooltipEl || this.tooltipEl.style.visibility !== "visible") return;
     const muscle = this.muscleData.find((m) => m.id === this.tooltipMuscleId);
     if (!muscle) return;
-    this.tooltipEl.textContent = this.options.tooltipFormatter(
-      muscle,
-      this.options.bodyState[muscle.id],
-    );
+    this.showTooltipAt(muscle, this.tooltipClientX, this.tooltipClientY);
   }
 
   // ── Build ────────────────────────────────────────────────
@@ -446,6 +447,8 @@ export class BodyChart {
     if (!this.options.interactive) return;
 
     this.tooltipMuscleId = muscle.id;
+    this.tooltipClientX = clientX;
+    this.tooltipClientY = clientY;
     this.tooltipEl.textContent = this.options.tooltipFormatter(
       muscle,
       this.options.bodyState[muscle.id],

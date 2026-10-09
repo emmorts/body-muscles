@@ -336,7 +336,7 @@ Review findings are tracked individually; each correction is committed separatel
 - [x] R3 — Restore bounded scrolling and spacing to the demo muscle list.
 - [x] R4 — Fix populated-state contrast and CDN prose-link styling.
 - [x] R5 — Preserve constructor defaults for undefined options.
-- [ ] R6 — Reposition visible tooltips after content updates.
+- [x] R6 — Reposition visible tooltips after content updates.
 - [ ] R7 — Restore tooltip visibility and description when enabled during focus.
 - [ ] R8 — Replace the vacuous tooltip-reference cleanup assertion.
 - [ ] R9 — Correct the browser tooling Node prerequisite.
@@ -437,3 +437,11 @@ For each completed item, append a record containing:
 - **Changes:** resolve every optional field after the supplied options, preserving explicit false values. README, site API reference, and Unreleased changelog document undefined constructor fields.
 - **Verification:** build and 16 browser tests pass. The new regression enters via Tab, activates a region, displays the default tooltip, and hovers Face with undefined optional fields. Separate built-bundle smoke with interactive/showTooltip/tooltipFormatter set to undefined yields role=group, one tab stop, and a visible Head tooltip. Existing display-only and option-off coverage continues to pass.
 - **Compatibility:** fixes optional-field default handling without changing signatures or runtime dependencies.
+
+### R6 — Tooltip collision positioning after refresh
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix: reposition tooltips after content updates`.
+- **Changes:** retain the last tooltip anchor coordinates and reuse showTooltipAt for content refresh, including its collision handling. Anchors are cleared on destruction.
+- **Verification:** build and 17 browser tests pass. New coverage checks chart boundaries after a formatter changes tooltip width for both keyboard and pointer anchors. Separate built-bundle smoke changed Short to a 287px-wide tooltip; its horizontal margins were 64px and 81px instead of overflowing. Screenshot confirms visible content and retained keyboard focus.
+- **Compatibility:** no API changes; content wider than the chart remains outside this fix's scope. Unreleased changelog updated.

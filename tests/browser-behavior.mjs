@@ -252,6 +252,38 @@ await test("focus survives in-place updates and Escape dismisses the tooltip", a
   assert.equal((await probe()).probe, "region", "Escape keeps focus on the region");
 });
 
+await test("updated tooltip content stays inside the chart for keyboard and pointer anchors", async (page) => {
+  await mount(page);
+  await page.evaluate(() => {
+    const { BodyChart, ViewSide } = window.BodyMuscles;
+    window.chart = new BodyChart(document.getElementById("host"), {
+      view: ViewSide.FRONT, bodyState: {}, tooltipFormatter: () => "Short",
+    });
+  });
+  for (const input of ["keyboard", "pointer"]) {
+    await page.evaluate(() => window.chart.update({ tooltipFormatter: () => "Short" }));
+    if (input === "keyboard") await page.locator(".body-chart-muscle").first().focus();
+    else await page.locator('.body-chart-muscle[aria-label="Face"]').hover();
+    await page.evaluate(() => window.chart.update({
+      tooltipFormatter: () => "A longer tooltip containing updated region information",
+    }));
+    await page.waitForFunction(() => document.getAnimations().length === 0);
+    const bounds = await page.evaluate(() => {
+      const tooltip = document.querySelector(".body-chart-tooltip").getBoundingClientRect();
+      const chart = document.querySelector(".body-chart-container").getBoundingClientRect();
+      return {
+        left: tooltip.left - chart.left, right: chart.right - tooltip.right,
+        top: tooltip.top - chart.top, bottom: chart.bottom - tooltip.bottom,
+      };
+    });
+    assert.ok(Object.values(bounds).every((margin) => margin >= 0), `${input} tooltip overflows: ${JSON.stringify(bounds)}`);
+    assert.equal(
+      await page.locator(".body-chart-tooltip").textContent(),
+      "A longer tooltip containing updated region information",
+    );
+  }
+});
+
 // ── Library: mutable options ─────────────────────────────
 
 await test("update applies every option without a view change", async (page) => {

@@ -14,6 +14,8 @@
   `interactive`; explicit `false` options remain respected.
 - A visible tooltip now reflects explicit `bodyState` updates, including mutations to a reused
   state mapping, or a new `tooltipFormatter`, without waiting for pointer movement.
+- Tooltip content updates recompute positioning from the current anchor, keeping content
+  that fits within the chart inside its boundaries.
 - The chart no longer marks its interactive SVG `aria-hidden`, and the container no longer uses
   `role="img"`, so muscle regions are reachable by assistive technology instead of being hidden
   focusable content nested inside an image. Regions are exposed as toggle buttons whose
