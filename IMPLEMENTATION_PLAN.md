@@ -2,7 +2,7 @@
 
 Created: 2026-10-09  
 Review baseline: @emmorts/body-muscles 1.1.1  
-Status: Phase 1 in progress (A1 complete; A2–A4 not started).
+Status: Phase 1 in progress (A1–A2 complete; A3–A4 not started).
 
 This document tracks every improvement proposed in the developer and user experience review. Checking an item means its acceptance criteria have been met and verification evidence has been recorded, not merely that code has been written.
 
@@ -39,7 +39,7 @@ This document tracks every improvement proposed in the developer and user experi
 
 ### A2 — Reliable mutable options and focus-preserving updates
 
-- [ ] Complete A2
+- [x] Complete A2
 
 **Problem:** Updating `ariaLabel`, `className`, `showViewLabel`, or enabling `showTooltip` without changing `view` did not update the DOM in the reviewed build. `update()` currently refreshes paths unless the view changes.
 
@@ -326,3 +326,12 @@ For each completed item, append a record containing:
 - **Changes:** removed `aria-hidden` from the interactive SVG and `role="img"` from the wrapper; the SVG now carries `role="group"`/`role="img"` plus the chart name. Regions are toggle buttons with `aria-pressed` tracking `selected`; the `(selected)` label suffix was dropped. Added the `interactive` option (default `true`); `false` renders a display-only graphic with no focusable regions, tooltip, or callbacks. Added a roving tab index (single tab stop) with arrow-key, `Home`/`End`, `Enter`/`Space`, and `Escape` handling, and a dual-tone keyboard focus indicator.
 - **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build` pass. Browser smoke test on the built UMD bundle confirmed: one tab stop across 40 regions with `role="button"`/`aria-pressed`; `Tab` lands on the first region and one further `Tab` leaves the chart; `ArrowRight`/`ArrowUp`/`Home`/`End` move focus with `:focus-visible` showing stroke `#1d4ed8` plus the halo; `Enter` toggles `aria-pressed` and fires `onMuscleClick`; a real click toggles selection; `Escape` hides the tooltip; `interactive: false` yields `role="img"`, zero focusable regions/roles, no tooltip, and no callback invocations while still painting intensity colours. axe-core on the demo page no longer reports `aria-hidden-focus` or `nested-interactive`. Remaining demo-page findings (colour contrast, unlabelled sliders, landmarks) belong to A3.
 - **Compatibility:** visible accessibility semantics changed (wrapper no longer exposes a label; region labels no longer include "(selected)"; tab order reduced to one stop). Documented in the changelog under Unreleased. No `[INFERENCE]` items outstanding.
+
+### A2 — Reliable mutable options and focus-preserving updates
+
+- **Completed:** 2026-10-09.
+- **Commit:** `fix(api): apply every option in update and preserve focus` (see git history for the hash).
+- **Files:** `src/BodyChart.ts`, `README.md`, `docs/index.html`, `CHANGELOG.md`.
+- **Changes:** `update()` now shallow-merges into a new resolved-options object, skipping `undefined` values, then applies each changed field through a dedicated method (`applyClassName`, `applyChartLabel`, `applyViewLabels`, `applyTooltipPresence`, `applyTransitions`) before refreshing regions. `view` or `interactive` changes rebuild. `applyViewLabels` and `applyTooltipPresence` remove before they add, so toggling never accumulates nodes; tooltip removal also clears `aria-describedby` from every region. `showTooltipAt` now takes the region and records `tooltipMuscleId`, and `refreshVisibleTooltip()` re-renders an on-screen tooltip when `bodyState` or `tooltipFormatter` changes. `build()` reuses the same appliers, and the outside-pointerdown listener is always registered. `destroy()` resets `hoveredMuscle`, `tooltipMuscleId`, and `tooltipId`.
+- **Verification:** `npm run typecheck`, `npm run build`, `npm run verify-build` pass. Browser smoke test on the built UMD bundle confirmed: `className`, `ariaLabel`, `showViewLabel`, `showTooltip` (off then on), and `enableTransitions` all reach the DOM without a view change; three on/off cycles left exactly one label set and one tooltip, and `showTooltip: false` left zero `aria-describedby` references; `undefined` in the update object did not clobber the existing `ariaLabel`; a focused region stayed focused across `update({ bodyState })` while its fill changed; a visible tooltip updated from `Face @ 6` to `Face @ 9` on a state change and to `Face!` on a formatter change without pointer movement; replacing callbacks took effect immediately; six view changes left one wrapper, one SVG, one tooltip, and one tab stop, and `destroy()` left the host empty. The demo page toggled views and a muscle group with no console errors.
+- **Compatibility:** `update()` behaviour changed (options now apply; `undefined` ignored; `interactive` change rebuilds). Documented in the changelog under Unreleased. `view`-change focus loss is now explicitly documented. No `[INFERENCE]` items outstanding.

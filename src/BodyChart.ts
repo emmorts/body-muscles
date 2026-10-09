@@ -111,6 +111,7 @@ export class BodyChart {
   private labelEl: HTMLDivElement | null = null;
   private tooltipEl: HTMLDivElement | null = null;
   private tooltipId: string = "";
+  private tooltipMuscleId: MuscleId | null = null;
   private musclePaths: Map<string, SVGPathElement> = new Map();
   private muscleData: MuscleDef[] = [];
   private tabbableMuscle: MuscleId | null = null;
@@ -123,18 +124,42 @@ export class BodyChart {
   }
 
   /**
-   * Update chart options. Partial updates are merged with current options.
-   * Changing `view` triggers a full re-render; other changes update in-place.
+   * Update chart options. Partial updates are merged with the current options;
+   * keys whose value is `undefined` are ignored, so callers can pass a spread
+   * object without clobbering existing values.
+   *
+   * Changing `view` or `interactive` rebuilds the chart (and therefore drops
+   * focus); every other change is applied in place and preserves focus.
    */
   update(options: Partial<BodyChartOptions>): void {
-    const viewChanged = options.view !== undefined && options.view !== this.options.view;
-    Object.assign(this.options, options);
+    const previous = this.options;
+    const next = { ...previous };
+    for (const [key, value] of Object.entries(options)) {
+      if (value === undefined) continue;
+      (next as unknown as Record<string, unknown>)[key] = value;
+    }
 
-    if (viewChanged) {
+    const rebuild = next.view !== previous.view || next.interactive !== previous.interactive;
+    this.options = next;
+
+    if (rebuild) {
       this.destroy();
       this.build();
-    } else {
-      this.refreshAllPaths();
+      return;
+    }
+
+    if (next.className !== previous.className) this.applyClassName();
+    if (next.ariaLabel !== previous.ariaLabel) this.applyChartLabel();
+    if (next.showViewLabel !== previous.showViewLabel) this.applyViewLabels();
+    if (next.showTooltip !== previous.showTooltip) this.applyTooltipPresence();
+    if (next.enableTransitions !== previous.enableTransitions) this.applyTransitions();
+
+    this.refreshAllPaths();
+
+    // A tooltip that is already on screen must not go stale when its content
+    // source changes, even though the pointer has not moved.
+    if (next.bodyState !== previous.bodyState || next.tooltipFormatter !== previous.tooltipFormatter) {
+      this.refreshVisibleTooltip();
     }
   }
 
@@ -148,6 +173,8 @@ export class BodyChart {
     this.musclePaths.clear();
     this.muscleData = [];
     this.tabbableMuscle = null;
+    this.hoveredMuscle = null;
+    this.tooltipMuscleId = null;
 
     if (this.tooltipEl && this.wrapperEl?.contains(this.tooltipEl)) {
       this.wrapperEl.removeChild(this.tooltipEl);
@@ -159,13 +186,92 @@ export class BodyChart {
     this.svgEl = null;
     this.labelEl = null;
     this.tooltipEl = null;
+    this.tooltipId = "";
+  }
+
+  // ── Incremental option application ───────────────────────
+
+  private applyClassName(): void {
+    if (!this.wrapperEl) return;
+    this.wrapperEl.className = `body-chart-container ${this.options.className}`.trim();
+  }
+
+  private applyChartLabel(): void {
+    if (!this.svgEl) return;
+    const { view, ariaLabel } = this.options;
+    const fallback =
+      view === ViewSide.BOTH
+        ? "Anterior and posterior body map views"
+        : `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} body map view`;
+    this.svgEl.setAttribute("aria-label", ariaLabel || fallback);
+  }
+
+  /** Replace the view overlay labels to match the current view and option. */
+  private applyViewLabels(): void {
+    if (!this.wrapperEl) return;
+    this.wrapperEl.querySelectorAll(".body-chart-view-label").forEach((el) => el.remove());
+    this.labelEl = null;
+
+    if (!this.options.showViewLabel) return;
+
+    if (this.options.view === ViewSide.BOTH) {
+      this.labelEl = this.buildViewLabel("Anterior View", 25);
+      this.wrapperEl.appendChild(this.labelEl);
+      this.wrapperEl.appendChild(this.buildViewLabel("Posterior View", 75));
+    } else {
+      this.labelEl = this.buildViewLabel(
+        `${this.options.view === ViewSide.FRONT ? "Anterior" : "Posterior"} View`,
+        50,
+      );
+      this.wrapperEl.appendChild(this.labelEl);
+    }
+  }
+
+  /**
+   * Create or remove the tooltip element so `showTooltip` can be toggled at
+   * runtime without leaking DOM nodes or leaving stale `aria-describedby`
+   * references on the regions.
+   */
+  private applyTooltipPresence(): void {
+    const wanted = this.options.showTooltip && this.options.interactive;
+    if (wanted && !this.tooltipEl) {
+      this.buildTooltip();
+      return;
+    }
+    if (!wanted && this.tooltipEl) {
+      this.hideTooltip();
+      this.tooltipEl.remove();
+      this.tooltipEl = null;
+      this.tooltipId = "";
+      this.tooltipMuscleId = null;
+      for (const path of this.musclePaths.values()) {
+        path.removeAttribute("aria-describedby");
+      }
+    }
+  }
+
+  private applyTransitions(): void {
+    if (!this.svgEl) return;
+    (this.svgEl as unknown as HTMLElement).style.transition = this.options.enableTransitions
+      ? "all 200ms ease-out"
+      : "";
+  }
+
+  /** Re-render an on-screen tooltip after its content source changed. */
+  private refreshVisibleTooltip(): void {
+    if (!this.tooltipEl || this.tooltipEl.style.visibility !== "visible") return;
+    const muscle = this.muscleData.find((m) => m.id === this.tooltipMuscleId);
+    if (!muscle) return;
+    this.tooltipEl.textContent = this.options.tooltipFormatter(
+      muscle,
+      this.options.bodyState[muscle.id],
+    );
   }
 
   // ── Build ────────────────────────────────────────────────
 
   private build(): void {
-    const { view, className, ariaLabel, showViewLabel, enableTransitions, interactive } =
-      this.options;
+    const { view, className, enableTransitions, interactive } = this.options;
     this.muscleData = filterMuscles(view);
     const isBoth = view === ViewSide.BOTH;
     const viewBox = isBoth
@@ -187,12 +293,6 @@ export class BodyChart {
       padding: "1rem",
     });
 
-    const chartLabel =
-      ariaLabel ||
-      (isBoth
-        ? "Anterior and posterior body map views"
-        : `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} body map view`);
-
     // SVG
     this.svgEl = document.createElementNS(SVG_NS, "svg");
     this.svgEl.setAttribute("viewBox", viewBox);
@@ -201,7 +301,7 @@ export class BodyChart {
     // not be `aria-hidden` and must be a group rather than an image. Display-only
     // charts have no focusable descendants and are announced as one graphic.
     this.svgEl.setAttribute("role", interactive ? "group" : "img");
-    this.svgEl.setAttribute("aria-label", chartLabel);
+    this.applyChartLabel();
     setStyles(this.svgEl as unknown as HTMLElement, {
       height: "auto",
       width: "100%",
@@ -243,36 +343,21 @@ export class BodyChart {
     this.wrapperEl.appendChild(this.svgEl);
 
     // Optional view label(s)
-    if (showViewLabel) {
-      if (isBoth) {
-        this.labelEl = this.buildViewLabel("Anterior View", 25);
-        this.wrapperEl.appendChild(this.labelEl);
-        const posteriorLabel = this.buildViewLabel("Posterior View", 75);
-        this.wrapperEl.appendChild(posteriorLabel);
-      } else {
-        this.labelEl = this.buildViewLabel(
-          `${view === ViewSide.FRONT ? "Anterior" : "Posterior"} View`,
-          50,
-        );
-        this.wrapperEl.appendChild(this.labelEl);
-      }
-    }
+    this.applyViewLabels();
 
     // Instant Tooltip DOM
     this.buildTooltip();
 
     // Hide tooltip when tapping outside wrapper
-    if (this.tooltipEl) {
-      const onDocumentPointerDown = (e: PointerEvent) => {
-        if (this.wrapperEl && !this.wrapperEl.contains(e.target as Node)) {
-          this.hideTooltip();
-        }
-      };
-      document.addEventListener("pointerdown", onDocumentPointerDown);
-      this.eventCleanup.push(() => {
-        document.removeEventListener("pointerdown", onDocumentPointerDown);
-      });
-    }
+    const onDocumentPointerDown = (e: PointerEvent) => {
+      if (this.wrapperEl && !this.wrapperEl.contains(e.target as Node)) {
+        this.hideTooltip();
+      }
+    };
+    document.addEventListener("pointerdown", onDocumentPointerDown);
+    this.eventCleanup.push(() => {
+      document.removeEventListener("pointerdown", onDocumentPointerDown);
+    });
 
     this.container.appendChild(this.wrapperEl);
     this.refreshAllPaths();
@@ -353,14 +438,18 @@ export class BodyChart {
   }
 
   private showTooltipAt(
-    content: string,
+    muscle: MuscleDef,
     clientX: number,
     clientY: number,
   ): void {
     if (!this.tooltipEl || !this.wrapperEl || !this.options.showTooltip) return;
     if (!this.options.interactive) return;
 
-    this.tooltipEl.textContent = content;
+    this.tooltipMuscleId = muscle.id;
+    this.tooltipEl.textContent = this.options.tooltipFormatter(
+      muscle,
+      this.options.bodyState[muscle.id],
+    );
     this.tooltipEl.style.visibility = "visible";
     this.tooltipEl.style.opacity = "1";
     this.tooltipEl.setAttribute("aria-hidden", "false");
@@ -418,22 +507,17 @@ export class BodyChart {
     path.setAttribute("role", "button");
     path.setAttribute("tabindex", "-1");
 
-    const getTooltipText = () => {
-      const state = this.options.bodyState[muscle.id];
-      return this.options.tooltipFormatter(muscle, state);
-    };
-
     // Event listeners
     const onPointerEnter = (e: PointerEvent) => {
       this.hoveredMuscle = muscle.id;
       this.options.onMuscleHover(muscle.id);
       this.refreshPath(muscle.id);
-      this.showTooltipAt(getTooltipText(), e.clientX, e.clientY);
+      this.showTooltipAt(muscle, e.clientX, e.clientY);
     };
 
     const onPointerMove = (e: PointerEvent) => {
       if (this.hoveredMuscle === muscle.id) {
-        this.showTooltipAt(getTooltipText(), e.clientX, e.clientY);
+        this.showTooltipAt(muscle, e.clientX, e.clientY);
       }
     };
 
@@ -455,7 +539,7 @@ export class BodyChart {
       const rect = path.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const topY = rect.top;
-      this.showTooltipAt(getTooltipText(), centerX, topY);
+      this.showTooltipAt(muscle, centerX, topY);
     };
 
     const onBlur = () => {

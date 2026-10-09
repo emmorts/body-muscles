@@ -457,7 +457,7 @@ chart.destroy();</code></pre>
             <tbody>
               <tr>
                 <td><code>update(options)</code></td>
-                <td>Merge partial options. Changing <code>view</code> triggers a full re-render; other changes update paths in-place.</td>
+                <td>Merge partial options; <code>undefined</code> values are ignored. Changing <code>view</code> or <code>interactive</code> rebuilds the chart; every other change applies in place and preserves focus.</td>
               </tr>
               <tr>
                 <td><code>destroy()</code></td>

@@ -111,7 +111,7 @@ Creates an interactive body map inside the given DOM element.
 
 | Method                              | Description                                       |
 | ----------------------------------- | ------------------------------------------------- |
-| `update(options: Partial<Options>)` | Merge new options. View change triggers re-render. |
+| `update(options: Partial<Options>)` | Merge new options. `view`/`interactive` changes rebuild; `undefined` values are ignored. |
 | `destroy()`                         | Remove all DOM elements and event listeners.       |
 
 ### Types
