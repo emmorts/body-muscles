@@ -571,7 +571,7 @@ For each completed item, append a record containing:
 Review baseline: `051005a`. Corrections are implemented and committed separately.
 
 - [x] **P2-R1 — Back/forward-cache restoration.** Removed document-navigation teardown from the vanilla example and both snippets; explicit widget removal/rebuild still calls `destroy()`. Verification: built the vanilla example; actual Chromium navigation away and Back returned `pageshow.persisted=true`, one container, 40 regions, and a working keyboard toggle. Commit: `fix(examples): preserve charts across cached navigation`.
-- [ ] **P2-R2 — Browser-resolvable vanilla HTML example.**
+- [x] **P2-R2 — Browser-resolvable vanilla HTML example.** Replaced the site's bare npm import with the same CDN UMD loading pattern as the README. Verification: copied the HTML verbatim into Chromium; the actual CDN script loaded, one chart/40 regions rendered, and no page errors occurred. Commit: `fix(docs): make vanilla HTML example runnable`.
 - [ ] **P2-R3 — Prevent catalog search submission.**
 - [ ] **P2-R4 — Remove stale catalog preview highlights.**
 - [ ] **P2-R5 — Refresh explicitly resubmitted labels.**

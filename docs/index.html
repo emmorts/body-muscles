@@ -903,8 +903,9 @@ cd examples/react            &amp;&amp; npm install &amp;&amp; npm start   # htt
 
         <h3>Vanilla JavaScript</h3>
         <pre><code class="language-html">&lt;div id="body-map"&gt;&lt;/div&gt;
-&lt;script type="module"&gt;
-  import { BodyChart, ViewSide } from '@emmorts/body-muscles';
+&lt;script src="https://unpkg.com/@emmorts/body-muscles/dist/umd/body-muscles.umd.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  const { BodyChart, ViewSide } = BodyMuscles;
 
   const container = document.getElementById('body-map');
   if (!container) throw new Error('Missing #body-map element');
